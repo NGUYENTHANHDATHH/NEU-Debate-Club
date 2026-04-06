@@ -1,6 +1,8 @@
+"use client";
+
 import React, { useState } from "react";
 import { motion } from "motion/react";
-import { Link } from "react-router";
+import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { MOCK_PROJECTS } from "@/components/ui/HomeLayout/Projects";
 
@@ -54,7 +56,7 @@ export const ALL_PROJECTS = [
   },
 ];
 
-export const AllProjects = () => {
+export default function AllProjects() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
   const totalPages = Math.ceil(ALL_PROJECTS.length / itemsPerPage);
@@ -89,11 +91,11 @@ export const AllProjects = () => {
             className="group cursor-pointer relative"
           >
             <Link
-              to={`/project/${project.id}`}
+              href={`/project/${project.id}`}
               className="absolute inset-0 z-40"
               aria-label={`Xem chi tiết dự án ${project.title}`}
             />
-            <div className="overflow-hidden aspect-[4/3] mb-6 relative rounded-sm">
+            <div className="overflow-hidden aspect-4/3 mb-6 relative rounded-sm">
               <div className="absolute inset-0 bg-black/10 dark:bg-black/40 group-hover:bg-transparent dark:group-hover:bg-black/10 transition-colors duration-500 z-10" />
               <img
                 src={project.image}
@@ -144,4 +146,4 @@ export const AllProjects = () => {
       )}
     </div>
   );
-};
+}

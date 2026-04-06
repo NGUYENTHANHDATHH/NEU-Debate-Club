@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import {
@@ -85,7 +87,7 @@ const ALL_POSTS = [
 
 const POSTS_PER_PAGE = 3;
 
-export const AchievementsPage = () => {
+export default function AchievementsPage() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const totalPages = Math.ceil(ALL_POSTS.length / POSTS_PER_PAGE);
@@ -225,4 +227,4 @@ export const AchievementsPage = () => {
       </section>
     </div>
   );
-};
+}
