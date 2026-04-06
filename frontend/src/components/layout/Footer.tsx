@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import { ChevronRight, ExternalLink } from "lucide-react";

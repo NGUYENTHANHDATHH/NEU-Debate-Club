@@ -1,9 +1,10 @@
+"use client";
 import React, { useState } from "react";
 import { Link } from "react-router";
 import { Moon, Sun, User, ChevronDown, LayoutDashboard } from "lucide-react";
 import { useTheme } from "next-themes";
 import Image from "next/image";
-import clubLogo from "figma:asset/9a83713c71f73f7875a1b7aeb1a76cf50b24e8e7.png";
+import clubLogo from "@/../public/logo.png";
 
 export const Header = () => {
   const { theme, setTheme } = useTheme();
