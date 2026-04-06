@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 import { Hero } from "@/components/ui/HomeLayout/Hero";
 import { Vision } from "@/components/ui/HomeLayout/Vision";

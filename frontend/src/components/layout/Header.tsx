@@ -1,10 +1,10 @@
 "use client";
 import React, { useState } from "react";
-import { Link } from "react-router";
 import { Moon, Sun, User, ChevronDown, LayoutDashboard } from "lucide-react";
-import { useTheme } from "next-themes";
 import Image from "next/image";
+import Link from "next/link";
 import clubLogo from "@/../public/logo.png";
+import { useTheme } from "@/provider/ThemeProvider";
 
 export const Header = () => {
   const { theme, setTheme } = useTheme();
@@ -23,7 +23,7 @@ export const Header = () => {
   return (
     <header className="fixed top-0 left-0 w-full z-50 border-b border-gray-200 dark:border-[#222] bg-white/80 dark:bg-black/80 backdrop-blur-md transition-colors duration-500">
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-3 group">
+        <Link href="/" className="flex items-center gap-3 group">
           <Image
             src={clubLogo}
             alt="Logo"
@@ -39,14 +39,14 @@ export const Header = () => {
 
         <nav className="hidden md:flex items-center gap-8 font-['Montserrat'] text-sm font-semibold">
           <Link
-            to="/projects"
+            href="/projects"
             className="text-gray-600 dark:text-gray-300 hover:text-[#8A151B] dark:hover:text-[#8A151B] transition-colors"
           >
             Dự Án
           </Link>
 
           <Link
-            to="/achievements"
+            href="/achievements"
             className="text-gray-600 dark:text-gray-300 hover:text-[#8A151B] dark:hover:text-[#8A151B] transition-colors"
           >
             Thành Tựu
@@ -59,27 +59,27 @@ export const Header = () => {
             <ChevronDown className="w-4 h-4 transition-transform group-hover:rotate-180" />
           </button>
 
-          <div className="absolute top-full left-0 mt-0 w-48 bg-white dark:bg-[#0A0A0A] border border-gray-100 dark:border-[#222] rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 flex flex-col py-2 z-[60] overflow-hidden">
+          <div className="absolute top-full left-0 mt-0 w-48 bg-white dark:bg-[#0A0A0A] border border-gray-100 dark:border-[#222] rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 flex flex-col py-2 z-60 overflow-hidden">
             <Link
-              to="/department/truyen-thong"
+              href="/department/truyen-thong"
               className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#111] hover:text-[#8A151B] dark:hover:text-[#8A151B] transition-colors"
             >
               Truyền Thông
             </Link>
             <Link
-              to="/department/doi-ngoai"
+              href="/department/doi-ngoai"
               className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#111] hover:text-[#8A151B] dark:hover:text-[#8A151B] transition-colors"
             >
               Đối Ngoại
             </Link>
             <Link
-              to="/department/su-kien"
+              href="/department/su-kien"
               className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#111] hover:text-[#8A151B] dark:hover:text-[#8A151B] transition-colors"
             >
               Sự Kiện
             </Link>
             <Link
-              to="/department/chuyen-mon"
+              href="/department/chuyen-mon"
               className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#111] hover:text-[#8A151B] dark:hover:text-[#8A151B] transition-colors"
             >
               Chuyên Môn
@@ -102,7 +102,7 @@ export const Header = () => {
           {user ? (
             <div className="flex items-center gap-4">
               <Link
-                to="/dashboard"
+                href="/dashboard"
                 className="hidden sm:flex items-center gap-2 bg-[#F8FAFC] text-[#1E293B] border border-gray-200 px-4 py-2 rounded-full font-['Montserrat'] text-sm font-semibold hover:bg-gray-100 transition-all shadow-sm dark:bg-[#111] dark:border-[#333] dark:text-white dark:hover:bg-[#222]"
               >
                 <LayoutDashboard className="w-4 h-4" />

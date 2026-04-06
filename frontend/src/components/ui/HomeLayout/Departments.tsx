@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "motion/react";
-import { Link } from "react-router";
 import { Triangle, Hexagon, Circle, Square, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 export const DEPARTMENTS = [
   {
@@ -63,13 +63,13 @@ export const Departments = () => {
               className="group relative border border-gray-200 dark:border-[#222] p-8 hover:border-[#8A151B] dark:hover:border-[#8A151B] transition-colors duration-500 bg-gray-50 dark:bg-[#080808] hover:bg-red-50 dark:hover:bg-[#110505] overflow-hidden rounded-sm"
             >
               <Link
-                to={`/department/${dept.id}`}
+                href={`/department/${dept.id}`}
                 className="absolute inset-0 z-20"
                 aria-label={`Xem chi tiết ban ${dept.title}`}
               />
 
               {/* Background Geometric Hover Effect */}
-              <div className="absolute -inset-10 opacity-0 group-hover:opacity-[0.03] transition-opacity duration-700 bg-[linear-gradient(45deg,transparent_25%,rgba(138,21,27,1)_50%,transparent_75%)] dark:bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,1)_50%,transparent_75%)] bg-[length:10px_10px]" />
+              <div className="absolute -inset-10 opacity-0 group-hover:opacity-[0.03] transition-opacity duration-700 bg-[linear-gradient(45deg,transparent_25%,rgba(138,21,27,1)_50%,transparent_75%)] dark:bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,1)_50%,transparent_75%)] bg-size-[10px_10px]" />
 
               <div className="relative z-10 pointer-events-none">
                 <div className="w-16 h-16 rounded-full border border-gray-300 dark:border-[#333] group-hover:border-[#8A151B] dark:group-hover:border-[#8A151B] flex items-center justify-center mb-8 transition-colors duration-300 bg-white dark:bg-transparent">
@@ -81,7 +81,7 @@ export const Departments = () => {
                 <p className="text-gray-600 dark:text-gray-400 font-['Inter'] font-light leading-relaxed transition-colors">
                   {dept.desc}
                 </p>
-                <div className="mt-6 flex items-center gap-2 text-[#8A151B] text-sm font-semibold opacity-0 group-hover:opacity-100 transform translate-x-[-10px] group-hover:translate-x-0 transition-all duration-300">
+                <div className="mt-6 flex items-center gap-2 text-[#8A151B] text-sm font-semibold opacity-0 group-hover:opacity-100 transform -translate-x-2.5 group-hover:translate-x-0 transition-all duration-300">
                   Khám phá <ArrowRight className="w-4 h-4" />
                 </div>
               </div>

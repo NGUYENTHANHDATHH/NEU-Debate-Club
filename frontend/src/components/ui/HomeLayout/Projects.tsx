@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "motion/react";
-import { Link } from "react-router";
 import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 export const MOCK_PROJECTS = [
   {
@@ -58,7 +58,7 @@ export const Projects = () => {
             transition={{ duration: 0.6 }}
           >
             <Link
-              to="/projects"
+              href="/projects"
               className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-[#8A151B] dark:hover:text-[#8A151B] transition-colors font-['Inter'] group pb-2 border-b border-transparent hover:border-[#8A151B]"
             >
               Xem Tất Cả Dự Án{" "}
@@ -78,12 +78,12 @@ export const Projects = () => {
               className="group cursor-pointer relative"
             >
               <Link
-                to={`/project/${project.id}`}
+                href={`/project/${project.id}`}
                 className="absolute inset-0 z-40"
                 aria-label={`Xem chi tiết dự án ${project.title}`}
               />
               {/* Image Container with Dark Overlay */}
-              <div className="overflow-hidden aspect-[4/3] mb-6 relative rounded-sm">
+              <div className="overflow-hidden aspect-4/3 mb-6 relative rounded-sm">
                 <div className="absolute inset-0 bg-black/10 dark:bg-black/40 group-hover:bg-transparent dark:group-hover:bg-black/10 transition-colors duration-500 z-10" />
                 <motion.img
                   src={project.image}
