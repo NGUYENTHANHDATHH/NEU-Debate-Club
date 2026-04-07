@@ -1,15 +1,37 @@
+"use client";
+
 import React from "react";
-import { useParams, Navigate } from "react-router";
+import { useParams } from "next/navigation";
 import { motion } from "motion/react";
-import { DEPARTMENTS } from "@/app/(public)/departments/page";
+import { DEPARTMENTS } from "@/components/ui/HomeLayout/Departments";
+import Link from "next/link";
+import { ROUTES } from "@/constants/routes";
 
-export const DepartmentDetail = () => {
-  const { id } = useParams();
+export default function DepartmentDetail() {
+  const params = useParams<{ slug: string }>();
+  const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
 
-  const department = DEPARTMENTS.find((d) => d.id === id);
+  const department = DEPARTMENTS.find((d) => d.id === slug);
 
   if (!department) {
-    return <Navigate to="/" replace />;
+    return (
+      <main className="py-32 px-6 max-w-4xl mx-auto min-h-[70vh] flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <h1 className="text-3xl md:text-4xl font-bold font-['Montserrat'] text-black dark:text-white">
+            Không tìm thấy ban
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 font-['Inter']">
+            Đường dẫn bạn truy cập không tồn tại.
+          </p>
+          <Link
+            href={ROUTES.home}
+            className="inline-flex items-center gap-2 text-sm font-semibold font-['Montserrat'] text-[#8A151B] hover:underline"
+          >
+            Quay về trang chủ
+          </Link>
+        </div>
+      </main>
+    );
   }
 
   const Icon = department.icon;
@@ -33,7 +55,7 @@ export const DepartmentDetail = () => {
           {department.title}
         </h1>
 
-        <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-[#333] to-transparent mb-10" />
+        <div className="w-full h-px bg-linear-to-r from-transparent via-gray-300 dark:via-[#333] to-transparent mb-10" />
 
         <div className="text-left bg-gray-50 dark:bg-[#0A0A0A] p-10 border border-gray-200 dark:border-[#222] rounded-sm w-full">
           <h2 className="text-2xl font-bold font-['Montserrat'] mb-6 text-black dark:text-white border-l-4 border-[#8A151B] pl-4">
@@ -60,4 +82,4 @@ export const DepartmentDetail = () => {
       </motion.div>
     </div>
   );
-};
+}

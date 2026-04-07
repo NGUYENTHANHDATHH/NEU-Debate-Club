@@ -59,25 +59,25 @@ export const Header = () => {
 
             <div className="absolute top-full left-0 mt-0 w-48 bg-white dark:bg-[#0A0A0A] border border-gray-100 dark:border-[#222] rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 flex flex-col py-2 z-60 overflow-hidden">
               <Link
-                href="/department/truyen-thong"
+                href="/departments/truyen-thong"
                 className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#111] hover:text-[#8A151B] dark:hover:text-[#8A151B] transition-colors"
               >
                 Truyền Thông
               </Link>
               <Link
-                href="/department/doi-ngoai"
+                href="/departments/doi-ngoai"
                 className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#111] hover:text-[#8A151B] dark:hover:text-[#8A151B] transition-colors"
               >
                 Đối Ngoại
               </Link>
               <Link
-                href="/department/su-kien"
+                href="/departments/su-kien"
                 className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#111] hover:text-[#8A151B] dark:hover:text-[#8A151B] transition-colors"
               >
                 Sự Kiện
               </Link>
               <Link
-                href="/department/chuyen-mon"
+                href="/departments/chuyen-mon"
                 className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#111] hover:text-[#8A151B] dark:hover:text-[#8A151B] transition-colors"
               >
                 Chuyên Môn

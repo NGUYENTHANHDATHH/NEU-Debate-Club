@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Trophy,
 } from "lucide-react";
+import Image from "next/image";
 import { Link } from "react-router";
 
 // Dữ liệu mock cho các bài blog thành tựu
@@ -130,7 +131,8 @@ export default function AchievementsPage() {
             </h1>
             <p className="text-gray-600 dark:text-gray-400 font-['Inter'] max-w-2xl mx-auto text-lg">
               Cùng nhìn lại những dấu ấn, giải thưởng và sự kiện nổi bật trên
-              hành trình phát triển của Cogito qua các bài viết chi tiết.
+              hành trình phát triển của NEU Debate Club qua các bài viết chi
+              tiết.
             </p>
           </motion.div>
         </div>
@@ -152,9 +154,11 @@ export default function AchievementsPage() {
                   <div className="absolute top-4 left-4 z-10 bg-[#8A151B] text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
                     {post.category}
                   </div>
-                  <img
+                  <Image
                     src={post.image}
                     alt={post.title}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 40vw"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-in-out"
                   />
                 </div>
