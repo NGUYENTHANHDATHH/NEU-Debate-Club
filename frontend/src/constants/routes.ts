@@ -7,6 +7,6 @@ export const ROUTES = {
 } as const;
 
 export const routePath = {
-  projectDetail: (id: string | number) => `/project/${id}`,
+  projectDetail: (id: string | number) => `/projects/${id}`,
   departmentDetail: (id: string) => `/departments/${id}`,
 } as const;

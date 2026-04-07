@@ -4,58 +4,9 @@ import React, { useState } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { MOCK_PROJECTS } from "@/components/ui/HomeLayout/Projects";
+import { ALL_PROJECTS } from "@/constants/projects";
+import { routePath } from "@/constants/routes";
 import Image from "next/image";
-
-// Sinh thêm dữ liệu giả để biểu diễn phân trang
-export const ALL_PROJECTS = [
-  ...MOCK_PROJECTS,
-  {
-    id: 4,
-    title: "Kim Cổ Âm Vang",
-    category: "Workshop",
-    image:
-      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/kim-co-am-vang.jpg",
-    desc: "BẢN SẮC VIỆT TRONG DÒNG CHẢY HỘI NHẬP.",
-    delay: 0.1,
-  },
-  {
-    id: 5,
-    title: "Vinci's Arcane",
-    category: "Recruitment",
-    image:
-      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/vincis-arcane.jpg",
-    desc: "Lấy cảm hứng từ kiệt tác 𝐓𝐡𝐞 𝐃𝐚 𝐕𝐢𝐧𝐜𝐢 𝐂𝐨𝐝𝐞 của Dan Brown",
-    delay: 0.2,
-  },
-  {
-    id: 6,
-    title: "NEU Debate Open 2024",
-    category: "Competition",
-    image:
-      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/ndo2024.jpg",
-    desc: "Lấy ý tưởng từ bộ truyện kinh điển “Alice's adventures in wonderland” ",
-    delay: 0.3,
-  },
-  {
-    id: 7,
-    title: "NEU Debate Open 2023",
-    category: "Competition",
-    image:
-      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/ndo2023.jpg",
-    desc: "NDO 2023 lấy cảm hứng từ bộ phim điện ảnh “The Greatest Showman” hay còn được biết tới với tên tiếng việt là “Bậc thầy của những ước mơ”.",
-    delay: 0.4,
-  },
-  {
-    id: 8,
-    title: "NEU Debate Open 2022",
-    category: "Competition",
-    image:
-      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/ndo2022.jpg",
-    desc: "Giống như những cơn mưa sao băng hiếm khi xuất hiện, hiếm khi có người được chiêm ngưỡng.",
-    delay: 0.5,
-  },
-];
 
 export default function AllProjects() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -92,7 +43,7 @@ export default function AllProjects() {
             className="group cursor-pointer relative"
           >
             <Link
-              href={`/project/${project.id}`}
+              href={routePath.projectDetail(project.id)}
               className="absolute inset-0 z-40"
               aria-label={`Xem chi tiết dự án ${project.title}`}
             />
@@ -103,7 +54,7 @@ export default function AllProjects() {
                 alt={project.title}
                 fill
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 filter grayscale group-hover:grayscale-0"
+                className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 "
               />
               <div className="absolute inset-0 bg-[#8A151B]/10 dark:bg-[#8A151B]/20 opacity-0 group-hover:opacity-100 mix-blend-color z-20 transition-opacity duration-500" />
             </div>

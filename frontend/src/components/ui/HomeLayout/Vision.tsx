@@ -1,9 +1,8 @@
 import React from "react";
 import { motion } from "motion/react";
-
+import VisionBg from "@/../public/vision-bg.jpg";
 export const Vision = () => {
-  const bgImageUrl =
-    "https://scontent.fhan14-1.fna.fbcdn.net/v/t39.30808-6/489957385_1310905784368352_5996632066753669500_n.jpg?_nc_cat=107&ccb=1-7&_nc_sid=13d280&_nc_eui2=AeFWzBO5KnsfBa3Vdr52Dj3b0aRLHeRoLnPRpEsd5GguczEmAxi3MkVkOVy_G-QyTrkOxm9cUjFDYwFzkU7iRtEN&_nc_ohc=gmFJDj02gggQ7kNvwFamCMz&_nc_oc=AdoS7TNdl34qEnF8aDy62Ulgku3LIWGINCyy2vKHkS9Vk1VUAiOei3wGC2ezCi0C_1FoQ1e_xPAFVziBwN2IqoSb&_nc_zt=23&_nc_ht=scontent.fhan14-1.fna&_nc_gid=UmhYQRMeP-85XRKeE7Oydw&_nc_ss=7a32e&oh=00_AfylFVmSai4nK5TqfWD-miLJYSTYiOuTa7iKEK4YL1mJXQ&oe=69CD6163";
+  const bgImageUrl = VisionBg.src; // Assuming VisionBg is imported as a static asset
 
   return (
     <section className="relative py-32 bg-gray-50 dark:bg-[#050505] text-black dark:text-white overflow-hidden flex flex-col items-center border-t border-b border-gray-200 dark:border-[#111] transition-colors duration-500">
@@ -62,11 +61,11 @@ export const Vision = () => {
           <div className="absolute -bottom-4 -right-4 w-8 h-8 border-b-2 border-r-2 border-[#8A151B] opacity-30 dark:opacity-50 dark:shadow-[0_0_10px_#8A151B]" />
 
           <p className="text-gray-700 dark:text-gray-400 text-lg md:text-xl font-light font-['Inter'] leading-relaxed max-w-3xl mx-auto py-8 px-4 transition-colors duration-500">
-            Triết lý của chúng tôi không chỉ dừng lại ở suy nghĩ. "Cogito, ergo
-            sum" — "Tôi tư duy, nên tôi tồn tại" là minh chứng cho một cộng đồng
-            không ngừng phân tích, giải quyết vấn đề và chuyển hóa ý tưởng thành
-            hiện thực. Tại đây, mỗi cá nhân đều có cơ hội rèn luyện chiều sâu
-            trí tuệ và quyền lực tư duy để dẫn đầu.
+            Triết lý của chúng tôi không chỉ dừng lại ở suy nghĩ. &quot;Cogito,
+            ergo sum&quot; — &quot;Tôi tư duy, nên tôi tồn tại&quot; là minh
+            chứng cho một cộng đồng không ngừng phân tích, giải quyết vấn đề và
+            chuyển hóa ý tưởng thành hiện thực. Tại đây, mỗi cá nhân đều có cơ
+            hội rèn luyện chiều sâu trí tuệ và quyền lực tư duy để dẫn đầu.
           </p>
         </motion.div>
       </div>

@@ -1,17 +1,39 @@
+"use client";
+
 import React from "react";
-import { useParams, Navigate, Link } from "react-router";
 import { motion } from "motion/react";
 import { ArrowLeft, Calendar, User, Tag } from "lucide-react";
-import { ALL_PROJECTS } from "@/app/(public)/projects/page";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 import Image from "next/image";
+import { ALL_PROJECTS } from "@/constants/projects";
+import { ROUTES } from "@/constants/routes";
 
-export const ProjectDetail = () => {
-  const { id } = useParams();
+export default function ProjectDetail() {
+  const params = useParams<{ slug: string }>();
+  const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
 
-  const project = ALL_PROJECTS.find((p) => p.id === parseInt(id || "0", 10));
+  const project = ALL_PROJECTS.find((p) => p.id === parseInt(slug || "0", 10));
 
   if (!project) {
-    return <Navigate to="/projects" replace />;
+    return (
+      <main className="min-h-screen flex items-center justify-center px-6 bg-white dark:bg-black text-black dark:text-white">
+        <div className="max-w-lg text-center space-y-6">
+          <h1 className="text-3xl md:text-4xl font-bold font-['Montserrat']">
+            Không tìm thấy dự án
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 font-['Inter']">
+            Trang chi tiết bạn đang truy cập không tồn tại hoặc đã bị xoá.
+          </p>
+          <Link
+            href={ROUTES.projects}
+            className="inline-flex items-center gap-2 text-sm font-semibold font-['Montserrat'] text-[#8A151B] hover:underline"
+          >
+            <ArrowLeft className="w-4 h-4" /> Trở về danh sách
+          </Link>
+        </div>
+      </main>
+    );
   }
 
   return (
@@ -45,13 +67,13 @@ export const ProjectDetail = () => {
         </div>
 
         {/* Decorative fade bottom */}
-        <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-white dark:from-black to-transparent z-20" />
+        <div className="absolute bottom-0 left-0 w-full h-32 bg-linear-to-t from-white dark:from-black to-transparent z-20" />
       </div>
 
       {/* Main Content */}
       <div className="max-w-3xl mx-auto px-6 -mt-10 relative z-30">
         <Link
-          to="/projects"
+          href={ROUTES.projects}
           className="inline-flex items-center gap-2 text-sm font-semibold font-['Montserrat'] text-gray-500 hover:text-[#8A151B] dark:hover:text-[#8A151B] mb-12 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" /> TRỞ VỀ DANH SÁCH
@@ -144,23 +166,27 @@ export const ProjectDetail = () => {
 
           {/* Image Gallery Mock */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-16">
-            <Image
-              src={project.image}
-              alt="Gallery 1"
-              fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className="w-full h-64 object-cover rounded-sm filter grayscale hover:grayscale-0 transition-all duration-700 shadow-md"
-            />
-            <Image
-              src={project.image}
-              alt="Gallery 2"
-              fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className="w-full h-64 object-cover rounded-sm filter grayscale hover:grayscale-0 transition-all duration-700 scale-x-[-1] shadow-md"
-            />
+            <div className="relative h-64 overflow-hidden rounded-sm shadow-md">
+              <Image
+                src={project.image}
+                alt="Gallery 1"
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                className="object-cover transition-all duration-700"
+              />
+            </div>
+            <div className="relative h-64 overflow-hidden rounded-sm shadow-md">
+              <Image
+                src={project.image}
+                alt="Gallery 2"
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                className="object-cover scale-x-[-1] transition-all duration-700"
+              />
+            </div>
           </div>
         </motion.div>
       </div>
     </article>
   );
-};
+}

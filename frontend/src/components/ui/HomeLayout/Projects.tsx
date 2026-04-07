@@ -2,36 +2,8 @@ import React from "react";
 import { motion } from "motion/react";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-
-export const MOCK_PROJECTS = [
-  {
-    id: 1,
-    title: "NEU Debate Open 2025",
-    category: "Competition",
-    image:
-      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/ndo2025.jpg",
-    desc: "Giải đấu tranh biện lớn nhất năm, được tổ chức bởi CLB Tranh biện Đại học Kinh tế Quốc dân kết hợp cùng Liên chi đoàn Khoa Luật – NEU, chính thức trở lại! Năm 2025 đánh dấu cột mốc 5 năm tổ chức, hứa hẹn mang đến một đấu trường bùng nổ, nơi những lập luận sắc bén và bản lĩnh tranh biện sẽ tỏa sáng, khẳng định vị thế trong cộng đồng tranh biện Việt Nam.",
-    delay: 0.1,
-  },
-  {
-    id: 2,
-    title: "Compass 4Right Pass (2024)",
-    category: "Talkshow",
-    image:
-      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/compass-4right-path.jpg",
-    desc: "Workshop “COMPASS 4RIGHT PATH” ra đời với hy vọng sẽ trở thành chiếc “la bàn” giúp các bạn có cơ hội được chia sẻ những điều trăn trở, khó nói bấy lâu, cũng như lắng nghe kiến thức, kinh nghiệm và trải nghiệm từ các vị diễn giả uy tín.",
-    delay: 0.3,
-  },
-  {
-    id: 3,
-    title: "Thiêu Đường Tỏ Lối ",
-    category: "Talkshow",
-    image:
-      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/theu-duong-to-loi.jpg",
-    desc: "workshop “THÊU ĐƯỜNG TỎ LỐI” được tổ chức với hy vọng sẽ định hướng các bạn tân sinh viên thêu dệt nên con đường đúng đắn cho bản thân mình với sự góp mặt của những diễn giả vô cùng nổi tiếng có nhiều kinh nghiệm, trải nghiệm và kiến thức.",
-    delay: 0.5,
-  },
-];
+import { MOCK_PROJECTS } from "@/constants/projects";
+import { routePath } from "@/constants/routes";
 
 export const Projects = () => {
   return (
@@ -78,7 +50,7 @@ export const Projects = () => {
               className="group cursor-pointer relative"
             >
               <Link
-                href={`/project/${project.id}`}
+                href={routePath.projectDetail(project.id)}
                 className="absolute inset-0 z-40"
                 aria-label={`Xem chi tiết dự án ${project.title}`}
               />
