@@ -8,8 +8,7 @@ import Image from "next/image";
 export const Footer = () => {
   const [formData, setFormData] = useState({
     name: "",
-    studentId: "",
-    department: "",
+    phone: "",
     reason: "",
   });
   const [submitted, setSubmitted] = useState(false);
@@ -19,7 +18,7 @@ export const Footer = () => {
     console.log("Submitted to Google Sheets:", formData);
     setSubmitted(true);
     setTimeout(() => setSubmitted(false), 5000);
-    setFormData({ name: "", studentId: "", department: "", reason: "" });
+    setFormData({ name: "", phone: "", reason: "" });
   };
 
   return (
@@ -49,8 +48,7 @@ export const Footer = () => {
             <span className="text-[#8A151B]">Tồn Tại?</span>
           </h2>
           <p className="text-gray-600 dark:text-gray-400 font-['Inter'] text-lg font-light leading-relaxed mb-10 transition-colors">
-            Bạn đang có thắc mắc hay câu hỏi cho NEU Debate Club? Hãy liên hệ
-            qua các kênh thông tin sau.
+            NEU Debate hiện đang có các kênh thông tin sau.
           </p>
 
           <div className="flex flex-col gap-4 text-gray-600 dark:text-gray-400 font-['Inter'] text-sm mb-12 transition-colors">
@@ -88,7 +86,7 @@ export const Footer = () => {
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#8A151B] to-transparent" />
 
             <h3 className="text-2xl font-bold font-['Montserrat'] mb-8 text-black dark:text-white transition-colors">
-              Đơn Đăng Ký Gia Nhập
+              Liên Hệ Với Chúng Tôi
             </h3>
 
             {submitted ? (
@@ -130,46 +128,24 @@ export const Footer = () => {
                   </div>
                   <div className="flex-1">
                     <label className="block text-xs uppercase text-gray-500 mb-2 font-['Montserrat'] font-semibold">
-                      Mã Sinh Viên
+                      Số điện thoại
                     </label>
                     <input
                       required
                       type="text"
-                      value={formData.studentId}
+                      value={formData.phone}
                       onChange={(e) =>
-                        setFormData({ ...formData, studentId: e.target.value })
+                        setFormData({ ...formData, phone: e.target.value })
                       }
                       className="w-full bg-gray-50 dark:bg-[#111] border-b border-gray-300 dark:border-[#333] px-0 py-3 text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-700 focus:outline-none focus:border-[#8A151B] transition-colors"
-                      placeholder="SV123456"
+                      placeholder="0123456789"
                     />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-xs uppercase text-gray-500 mb-2 font-['Montserrat'] font-semibold">
-                    Ban Ứng Tuyển
-                  </label>
-                  <select
-                    required
-                    value={formData.department}
-                    onChange={(e) =>
-                      setFormData({ ...formData, department: e.target.value })
-                    }
-                    className="w-full bg-gray-50 dark:bg-[#111] border-b border-gray-300 dark:border-[#333] px-0 py-3 text-gray-700 dark:text-gray-300 focus:outline-none focus:border-[#8A151B] transition-colors appearance-none"
-                  >
-                    <option value="" disabled>
-                      -- Chọn Ban --
-                    </option>
-                    <option value="Truyền Thông">Truyền Thông</option>
-                    <option value="Đối Ngoại">Đối Ngoại</option>
-                    <option value="Sự Kiện">Sự Kiện</option>
-                    <option value="Chuyên Môn">Chuyên Môn</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs uppercase text-gray-500 mb-2 font-['Montserrat'] font-semibold">
-                    Lý Do Chọn Cogito?
+                    Thắc mắc/ Câu hỏi của bạn với NDC?
                   </label>
                   <textarea
                     required
@@ -187,7 +163,7 @@ export const Footer = () => {
                   type="submit"
                   className="mt-4 flex items-center justify-between w-full bg-black dark:bg-white text-white dark:text-black py-4 px-6 font-bold font-['Montserrat'] uppercase tracking-wider hover:bg-[#8A151B] dark:hover:bg-[#8A151B] hover:text-white dark:hover:text-white transition-all duration-300 group"
                 >
-                  <span>Gửi Đăng Ký</span>
+                  <span>Gửi</span>
                   <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
               </form>

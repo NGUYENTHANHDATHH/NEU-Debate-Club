@@ -63,7 +63,7 @@ export const Departments = () => {
               className="group relative border border-gray-200 dark:border-[#222] p-8 hover:border-[#8A151B] dark:hover:border-[#8A151B] transition-colors duration-500 bg-gray-50 dark:bg-[#080808] hover:bg-red-50 dark:hover:bg-[#110505] overflow-hidden rounded-sm"
             >
               <Link
-                href={`/department/${dept.id}`}
+                href={`/departments/${dept.id}`}
                 className="absolute inset-0 z-20"
                 aria-label={`Xem chi tiết ban ${dept.title}`}
               />
