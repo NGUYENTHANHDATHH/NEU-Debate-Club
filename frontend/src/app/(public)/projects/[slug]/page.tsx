@@ -3,6 +3,7 @@ import { useParams, Navigate, Link } from "react-router";
 import { motion } from "motion/react";
 import { ArrowLeft, Calendar, User, Tag } from "lucide-react";
 import { ALL_PROJECTS } from "@/app/(public)/projects/page";
+import Image from "next/image";
 
 export const ProjectDetail = () => {
   const { id } = useParams();
@@ -80,7 +81,7 @@ export const ProjectDetail = () => {
           className="max-w-none font-['Inter'] text-lg text-gray-700 dark:text-gray-300 space-y-6"
         >
           <p className="text-xl md:text-2xl font-light text-black dark:text-white leading-relaxed mb-10 border-l-4 border-[#8A151B] pl-6 italic">
-            "{project.desc}"
+            {project.desc}
           </p>
 
           <h2 className="text-3xl font-bold font-['Montserrat'] text-black dark:text-white mt-12 mb-6">
@@ -137,19 +138,24 @@ export const ProjectDetail = () => {
           </p>
           <p className="leading-relaxed">
             Sự thành công của {project.title} là minh chứng rõ ràng nhất cho
-            triết lý "Tư Duy Sắc Bén, Hành Động Chuyên Nghiệp" của chúng tôi.
+            triết lý <b>Tư Duy Sắc Bén, Hành Động Chuyên Nghiệp</b> của chúng
+            tôi.
           </p>
 
           {/* Image Gallery Mock */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-16">
-            <img
+            <Image
               src={project.image}
               alt="Gallery 1"
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className="w-full h-64 object-cover rounded-sm filter grayscale hover:grayscale-0 transition-all duration-700 shadow-md"
             />
-            <img
+            <Image
               src={project.image}
               alt="Gallery 2"
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className="w-full h-64 object-cover rounded-sm filter grayscale hover:grayscale-0 transition-all duration-700 scale-x-[-1] shadow-md"
             />
           </div>
