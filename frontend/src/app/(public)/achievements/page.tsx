@@ -20,7 +20,7 @@ const ALL_POSTS = [
     excerpt:
       "Đội tuyển của NEU Debate Club đã xuất sắc vượt qua hơn 50 đội thi để giành ngôi vị quán quân tại cuộc thi lớn nhất năm.",
     image:
-      "https://images.unsplash.com/photo-1768811838777-0507859b5ab9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkZWJhdGUlMjBjb21wZXRpdGlvbnxlbnwxfHx8fDE3NzQ1OTY2OTJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/ndo2024.jpg",
     date: "15 Tháng 03, 2025",
     category: "Giải Thưởng",
   },
@@ -30,7 +30,7 @@ const ALL_POSTS = [
     excerpt:
       "Câu lạc bộ vinh dự nhận bằng khen từ Đoàn Thanh niên trường vì những đóng góp tích cực cho phong trào học thuật.",
     image:
-      "https://images.unsplash.com/photo-1773312329764-fa036ce8bcac?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzdHVkZW50cyUyMHdpbm5pbmclMjBhd2FyZHxlbnwxfHx8fDE3NzQ2ODY4MjZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/ndo2024.jpg",
     date: "28 Tháng 02, 2025",
     category: "Vinh Danh",
   },
@@ -40,7 +40,7 @@ const ALL_POSTS = [
     excerpt:
       "Hơn 500 sinh viên đã tham dự và nhận được nhiều giá trị từ các diễn giả khách mời hàng đầu về kỹ năng tranh biện.",
     image:
-      "https://images.unsplash.com/photo-1765438863717-49fca900f861?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3b3Jrc2hvcCUyMHByZXNlbnRhdGlvbnxlbnwxfHx8fDE3NzQ2ODY4MjZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/ndo2024.jpg",
     date: "10 Tháng 01, 2025",
     category: "Sự Kiện",
   },
@@ -50,7 +50,7 @@ const ALL_POSTS = [
     excerpt:
       "Đại diện của câu lạc bộ đã có màn thể hiện xuất sắc tại đấu trường quốc tế, mang về thành tích đáng tự hào.",
     image:
-      "https://images.unsplash.com/photo-1758270704787-615782711641?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzdHVkZW50cyUyMGRpc2N1c3Npb258ZW58MXx8fHwxNzc0Njg2ODMwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/ndo2024.jpg",
     date: "12 Tháng 12, 2024",
     category: "Giải Thưởng",
   },
@@ -60,7 +60,7 @@ const ALL_POSTS = [
     excerpt:
       "Giải đấu thường niên đã thu hút sự tham gia của các trường đại học lớn trên toàn quốc với chất lượng chuyên môn cao.",
     image:
-      "https://images.unsplash.com/photo-1731160352698-cb7e2f142d7a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx1bml2ZXJzaXR5JTIwZXZlbnR8ZW58MXx8fHwxNzc0Njg2ODMwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/ndo2024.jpg",
     date: "25 Tháng 11, 2024",
     category: "Sự Kiện",
   },
@@ -70,7 +70,7 @@ const ALL_POSTS = [
     excerpt:
       "Đêm Gala đầy cảm xúc nhìn lại chặng đường một thập kỷ hình thành và phát triển của Cogito.",
     image:
-      "https://images.unsplash.com/photo-1760348082205-8bda5fbdd7b5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzdWNjZXNzJTIwY2VyZW1vbnl8ZW58MXx8fHwxNzc0Njg2ODMwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/ndo2024.jpg",
     date: "05 Tháng 10, 2024",
     category: "Kỷ Niệm",
   },
@@ -80,7 +80,7 @@ const ALL_POSTS = [
     excerpt:
       "Cá nhân thành viên chủ chốt đã lọt vào top những người nói tốt nhất tại giải đấu quy mô châu lục.",
     image:
-      "https://images.unsplash.com/photo-1768811838777-0507859b5ab9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkZWJhdGUlMjBjb21wZXRpdGlvbnxlbnwxfHx8fDE3NzQ1OTY2OTJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/ndo2024.jpg",
     date: "15 Tháng 09, 2024",
     category: "Vinh Danh",
   },
