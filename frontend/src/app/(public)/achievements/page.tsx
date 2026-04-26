@@ -10,7 +10,7 @@ import {
   Trophy,
 } from "lucide-react";
 import Image from "next/image";
-import { Link } from "react-router";
+import Link from "next/link";
 
 // Dữ liệu mock cho các bài blog thành tựu
 const ALL_POSTS = [
@@ -150,35 +150,40 @@ export default function AchievementsPage() {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 className="group flex flex-col md:flex-row gap-8 bg-gray-50 dark:bg-[#0A0A0A] p-6 rounded-2xl border border-gray-100 dark:border-[#222] hover:border-[#8A151B]/50 dark:hover:border-[#8A151B]/50 transition-all duration-300 shadow-sm hover:shadow-md dark:shadow-none"
               >
-                <div className="w-full md:w-2/5 overflow-hidden rounded-xl h-64 md:h-auto shrink-0 relative">
-                  <div className="absolute top-4 left-4 z-10 bg-[#8A151B] text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                    {post.category}
+                <Link
+                  href={`/achievements/${post.id}`}
+                  className="flex w-full flex-col gap-8 md:flex-row"
+                >
+                  <div className="relative h-64 w-full shrink-0 overflow-hidden rounded-xl md:h-70 md:w-2/5">
+                    <div className="absolute top-4 left-4 z-10 bg-[#8A151B] text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                      {post.category}
+                    </div>
+                    <Image
+                      src={post.image}
+                      alt={post.title}
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 40vw"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-in-out"
+                    />
                   </div>
-                  <Image
-                    src={post.image}
-                    alt={post.title}
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 40vw"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-in-out"
-                  />
-                </div>
 
-                <div className="w-full md:w-3/5 flex flex-col justify-center py-2">
-                  <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-4 font-['Inter']">
-                    <Calendar className="w-4 h-4" />
-                    <span>{post.date}</span>
+                  <div className="w-full md:w-3/5 flex flex-col justify-center py-2">
+                    <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-4 font-['Inter']">
+                      <Calendar className="w-4 h-4" />
+                      <span>{post.date}</span>
+                    </div>
+                    <h2 className="text-2xl md:text-3xl font-bold font-['Montserrat'] mb-4 group-hover:text-[#8A151B] transition-colors">
+                      {post.title}
+                    </h2>
+                    <p className="text-gray-600 dark:text-gray-400 font-['Inter'] mb-6 line-clamp-3">
+                      {post.excerpt}
+                    </p>
+                    <div className="mt-auto flex items-center gap-2 font-['Montserrat'] font-semibold text-[#8A151B] group/btn cursor-pointer w-fit">
+                      Đọc tiếp
+                      <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                    </div>
                   </div>
-                  <h2 className="text-2xl md:text-3xl font-bold font-['Montserrat'] mb-4 group-hover:text-[#8A151B] transition-colors">
-                    {post.title}
-                  </h2>
-                  <p className="text-gray-600 dark:text-gray-400 font-['Inter'] mb-6 line-clamp-3">
-                    {post.excerpt}
-                  </p>
-                  <div className="mt-auto flex items-center gap-2 font-['Montserrat'] font-semibold text-[#8A151B] group/btn cursor-pointer w-fit">
-                    Đọc tiếp
-                    <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                  </div>
-                </div>
+                </Link>
               </motion.article>
             ))}
           </div>

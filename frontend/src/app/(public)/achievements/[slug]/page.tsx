@@ -1,192 +1,194 @@
-"use client";
-
-import React from "react";
-import { motion } from "motion/react";
-import { ArrowLeft, Calendar, User, Tag } from "lucide-react";
-import Link from "next/link";
-import { useParams } from "next/navigation";
+import { ArrowLeft, Calendar, Tag } from "lucide-react";
 import Image from "next/image";
-import { ALL_PROJECTS } from "@/constants/projects";
+import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ROUTES } from "@/constants/routes";
 
-export default function ProjectDetail() {
-  const params = useParams<{ slug: string }>();
-  const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
+type Achievement = {
+  id: number;
+  slug: string;
+  title: string;
+  excerpt: string;
+  image: string;
+  date: string;
+  category: string;
+  content: string[];
+};
 
-  const project = ALL_PROJECTS.find((p) => p.id === parseInt(slug || "0", 10));
+const ACHIEVEMENTS: Achievement[] = [
+  {
+    id: 1,
+    slug: "1",
+    title: "Vô địch Giải Tranh biện Sinh viên Toàn quốc 2025",
+    excerpt:
+      "Đội tuyển của NEU Debate Club đã xuất sắc vượt qua hơn 50 đội thi để giành ngôi vị quán quân tại cuộc thi lớn nhất năm.",
+    image:
+      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/ndo2024.jpg",
+    date: "15 Tháng 03, 2025",
+    category: "Giải Thưởng",
+    content: [
+      "Chiến thắng này là cột mốc quan trọng, khẳng định năng lực chuyên môn và tinh thần bền bỉ của các thành viên câu lạc bộ.",
+      "Trong suốt mùa giải, đội đã thể hiện tư duy phản biện sắc bén, khả năng phối hợp chiến thuật và phong thái thi đấu tự tin.",
+    ],
+  },
+  {
+    id: 2,
+    slug: "2",
+    title: "Giải Cống hiến Phong trào Sinh viên NEU",
+    excerpt:
+      "Câu lạc bộ vinh dự nhận bằng khen từ Đoàn Thanh niên trường vì những đóng góp tích cực cho phong trào học thuật.",
+    image:
+      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/ndo2024.jpg",
+    date: "28 Tháng 02, 2025",
+    category: "Vinh Danh",
+    content: [
+      "Danh hiệu ghi nhận nỗ lực bền bỉ của tập thể trong việc lan toả văn hoá tranh biện và học thuật đến cộng đồng sinh viên.",
+      "Các hoạt động đào tạo, workshop và giải đấu nội bộ đã góp phần xây dựng môi trường phát triển toàn diện cho thành viên.",
+    ],
+  },
+  {
+    id: 3,
+    slug: "3",
+    title: "Thành công Workshop 'Nghệ thuật Thuyết phục'",
+    excerpt:
+      "Hơn 500 sinh viên đã tham dự và nhận được nhiều giá trị từ các diễn giả khách mời hàng đầu về kỹ năng tranh biện.",
+    image:
+      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/ndo2024.jpg",
+    date: "10 Tháng 01, 2025",
+    category: "Sự Kiện",
+    content: [
+      "Workshop mang lại góc nhìn thực tế về nghệ thuật lập luận và kỹ năng thuyết phục trong học tập, công việc và cuộc sống.",
+      "Phản hồi tích cực từ người tham dự là động lực để câu lạc bộ tiếp tục mở rộng các chương trình chất lượng cao.",
+    ],
+  },
+  {
+    id: 4,
+    slug: "4",
+    title: "Á quân Giải Vô địch Tranh biện Quốc tế V-WSDC",
+    excerpt:
+      "Đại diện của câu lạc bộ đã có màn thể hiện xuất sắc tại đấu trường quốc tế, mang về thành tích đáng tự hào.",
+    image:
+      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/ndo2024.jpg",
+    date: "12 Tháng 12, 2024",
+    category: "Giải Thưởng",
+    content: [
+      "Thành tích á quân tại sân chơi quốc tế là minh chứng rõ nét cho chất lượng đào tạo và khả năng hội nhập của thành viên.",
+      "Đội thi đã thể hiện bản lĩnh qua nhiều vòng tranh luận với những đối thủ mạnh đến từ nhiều quốc gia.",
+    ],
+  },
+  {
+    id: 5,
+    slug: "5",
+    title: "Tổ chức thành công Giải đấu N-Debate Mở rộng",
+    excerpt:
+      "Giải đấu thường niên đã thu hút sự tham gia của các trường đại học lớn trên toàn quốc với chất lượng chuyên môn cao.",
+    image:
+      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/ndo2024.jpg",
+    date: "25 Tháng 11, 2024",
+    category: "Sự Kiện",
+    content: [
+      "Giải đấu mở rộng đã tạo nên diễn đàn học thuật sôi nổi, kết nối nhiều đội tranh biện xuất sắc trên cả nước.",
+      "Công tác tổ chức chuyên nghiệp giúp nâng cao trải nghiệm cho thí sinh, giám khảo và khán giả theo dõi.",
+    ],
+  },
+  {
+    id: 6,
+    slug: "6",
+    title: "Kỷ niệm 10 năm thành lập câu lạc bộ",
+    excerpt:
+      "Đêm Gala đầy cảm xúc nhìn lại chặng đường một thập kỷ hình thành và phát triển của Cogito.",
+    image:
+      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/ndo2024.jpg",
+    date: "05 Tháng 10, 2024",
+    category: "Kỷ Niệm",
+    content: [
+      "Sự kiện kỷ niệm là dịp để các thế hệ thành viên cùng nhìn lại hành trình phát triển và những dấu mốc đáng nhớ.",
+      "Không khí trang trọng và ấm áp của Gala thể hiện tinh thần gắn kết, kế thừa và khát vọng bứt phá.",
+    ],
+  },
+  {
+    id: 7,
+    slug: "7",
+    title: "Thành viên xuất sắc nhất Giải vô địch châu Á",
+    excerpt:
+      "Cá nhân thành viên chủ chốt đã lọt vào top những người nói tốt nhất tại giải đấu quy mô châu lục.",
+    image:
+      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/ndo2024.jpg",
+    date: "15 Tháng 09, 2024",
+    category: "Vinh Danh",
+    content: [
+      "Thành tích cá nhân nổi bật góp phần nâng cao uy tín của câu lạc bộ trong cộng đồng tranh biện khu vực.",
+      "Đây là kết quả của quá trình rèn luyện nghiêm túc, tư duy sắc bén và tinh thần cầu tiến không ngừng.",
+    ],
+  },
+];
 
-  if (!project) {
-    return (
-      <main className="min-h-screen flex items-center justify-center px-6 bg-white dark:bg-black text-black dark:text-white">
-        <div className="max-w-lg text-center space-y-6">
-          <h1 className="text-3xl md:text-4xl font-bold font-['Montserrat']">
-            Không tìm thấy dự án
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 font-['Inter']">
-            Trang chi tiết bạn đang truy cập không tồn tại hoặc đã bị xoá.
-          </p>
-          <Link
-            href={ROUTES.projects}
-            className="inline-flex items-center gap-2 text-sm font-semibold font-['Montserrat'] text-[#8A151B] hover:underline"
-          >
-            <ArrowLeft className="w-4 h-4" /> Trở về danh sách
-          </Link>
-        </div>
-      </main>
-    );
+type PageProps = {
+  params: Promise<{ slug: string }>;
+};
+
+export default async function AchievementDetailPage({ params }: PageProps) {
+  const { slug } = await params;
+
+  const achievement = ACHIEVEMENTS.find(
+    (item) => item.slug === slug || String(item.id) === slug,
+  );
+
+  if (!achievement) {
+    notFound();
   }
 
   return (
-    <article className="min-h-screen bg-white dark:bg-black text-black dark:text-white pb-32 transition-colors duration-500">
-      {/* Hero Banner */}
-      <div className="relative w-full h-[50vh] md:h-[70vh] overflow-hidden">
-        <div className="absolute inset-0 bg-black/40 dark:bg-black/60 z-10" />
-        <motion.img
-          initial={{ scale: 1.1 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 1.5, ease: "easeOut" }}
-          src={project.image}
-          alt={project.title}
-          className="w-full h-full object-cover"
-        />
-
-        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center px-6 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="max-w-4xl mx-auto"
-          >
-            <span className="inline-block py-1 px-3 border border-white/30 rounded-full text-white/80 text-xs font-semibold uppercase tracking-widest mb-6 font-['Montserrat'] backdrop-blur-md">
-              {project.category}
-            </span>
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold font-['Montserrat'] text-white mb-6 drop-shadow-lg leading-tight">
-              {project.title}
-            </h1>
-          </motion.div>
-        </div>
-
-        {/* Decorative fade bottom */}
-        <div className="absolute bottom-0 left-0 w-full h-32 bg-linear-to-t from-white dark:from-black to-transparent z-20" />
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-3xl mx-auto px-6 -mt-10 relative z-30">
+    <article className="min-h-screen bg-white dark:bg-black text-black dark:text-white pt-24 pb-20 transition-colors duration-500">
+      <section className="max-w-5xl mx-auto px-6">
         <Link
-          href={ROUTES.projects}
-          className="inline-flex items-center gap-2 text-sm font-semibold font-['Montserrat'] text-gray-500 hover:text-[#8A151B] dark:hover:text-[#8A151B] mb-12 transition-colors"
+          href={ROUTES.achievements}
+          className="inline-flex items-center gap-2 text-sm font-semibold font-['Montserrat'] text-gray-500 hover:text-[#8A151B] transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" /> TRỞ VỀ DANH SÁCH
+          <ArrowLeft className="w-4 h-4" /> TRỞ VỀ DANH SÁCH THÀNH TỰU
         </Link>
 
-        {/* Meta info */}
-        <div className="flex flex-wrap items-center gap-6 mb-12 py-6 border-y border-gray-200 dark:border-[#222]">
-          <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 font-['Inter'] text-sm">
-            <Calendar className="w-4 h-4 text-[#8A151B]" />
-            <span>Tháng 10, 2025</span>
-          </div>
-          <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 font-['Inter'] text-sm">
-            <User className="w-4 h-4 text-[#8A151B]" />
-            <span>Ban Tổ Chức NDC</span>
-          </div>
-          <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 font-['Inter'] text-sm">
-            <Tag className="w-4 h-4 text-[#8A151B]" />
-            <span>{project.category}</span>
+        <div className="mt-8 relative w-full h-[42vh] md:h-[58vh] overflow-hidden rounded-2xl">
+          <div className="absolute inset-0 bg-black/35 z-10" />
+          <Image
+            src={achievement.image}
+            alt={achievement.title}
+            fill
+            sizes="100vw"
+            priority
+            className="object-cover"
+          />
+
+          <div className="absolute inset-0 z-20 flex flex-col justify-end p-6 md:p-10">
+            <span className="w-fit bg-[#8A151B] text-white text-xs font-semibold tracking-wider uppercase px-3 py-1 rounded-full">
+              {achievement.category}
+            </span>
+            <h1 className="text-3xl md:text-5xl font-bold text-white font-['Montserrat'] mt-4 leading-tight max-w-4xl">
+              {achievement.title}
+            </h1>
           </div>
         </div>
 
-        {/* Blog content */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="max-w-none font-['Inter'] text-lg text-gray-700 dark:text-gray-300 space-y-6"
-        >
-          <p className="text-xl md:text-2xl font-light text-black dark:text-white leading-relaxed mb-10 border-l-4 border-[#8A151B] pl-6 italic">
-            {project.desc}
-          </p>
+        <div className="mt-8 flex items-center gap-6 text-sm text-gray-600 dark:text-gray-400 border-y border-gray-200 dark:border-[#222] py-5">
+          <span className="inline-flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-[#8A151B]" />
+            {achievement.date}
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <Tag className="w-4 h-4 text-[#8A151B]" />
+            {achievement.category}
+          </span>
+        </div>
 
-          <h2 className="text-3xl font-bold font-['Montserrat'] text-black dark:text-white mt-12 mb-6">
-            Bối Cảnh & Tầm Nhìn
-          </h2>
-          <p className="leading-relaxed">
-            Dự án{" "}
-            <strong className="text-black dark:text-white font-semibold">
-              {project.title}
-            </strong>{" "}
-            được ra đời từ khát khao tạo ra một sân chơi trí tuệ đẳng cấp, nơi
-            các cá nhân không chỉ tranh luận mà còn cùng nhau kiến tạo những giá
-            trị mới. Chúng tôi tin rằng tư duy phản biện là vũ khí sắc bén nhất
-            để đương đầu với những thách thức của kỷ nguyên hiện đại.
+        <div className="mt-8 space-y-5 text-lg leading-relaxed text-gray-700 dark:text-gray-300 font-['Inter']">
+          <p className="text-xl md:text-2xl font-light text-black dark:text-white border-l-4 border-[#8A151B] pl-5 italic">
+            {achievement.excerpt}
           </p>
-          <p className="leading-relaxed">
-            Trải qua nhiều vòng tuyển chọn và chuẩn bị gắt gao, chuỗi hoạt động
-            của dự án đã vượt xa mong đợi ban đầu, thu hút hàng ngàn người theo
-            dõi và tham gia trực tiếp.
-          </p>
-
-          <div className="my-12 p-8 bg-gray-50 dark:bg-[#0A0A0A] border border-gray-200 dark:border-[#222] rounded-sm">
-            <h3 className="text-xl font-bold font-['Montserrat'] text-black dark:text-white mb-4">
-              Điểm Nhấn Nổi Bật
-            </h3>
-            <ul className="space-y-4 font-['Inter'] text-gray-700 dark:text-gray-300">
-              <li className="flex items-start gap-3">
-                <span className="text-[#8A151B] font-bold">01.</span> Thu hút
-                hơn 1,000 sinh viên tham gia trải nghiệm và thi đấu.
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="text-[#8A151B] font-bold">02.</span> Hợp tác
-                với 15+ đơn vị báo chí, truyền thông và nhà tài trợ.
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="text-[#8A151B] font-bold">03.</span> Nhận được
-                đánh giá chuyên môn cực kỳ cao từ hội đồng chuyên gia.
-              </li>
-            </ul>
-          </div>
-
-          <h2 className="text-3xl font-bold font-['Montserrat'] text-black dark:text-white mt-12 mb-6">
-            Giá Trị Cốt Lõi
-          </h2>
-          <p className="leading-relaxed">
-            Không chỉ dừng lại ở một sự kiện mang tính phong trào, dự án hướng
-            tới việc thiết lập một chuẩn mực mới trong cách thức tổ chức chuyên
-            nghiệp. Từ thiết kế hình ảnh, truyền thông đến vận hành thực tế, mỗi
-            khâu đều được đảm bảo sự chỉn chu tuyệt đối bởi đội ngũ{" "}
-            <strong className="text-black dark:text-white font-semibold">
-              NEU Debate Club
-            </strong>
-            .
-          </p>
-          <p className="leading-relaxed">
-            Sự thành công của {project.title} là minh chứng rõ ràng nhất cho
-            triết lý <b>Tư Duy Sắc Bén, Hành Động Chuyên Nghiệp</b> của chúng
-            tôi.
-          </p>
-
-          {/* Image Gallery Mock */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-16">
-            <div className="relative h-64 overflow-hidden rounded-sm shadow-md">
-              <Image
-                src={project.image}
-                alt="Gallery 1"
-                fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                className="object-cover transition-all duration-700"
-              />
-            </div>
-            <div className="relative h-64 overflow-hidden rounded-sm shadow-md">
-              <Image
-                src={project.image}
-                alt="Gallery 2"
-                fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                className="object-cover scale-x-[-1] transition-all duration-700"
-              />
-            </div>
-          </div>
-        </motion.div>
-      </div>
+          {achievement.content.map((paragraph) => (
+            <p key={paragraph}>{paragraph}</p>
+          ))}
+        </div>
+      </section>
     </article>
   );
 }
