@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Moon, Sun, User, ChevronDown, LayoutDashboard } from "lucide-react";
+import { Moon, Sun, User, ChevronDown } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import clubLogo from "@/../public/logo.png";
@@ -101,13 +101,6 @@ export const Header = () => {
 
           {user ? (
             <div className="flex items-center gap-4">
-              <Link
-                href="/dashboard"
-                className="hidden sm:flex items-center gap-2 bg-[#F8FAFC] text-[#1E293B] border border-gray-200 px-4 py-2 rounded-full font-montserrat text-sm font-semibold hover:bg-gray-100 transition-all shadow-sm dark:bg-[#111] dark:border-[#333] dark:text-white dark:hover:bg-[#222]"
-              >
-                <LayoutDashboard className="w-4 h-4" />
-                Dashboard
-              </Link>
               <div
                 className="flex items-center gap-3 text-sm font-montserrat font-medium text-black dark:text-white cursor-pointer group"
                 onClick={handleLogout}

@@ -10,7 +10,7 @@ import {
   Trophy,
 } from "lucide-react";
 import Image from "next/image";
-import { Link } from "react-router";
+import Link from "next/link";
 
 // Dữ liệu mock cho các bài blog thành tựu
 const ALL_POSTS = [
@@ -20,7 +20,7 @@ const ALL_POSTS = [
     excerpt:
       "Đội tuyển của NEU Debate Club đã xuất sắc vượt qua hơn 50 đội thi để giành ngôi vị quán quân tại cuộc thi lớn nhất năm.",
     image:
-      "https://images.unsplash.com/photo-1768811838777-0507859b5ab9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkZWJhdGUlMjBjb21wZXRpdGlvbnxlbnwxfHx8fDE3NzQ1OTY2OTJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/ndo2024.jpg",
     date: "15 Tháng 03, 2025",
     category: "Giải Thưởng",
   },
@@ -30,7 +30,7 @@ const ALL_POSTS = [
     excerpt:
       "Câu lạc bộ vinh dự nhận bằng khen từ Đoàn Thanh niên trường vì những đóng góp tích cực cho phong trào học thuật.",
     image:
-      "https://images.unsplash.com/photo-1773312329764-fa036ce8bcac?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzdHVkZW50cyUyMHdpbm5pbmclMjBhd2FyZHxlbnwxfHx8fDE3NzQ2ODY4MjZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/ndo2024.jpg",
     date: "28 Tháng 02, 2025",
     category: "Vinh Danh",
   },
@@ -40,7 +40,7 @@ const ALL_POSTS = [
     excerpt:
       "Hơn 500 sinh viên đã tham dự và nhận được nhiều giá trị từ các diễn giả khách mời hàng đầu về kỹ năng tranh biện.",
     image:
-      "https://images.unsplash.com/photo-1765438863717-49fca900f861?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3b3Jrc2hvcCUyMHByZXNlbnRhdGlvbnxlbnwxfHx8fDE3NzQ2ODY4MjZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/ndo2024.jpg",
     date: "10 Tháng 01, 2025",
     category: "Sự Kiện",
   },
@@ -50,7 +50,7 @@ const ALL_POSTS = [
     excerpt:
       "Đại diện của câu lạc bộ đã có màn thể hiện xuất sắc tại đấu trường quốc tế, mang về thành tích đáng tự hào.",
     image:
-      "https://images.unsplash.com/photo-1758270704787-615782711641?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzdHVkZW50cyUyMGRpc2N1c3Npb258ZW58MXx8fHwxNzc0Njg2ODMwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/ndo2024.jpg",
     date: "12 Tháng 12, 2024",
     category: "Giải Thưởng",
   },
@@ -60,7 +60,7 @@ const ALL_POSTS = [
     excerpt:
       "Giải đấu thường niên đã thu hút sự tham gia của các trường đại học lớn trên toàn quốc với chất lượng chuyên môn cao.",
     image:
-      "https://images.unsplash.com/photo-1731160352698-cb7e2f142d7a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx1bml2ZXJzaXR5JTIwZXZlbnR8ZW58MXx8fHwxNzc0Njg2ODMwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/ndo2024.jpg",
     date: "25 Tháng 11, 2024",
     category: "Sự Kiện",
   },
@@ -70,7 +70,7 @@ const ALL_POSTS = [
     excerpt:
       "Đêm Gala đầy cảm xúc nhìn lại chặng đường một thập kỷ hình thành và phát triển của Cogito.",
     image:
-      "https://images.unsplash.com/photo-1760348082205-8bda5fbdd7b5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzdWNjZXNzJTIwY2VyZW1vbnl8ZW58MXx8fHwxNzc0Njg2ODMwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/ndo2024.jpg",
     date: "05 Tháng 10, 2024",
     category: "Kỷ Niệm",
   },
@@ -80,7 +80,7 @@ const ALL_POSTS = [
     excerpt:
       "Cá nhân thành viên chủ chốt đã lọt vào top những người nói tốt nhất tại giải đấu quy mô châu lục.",
     image:
-      "https://images.unsplash.com/photo-1768811838777-0507859b5ab9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkZWJhdGUlMjBjb21wZXRpdGlvbnxlbnwxfHx8fDE3NzQ1OTY2OTJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/ndo2024.jpg",
     date: "15 Tháng 09, 2024",
     category: "Vinh Danh",
   },
@@ -150,35 +150,40 @@ export default function AchievementsPage() {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 className="group flex flex-col md:flex-row gap-8 bg-gray-50 dark:bg-[#0A0A0A] p-6 rounded-2xl border border-gray-100 dark:border-[#222] hover:border-[#8A151B]/50 dark:hover:border-[#8A151B]/50 transition-all duration-300 shadow-sm hover:shadow-md dark:shadow-none"
               >
-                <div className="w-full md:w-2/5 overflow-hidden rounded-xl h-64 md:h-auto shrink-0 relative">
-                  <div className="absolute top-4 left-4 z-10 bg-[#8A151B] text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                    {post.category}
+                <Link
+                  href={`/achievements/${post.id}`}
+                  className="flex w-full flex-col gap-8 md:flex-row"
+                >
+                  <div className="relative h-64 w-full shrink-0 overflow-hidden rounded-xl md:h-70 md:w-2/5">
+                    <div className="absolute top-4 left-4 z-10 bg-[#8A151B] text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                      {post.category}
+                    </div>
+                    <Image
+                      src={post.image}
+                      alt={post.title}
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 40vw"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-in-out"
+                    />
                   </div>
-                  <Image
-                    src={post.image}
-                    alt={post.title}
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 40vw"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-in-out"
-                  />
-                </div>
 
-                <div className="w-full md:w-3/5 flex flex-col justify-center py-2">
-                  <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-4 font-['Inter']">
-                    <Calendar className="w-4 h-4" />
-                    <span>{post.date}</span>
+                  <div className="w-full md:w-3/5 flex flex-col justify-center py-2">
+                    <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-4 font-['Inter']">
+                      <Calendar className="w-4 h-4" />
+                      <span>{post.date}</span>
+                    </div>
+                    <h2 className="text-2xl md:text-3xl font-bold font-['Montserrat'] mb-4 group-hover:text-[#8A151B] transition-colors">
+                      {post.title}
+                    </h2>
+                    <p className="text-gray-600 dark:text-gray-400 font-['Inter'] mb-6 line-clamp-3">
+                      {post.excerpt}
+                    </p>
+                    <div className="mt-auto flex items-center gap-2 font-['Montserrat'] font-semibold text-[#8A151B] group/btn cursor-pointer w-fit">
+                      Đọc tiếp
+                      <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                    </div>
                   </div>
-                  <h2 className="text-2xl md:text-3xl font-bold font-['Montserrat'] mb-4 group-hover:text-[#8A151B] transition-colors">
-                    {post.title}
-                  </h2>
-                  <p className="text-gray-600 dark:text-gray-400 font-['Inter'] mb-6 line-clamp-3">
-                    {post.excerpt}
-                  </p>
-                  <div className="mt-auto flex items-center gap-2 font-['Montserrat'] font-semibold text-[#8A151B] group/btn cursor-pointer w-fit">
-                    Đọc tiếp
-                    <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                  </div>
-                </div>
+                </Link>
               </motion.article>
             ))}
           </div>

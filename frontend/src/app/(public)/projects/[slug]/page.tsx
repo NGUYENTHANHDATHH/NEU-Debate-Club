@@ -4,7 +4,7 @@ import React from "react";
 import { motion } from "motion/react";
 import { ArrowLeft, Calendar, User, Tag } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, notFound } from "next/navigation";
 import Image from "next/image";
 import { ALL_PROJECTS } from "@/constants/projects";
 import { ROUTES } from "@/constants/routes";
@@ -16,24 +16,7 @@ export default function ProjectDetail() {
   const project = ALL_PROJECTS.find((p) => p.id === parseInt(slug || "0", 10));
 
   if (!project) {
-    return (
-      <main className="min-h-screen flex items-center justify-center px-6 bg-white dark:bg-black text-black dark:text-white">
-        <div className="max-w-lg text-center space-y-6">
-          <h1 className="text-3xl md:text-4xl font-bold font-['Montserrat']">
-            Không tìm thấy dự án
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 font-['Inter']">
-            Trang chi tiết bạn đang truy cập không tồn tại hoặc đã bị xoá.
-          </p>
-          <Link
-            href={ROUTES.projects}
-            className="inline-flex items-center gap-2 text-sm font-semibold font-['Montserrat'] text-[#8A151B] hover:underline"
-          >
-            <ArrowLeft className="w-4 h-4" /> Trở về danh sách
-          </Link>
-        </div>
-      </main>
-    );
+    return notFound();
   }
 
   return (

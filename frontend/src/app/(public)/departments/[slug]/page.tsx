@@ -1,11 +1,9 @@
 "use client";
 
 import React from "react";
-import { useParams } from "next/navigation";
+import { useParams, notFound } from "next/navigation";
 import { motion } from "motion/react";
 import { DEPARTMENTS } from "@/components/ui/HomeLayout/Departments";
-import Link from "next/link";
-import { ROUTES } from "@/constants/routes";
 
 export default function DepartmentDetail() {
   const params = useParams<{ slug: string }>();
@@ -14,28 +12,10 @@ export default function DepartmentDetail() {
   const department = DEPARTMENTS.find((d) => d.id === slug);
 
   if (!department) {
-    return (
-      <main className="py-32 px-6 max-w-4xl mx-auto min-h-[70vh] flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <h1 className="text-3xl md:text-4xl font-bold font-['Montserrat'] text-black dark:text-white">
-            Không tìm thấy ban
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 font-['Inter']">
-            Đường dẫn bạn truy cập không tồn tại.
-          </p>
-          <Link
-            href={ROUTES.home}
-            className="inline-flex items-center gap-2 text-sm font-semibold font-['Montserrat'] text-[#8A151B] hover:underline"
-          >
-            Quay về trang chủ
-          </Link>
-        </div>
-      </main>
-    );
+    notFound();
   }
 
   const Icon = department.icon;
-
   return (
     <div className="py-32 px-6 max-w-4xl mx-auto min-h-[70vh]">
       <motion.div
