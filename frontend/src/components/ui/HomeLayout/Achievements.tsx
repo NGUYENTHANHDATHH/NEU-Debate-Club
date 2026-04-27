@@ -1,32 +1,34 @@
 import React from "react";
 import { motion } from "motion/react";
 import { Trophy, Target, Users, Star } from "lucide-react";
+import { useLanguage } from "@/provider/LanguageProvider";
 
 export const Achievements = () => {
+  const { t } = useLanguage();
   const stats = [
     {
       id: 1,
       icon: <Trophy className="w-8 h-8" />,
       value: "50+",
-      label: "Giải Thưởng",
+      label: t("achievements.reward"),
     },
     {
       id: 2,
       icon: <Target className="w-8 h-8" />,
       value: "100+",
-      label: "Dự Án",
+      label: t("achievements.event"),
     },
     {
       id: 3,
       icon: <Users className="w-8 h-8" />,
       value: "500+",
-      label: "Thành Viên",
+      label: t("achievements.member"),
     },
     {
       id: 4,
       icon: <Star className="w-8 h-8" />,
       value: "10+",
-      label: "Năm Hoạt Động",
+      label: t("achievements.established"),
     },
   ];
 
@@ -47,14 +49,13 @@ export const Achievements = () => {
           className="text-center mb-16"
         >
           <span className="uppercase tracking-[0.3em] text-[#8A151B] text-sm font-semibold mb-4 block font-['Montserrat']">
-            Cột Mốc Tự Hào
+            {t("achievements.chapter")}
           </span>
           <h2 className="text-4xl md:text-5xl font-bold font-['Montserrat'] mb-6">
-            Thành Tựu Nổi Bật
+            {t("achievements.title")}
           </h2>
           <p className="text-gray-600 dark:text-gray-400 font-['Inter'] max-w-2xl mx-auto">
-            Hành trình không ngừng nỗ lực và phát triển, những con số biết nói
-            minh chứng cho sự cống hiến và nhiệt huyết của cộng đồng.
+            {t("achievements.desc")}
           </p>
         </motion.div>
 

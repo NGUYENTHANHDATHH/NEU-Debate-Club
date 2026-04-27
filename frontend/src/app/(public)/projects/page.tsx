@@ -7,8 +7,10 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ALL_PROJECTS } from "@/constants/projects";
 import { routePath } from "@/constants/routes";
 import Image from "next/image";
+import { useLanguage } from "@/provider/LanguageProvider";
 
 export default function AllProjects() {
+  const { t } = useLanguage();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
   const totalPages = Math.ceil(ALL_PROJECTS.length / itemsPerPage);
@@ -26,10 +28,10 @@ export default function AllProjects() {
         animate={{ opacity: 1, y: 0 }}
       >
         <h1 className="text-4xl md:text-5xl font-bold font-['Montserrat'] mb-4 text-black dark:text-white">
-          Tất Cả Dự Án
+          {t("projects.title")}
         </h1>
         <p className="text-gray-600 dark:text-gray-400 font-['Inter']">
-          Khám phá những dấu ấn nổi bật của NEU Debate Club qua từng năm tháng.
+          {t("projects.desc")}
         </p>
       </motion.div>
 
@@ -66,7 +68,7 @@ export default function AllProjects() {
               <h3 className="text-xl font-bold font-['Montserrat'] mb-4 text-black dark:text-white group-hover:text-[#8A151B] dark:group-hover:text-[#8A151B] transition-colors">
                 {project.title}
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 font-light font-['Inter'] text-sm leading-relaxed">
+              <p className="text-gray-600 dark:text-gray-400 font-light font-['Inter'] text-sm leading-relaxed line-clamp-2">
                 {project.desc}
               </p>
             </div>

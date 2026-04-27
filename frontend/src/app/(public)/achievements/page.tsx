@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useLanguage } from "@/provider/LanguageProvider";
 
 // Dữ liệu mock cho các bài blog thành tựu
 const ALL_POSTS = [
@@ -89,6 +90,7 @@ const ALL_POSTS = [
 const POSTS_PER_PAGE = 3;
 
 export default function AchievementsPage() {
+  const { t } = useLanguage();
   const [currentPage, setCurrentPage] = useState(1);
 
   const totalPages = Math.ceil(ALL_POSTS.length / POSTS_PER_PAGE);
@@ -127,12 +129,10 @@ export default function AchievementsPage() {
           >
             <Trophy className="w-12 h-12 text-[#8A151B] mx-auto mb-6" />
             <h1 className="text-4xl md:text-6xl font-bold font-['Montserrat'] mb-6">
-              Góc Thành Tựu
+              {t("achievements.title")}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 font-['Inter'] max-w-2xl mx-auto text-lg">
-              Cùng nhìn lại những dấu ấn, giải thưởng và sự kiện nổi bật trên
-              hành trình phát triển của NEU Debate Club qua các bài viết chi
-              tiết.
+              {t("achievements.desc")}
             </p>
           </motion.div>
         </div>

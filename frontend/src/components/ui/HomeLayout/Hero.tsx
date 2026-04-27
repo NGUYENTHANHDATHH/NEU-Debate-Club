@@ -3,8 +3,10 @@ import { motion } from "motion/react";
 import { ArrowRight } from "lucide-react";
 import clubLogo from "@/../public/logo.png";
 import Image from "next/image";
+import { useLanguage } from "@/provider/LanguageProvider";
 
 export const Hero = () => {
+  const { t } = useLanguage();
   const slogan = "Cogito, ergo sum";
 
   return (
@@ -65,10 +67,7 @@ export const Hero = () => {
             className="text-gray-600 dark:text-gray-400 text-lg md:text-xl max-w-2xl mx-auto mb-12 font-light transition-colors duration-500"
             style={{ fontFamily: "'Inter', sans-serif" }}
           >
-            NEU Debate Club - NDC, được thành lập ngày 05/11/2013, là một CLB kỹ
-            năng mềm - học thuật trực thuộc Liên chi đoàn khoa Luật Trường Đại
-            học Kinh tế Quốc dân. Là ngôi nhà của những người có niềm đam mê với
-            bộ môn “thể thao trí tuệ” mang tên Tranh biện
+            {t("history")}
           </p>
         </motion.div>
 

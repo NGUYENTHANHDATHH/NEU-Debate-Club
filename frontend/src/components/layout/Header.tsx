@@ -5,9 +5,12 @@ import Image from "next/image";
 import Link from "next/link";
 import clubLogo from "@/../public/logo.png";
 import { useTheme } from "@/provider/ThemeProvider";
+import { useLanguage } from "@/provider/LanguageProvider";
+import LanguageDropdown from "./LanguageDropdown";
 
 export const Header = () => {
   const { theme, setTheme } = useTheme();
+  const { language, setLanguage, t } = useLanguage();
   // State mock cho việc đăng nhập vì không có backend
   const [user, setUser] = useState<{ name: string } | null>(null);
 
@@ -42,18 +45,18 @@ export const Header = () => {
             href="/projects"
             className="text-gray-600 dark:text-gray-300 hover:text-[#8A151B] dark:hover:text-[#8A151B] transition-colors"
           >
-            Dự Án
+            {t("nav.projects")}
           </Link>
 
           <Link
             href="/achievements"
             className="text-gray-600 dark:text-gray-300 hover:text-[#8A151B] dark:hover:text-[#8A151B] transition-colors"
           >
-            Thành Tựu
+            {t("nav.achievements")}
           </Link>
           <div className="relative group py-6">
             <button className="text-gray-600 dark:text-gray-300 group-hover:text-[#8A151B] dark:group-hover:text-[#8A151B] transition-colors flex items-center gap-1">
-              Cơ Cấu Tổ Chức
+              {t("nav.departments")}
               <ChevronDown className="w-4 h-4 transition-transform group-hover:rotate-180" />
             </button>
 
@@ -62,31 +65,35 @@ export const Header = () => {
                 href="/departments/truyen-thong"
                 className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#111] hover:text-[#8A151B] dark:hover:text-[#8A151B] transition-colors"
               >
-                Truyền Thông
+                {t("nav.media")}
               </Link>
               <Link
                 href="/departments/doi-ngoai"
                 className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#111] hover:text-[#8A151B] dark:hover:text-[#8A151B] transition-colors"
               >
-                Đối Ngoại
+                {t("nav.external")}
               </Link>
               <Link
                 href="/departments/su-kien"
                 className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#111] hover:text-[#8A151B] dark:hover:text-[#8A151B] transition-colors"
               >
-                Sự Kiện
+                {t("nav.events")}
               </Link>
               <Link
                 href="/departments/chuyen-mon"
                 className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#111] hover:text-[#8A151B] dark:hover:text-[#8A151B] transition-colors"
               >
-                Chuyên Môn
+                {t("nav.academics")}
               </Link>
             </div>
           </div>
         </nav>
 
         <div className="flex items-center gap-4">
+          <div className="relative">
+            {/* Controlled dropdown for mobile/touch support */}
+            <LanguageDropdown language={language} setLanguage={setLanguage} />
+          </div>
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#111] transition-colors"
@@ -104,10 +111,10 @@ export const Header = () => {
               <div
                 className="flex items-center gap-3 text-sm font-montserrat font-medium text-black dark:text-white cursor-pointer group"
                 onClick={handleLogout}
-                title="Đăng xuất"
+                title={t("auth.logout")}
               >
                 <span className="hidden sm:inline">
-                  Xin chào, {user.name} 👋
+                  {t("auth.hello")}, {user.name} 👋
                 </span>
                 <div className="w-8 h-8 rounded-full bg-[#8A151B] text-white flex items-center justify-center font-bold">
                   {user.name.charAt(0)}
@@ -120,7 +127,7 @@ export const Header = () => {
               className="flex items-center gap-2 bg-black dark:bg-white text-white dark:text-black px-4 py-2 rounded-full font-montserrat text-sm font-bold hover:bg-[#8A151B] dark:hover:bg-[#8A151B] hover:text-white transition-all shadow-md"
             >
               <User className="w-4 h-4" />
-              <span className="hidden sm:inline">Đăng nhập</span>
+              <span className="hidden sm:inline">{t("auth.login")}</span>
             </button>
           )}
         </div>

@@ -2,39 +2,41 @@ import React from "react";
 import { motion } from "motion/react";
 import { Triangle, Hexagon, Circle, Square, ArrowRight } from "lucide-react";
 import Link from "next/link";
-
-export const DEPARTMENTS = [
-  {
-    id: "truyen-thong",
-    title: "Truyền Thông",
-    desc: "Khuếch đại tiếng nói của tổ chức qua lăng kính sáng tạo. Quản lý hình ảnh và lan tỏa thông điệp mạnh mẽ.",
-    icon: Triangle,
-    delay: 0.1,
-  },
-  {
-    id: "doi-ngoai",
-    title: "Đối Ngoại",
-    desc: "Cầu nối chiến lược. Xây dựng và duy trì mạng lưới đối tác, tài trợ, kiến tạo các cơ hội hợp tác giá trị.",
-    icon: Hexagon,
-    delay: 0.2,
-  },
-  {
-    id: "su-kien",
-    title: "Sự Kiện",
-    desc: "Biến ý tưởng thành hiện thực. Đạo diễn và tổ chức chuyên nghiệp mọi chương trình quy mô từ nhỏ đến lớn.",
-    icon: Circle,
-    delay: 0.3,
-  },
-  {
-    id: "chuyen-mon",
-    title: "Chuyên Môn",
-    desc: "Cốt lõi trí tuệ. Nghiên cứu, đào tạo và định hướng phát triển kiến thức chuyên sâu cho toàn bộ thành viên.",
-    icon: Square,
-    delay: 0.4,
-  },
-];
+import { useLanguage } from "@/provider/LanguageProvider";
 
 export const Departments = () => {
+  const { t } = useLanguage();
+  const DEPARTMENTS = [
+    {
+      id: "truyen-thong",
+      title: t("departments.detail.media.name"),
+      desc: t("departments.detail.media.desc"),
+      icon: Triangle,
+      delay: 0.1,
+    },
+    {
+      id: "doi-ngoai",
+      title: t("departments.detail.external.name"),
+      desc: t("departments.detail.external.desc"),
+      icon: Hexagon,
+      delay: 0.2,
+    },
+    {
+      id: "su-kien",
+      title: t("departments.detail.event.name"),
+      desc: t("departments.detail.event.desc"),
+      icon: Circle,
+      delay: 0.3,
+    },
+    {
+      id: "chuyen-mon",
+      title: t("departments.detail.academics.name"),
+      desc: t("departments.detail.academics.desc"),
+      icon: Square,
+      delay: 0.4,
+    },
+  ];
+
   return (
     <section className="py-32 bg-white dark:bg-black text-black dark:text-white px-6 transition-colors duration-500">
       <div className="max-w-7xl mx-auto">
@@ -45,10 +47,10 @@ export const Departments = () => {
           viewport={{ once: true, margin: "-100px" }}
         >
           <span className="uppercase tracking-widest text-[#8A151B] text-sm font-semibold mb-2 block font-['Montserrat']">
-            Cơ Cấu Hoạt Động
+            {t("departments.chapter")}
           </span>
           <h2 className="text-4xl md:text-5xl font-bold font-['Montserrat']">
-            Nền Tảng Của Hành Động
+            {t("departments.title")}
           </h2>
         </motion.div>
 

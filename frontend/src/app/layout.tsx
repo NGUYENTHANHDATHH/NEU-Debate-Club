@@ -3,6 +3,7 @@ import { Inter, Montserrat } from "next/font/google";
 import "./globals.css";
 import { UserProvider } from "@/context/userContext";
 import { QueryProvider } from "@/provider/QueryProvider";
+import { LanguageProvider } from "@/provider/LanguageProvider";
 import { Toaster } from "sonner";
 
 const inter = Inter({
@@ -31,9 +32,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressContentEditableWarning={true}>
       <body className={`${inter.variable} ${montserrat.variable} antialiased`}>
-        <QueryProvider>
-          <UserProvider>{children}</UserProvider>
-        </QueryProvider>
+        <LanguageProvider>
+          <QueryProvider>
+            <UserProvider>{children}</UserProvider>
+          </QueryProvider>
+        </LanguageProvider>
         <Toaster richColors position="top-center" />
       </body>
     </html>
