@@ -6,6 +6,7 @@ import Link from "next/link";
 import clubLogo from "@/../public/logo.png";
 import { useTheme } from "@/provider/ThemeProvider";
 import { useLanguage } from "@/provider/LanguageProvider";
+import LanguageDropdown from "./LanguageDropdown";
 
 export const Header = () => {
   const { theme, setTheme } = useTheme();
@@ -89,30 +90,9 @@ export const Header = () => {
         </nav>
 
         <div className="flex items-center gap-4">
-          <div className="relative group">
-            <button
-              className="flex items-center justify-center gap-1 w-14 h-8 rounded-full border border-gray-300 dark:border-[#444] text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#111] transition-colors"
-              aria-label="Select Language"
-            >
-              {language.toUpperCase()}
-              <ChevronDown className="w-3 h-3 transition-transform group-hover:rotate-180" />
-            </button>
-            <div className="absolute top-full right-0 pt-2 w-32 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-60">
-              <div className="bg-white dark:bg-[#0A0A0A] border border-gray-100 dark:border-[#222] rounded-xl shadow-xl flex flex-col py-1 overflow-hidden">
-                <button
-                  onClick={() => setLanguage("vi")}
-                  className={`px-4 py-2 text-sm text-left transition-colors ${language === "vi" ? "text-[#8A151B] bg-gray-50 dark:bg-[#111] font-bold" : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#111] hover:text-[#8A151B] dark:hover:text-[#8A151B]"}`}
-                >
-                  Tiếng Việt
-                </button>
-                <button
-                  onClick={() => setLanguage("en")}
-                  className={`px-4 py-2 text-sm text-left transition-colors ${language === "en" ? "text-[#8A151B] bg-gray-50 dark:bg-[#111] font-bold" : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#111] hover:text-[#8A151B] dark:hover:text-[#8A151B]"}`}
-                >
-                  English
-                </button>
-              </div>
-            </div>
+          <div className="relative">
+            {/* Controlled dropdown for mobile/touch support */}
+            <LanguageDropdown language={language} setLanguage={setLanguage} />
           </div>
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
