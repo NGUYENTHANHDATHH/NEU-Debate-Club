@@ -66,7 +66,7 @@ export default function AllProjects() {
               <h3 className="text-xl font-bold font-['Montserrat'] mb-4 text-black dark:text-white group-hover:text-[#8A151B] dark:group-hover:text-[#8A151B] transition-colors">
                 {project.title}
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 font-light font-['Inter'] text-sm leading-relaxed">
+              <p className="text-gray-600 dark:text-gray-400 font-light font-['Inter'] text-sm leading-relaxed line-clamp-2">
                 {project.desc}
               </p>
             </div>

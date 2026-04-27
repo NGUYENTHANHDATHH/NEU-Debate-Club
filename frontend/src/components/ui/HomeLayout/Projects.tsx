@@ -74,7 +74,7 @@ export const Projects = () => {
                 <h3 className="text-2xl font-bold font-['Montserrat'] mb-4 text-black dark:text-white group-hover:text-[#8A151B] dark:group-hover:text-[#8A151B] transition-colors">
                   {project.title}
                 </h3>
-                <p className="text-gray-600 dark:text-gray-400 font-light font-['Inter'] text-sm leading-relaxed transition-colors">
+                <p className="text-gray-600 dark:text-gray-400 font-light font-['Inter'] text-sm leading-relaxed transition-colors line-clamp-2">
                   {project.desc}
                 </p>
               </div>
