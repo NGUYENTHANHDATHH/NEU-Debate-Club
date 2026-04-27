@@ -13,6 +13,71 @@
       "login": "Đăng nhập",
       "logout": "Đăng xuất",
       "hello": "Xin chào"
+    },
+    "history": "NEU Debate Club - NDC, được thành lập ngày 05/11/2013, là một CLB kỹ năng mềm - học thuật trực thuộc Liên chi đoàn khoa Luật Trường Đại học Kinh tế Quốc dân. Là ngôi nhà của những người có niềm đam mê với bộ môn “thể thao trí tuệ” mang tên Tranh biện",
+    "vision": {
+      "title": {
+        "title1": "Tư Duy Sắc Bén",
+        "title2": "Hành Động Chuyên Nghiệp"
+      },
+      "desc": "Triết lý của chúng tôi không chỉ dừng lại ở suy nghĩ. \"Cogito, ergo sum\" — \"Tôi tư duy, nên tôi tồn tại\" là minh chứng cho một cộng đồng không ngừng phân tích, giải quyết vấn đề và chuyển hóa ý tưởng thành hiện thực. Tại đây, mỗi cá nhân đều có cơ hội rèn luyện chiều sâu trí tuệ và quyền lực tư duy để dẫn đầu."
+    },
+    "achievements": {
+      "chapter": "Cột Mốc Tự Hào",
+      "title": "Thành Tựu Nổi Bật",
+      "desc": "Hành trình không ngừng nỗ lực và phát triển, những con số biết nói minh chứng cho sự cống hiến và nhiệt huyết của cộng đồng.",
+      "reward": "Giải thưởng",
+      "event": "Sự kiện",
+      "member": "Thành viên",
+      "established": "Năm hoạt động"
+    },
+    "projects": {
+      "title": "Dấu Ấn Thực Tiễn",
+      "viewall": "Xem tất cả dự án",
+      "desc": "Khám phá những dấu ấn nổi bật của NEU Debate Club qua từng năm tháng. Mỗi dự án là một câu chuyện về sự sáng tạo, nỗ lực và tác động tích cực đến cộng đồng. Hãy cùng nhìn lại những bước tiến quan trọng và những thành tựu đáng tự hào mà chúng tôi đã đạt được trên hành trình phát triển của mình."
+    },
+    "departments": {
+      "chapter": "CƠ CẤU HOẠT ĐỘNG",
+      "title": "Nền Tảng Của Hành Động",
+      "detail": {
+        "event": {
+          "name": "Sự kiện",
+          "desc": "Biến ý tưởng thành hiện thực. Đạo diễn và tổ chức chuyên nghiệp mọi chương trình quy mô từ nhỏ đến lớn."
+        },
+        "media": {
+          "name": "Truyền thông",
+          "desc": "Khuếch đại tiếng nói của tổ chức qua lăng kính sáng tạo. Quản lý hình ảnh và lan tỏa thông điệp mạnh mẽ."
+        },
+        "external": {
+          "name": "Đối ngoại",
+          "desc": "Cầu nối chiến lược. Xây dựng và duy trì mạng lưới đối tác, tài trợ, kiến tạo các cơ hội hợp tác giá trị."
+        },
+        "academics": {
+          "name": "Chuyên môn",
+          "desc": "Cốt lõi trí tuệ. Nghiên cứu, đào tạo và định hướng phát triển kiến thức chuyên sâu cho toàn bộ thành viên."
+        }
+      }
+    },
+    "comments": {
+      "chapter": "TIẾNG NÓI THÀNH VIÊN",
+      "title": "Vượt Lên Giới Hạn"
+    },
+    "contact": {
+      "title": {
+        "title1": "Kết Nối Với",
+        "title2": "Chúng Tôi"
+      },
+      "desc": "NEU Debate hiện đang có các kênh thông tin sau. Hãy liên hệ với chúng tôi qua các kênh dưới đây để biết thêm thông tin chi tiết về câu lạc bộ, các dự án, sự kiện sắp tới hoặc bất kỳ thắc mắc nào bạn có thể có. Chúng tôi rất mong được kết nối và chia sẻ đam mê với bạn!",
+      "details": {
+        "title": "Liên hệ với chúng tôi",
+        "name": "Họ và tên",
+        "email": "Email",
+        "message": {
+          "label": "Thắc mắc/ Câu hỏi của bạn với NDC?",
+          "placeholder": "Nhập tin nhắn của bạn ở đây..."
+        },
+        "submit": "Gửi"
+      }
     }
   },
   "en": {
@@ -29,6 +94,71 @@
       "login": "Login",
       "logout": "Logout",
       "hello": "Hello"
+    },
+    "history": "NEU Debate Club - NDC, established on November 5th, 2013, is a soft skills and academic club under the Youth Union of the Faculty of Law at National Economics University. It is a home for those passionate about the intellectual sport called Debate.",
+    "vision": {
+      "title": {
+        "title1": "Sharp Thinking",
+        "title2": "Professional Action"
+      },
+      "desc": "Our philosophy doesn't stop at thinking alone. \"Cogito, ergo sum\" — \"I think, therefore I am\" is proof of a community that constantly analyzes, solves problems, and transforms ideas into reality. Here, every individual has the opportunity to cultivate intellectual depth and the power of thought to lead."
+    },
+    "achievements": {
+      "chapter": "Proud Milestones",
+      "title": "Outstanding Achievements",
+      "desc": "A journey of relentless effort and development, the numbers speak volumes about the dedication and passion of the community.",
+      "reward": "Awards",
+      "event": "Events",
+      "member": "Members",
+      "established": "Years Active"
+    },
+    "projects": {
+      "title": "Practical Imprints",
+      "viewall": "View all projects",
+      "desc": "Discover the outstanding imprints of NEU Debate Club through the years. Each project is a story of creativity, effort, and positive impact on the community. Let's take a look at the important milestones and proud achievements we've reached on our development journey."
+    },
+    "departments": {
+      "chapter": "STRUCTURE OF OPERATION",
+      "title": "Foundation of Action",
+      "detail": {
+        "event": {
+          "name": "Events",
+          "desc": "Turning ideas into reality. Directing and professionally organizing programs of all scales from small to large."
+        },
+        "media": {
+          "name": "Media",
+          "desc": "Amplifying the organization's voice through a creative lens. Managing image and spreading powerful messages."
+        },
+        "external": {
+          "name": "External Relations",
+          "desc": "Strategic bridge. Building and maintaining a network of partners, sponsors, creating valuable collaboration opportunities."
+        },
+        "academics": {
+          "name": "Academics",
+          "desc": "Intellectual core. Researching, training, and guiding the development of in-depth knowledge for all members."
+        }
+      }
+    },
+    "comments": {
+      "chapter": "MEMBER VOICES",
+      "title": "Beyond Limits"
+    },
+    "contact": {
+      "title": {
+        "title1": "Connect With",
+        "title2": "Us"
+      },
+      "desc": "NEU Debate currently has the following information channels. Please contact us through the channels below for more detailed information about the club, upcoming projects, events, or any questions you may have. We look forward to connecting and sharing our passion with you!",
+      "details": {
+        "title": "Contact Us",
+        "name": "Full Name",
+        "email": "Email",
+        "message": {
+          "label": "Your inquiry/ question for NDC?",
+          "placeholder": "Enter your message here..."
+        },
+        "submit": "Submit"
+      }
     }
   }
 }

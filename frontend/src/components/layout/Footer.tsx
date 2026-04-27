@@ -4,11 +4,13 @@ import { motion } from "motion/react";
 import { ChevronRight, ExternalLink } from "lucide-react";
 import clubLogo from "@/../public/logo.png";
 import Image from "next/image";
+import { useLanguage } from "@/provider/LanguageProvider";
 
 export const Footer = () => {
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     name: "",
-    phone: "",
+    email: "",
     reason: "",
   });
   const [submitted, setSubmitted] = useState(false);
@@ -18,7 +20,7 @@ export const Footer = () => {
     console.log("Submitted to Google Sheets:", formData);
     setSubmitted(true);
     setTimeout(() => setSubmitted(false), 5000);
-    setFormData({ name: "", phone: "", reason: "" });
+    setFormData({ name: "", email: "", reason: "" });
   };
 
   return (
@@ -44,11 +46,11 @@ export const Footer = () => {
             className="w-24 h-24 mb-10 filter drop-shadow-[0_0_10px_rgba(138,21,27,0.1)] dark:drop-shadow-[0_0_10px_rgba(138,21,27,0.3)]"
           />
           <h2 className="text-4xl md:text-5xl font-bold font-['Montserrat'] mb-6 leading-tight text-black dark:text-white transition-colors">
-            Sẵn Sàng Để <br />
-            <span className="text-[#8A151B]">Tồn Tại?</span>
+            {t("contact.title.title1")} <br />
+            <span className="text-[#8A151B]">{t("contact.title.title2")}</span>
           </h2>
           <p className="text-gray-600 dark:text-gray-400 font-['Inter'] text-lg font-light leading-relaxed mb-10 transition-colors">
-            NEU Debate hiện đang có các kênh thông tin sau.
+            {t("contact.desc")}
           </p>
 
           <div className="flex flex-col gap-4 text-gray-600 dark:text-gray-400 font-['Inter'] text-sm mb-12 transition-colors">
@@ -86,7 +88,7 @@ export const Footer = () => {
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#8A151B] to-transparent" />
 
             <h3 className="text-2xl font-bold font-['Montserrat'] mb-8 text-black dark:text-white transition-colors">
-              Liên Hệ Với Chúng Tôi
+              {t("contact.details.title")}
             </h3>
 
             {submitted ? (
@@ -113,7 +115,7 @@ export const Footer = () => {
                 <div className="flex flex-col md:flex-row gap-6">
                   <div className="flex-1">
                     <label className="block text-xs uppercase text-gray-500 mb-2 font-['Montserrat'] font-semibold">
-                      Họ và Tên
+                      {t("contact.details.name")}
                     </label>
                     <input
                       required
@@ -128,24 +130,24 @@ export const Footer = () => {
                   </div>
                   <div className="flex-1">
                     <label className="block text-xs uppercase text-gray-500 mb-2 font-['Montserrat'] font-semibold">
-                      Số điện thoại
+                      {t("contact.details.email")}
                     </label>
                     <input
                       required
-                      type="text"
-                      value={formData.phone}
+                      type="email"
+                      value={formData.email}
                       onChange={(e) =>
-                        setFormData({ ...formData, phone: e.target.value })
+                        setFormData({ ...formData, email: e.target.value })
                       }
                       className="w-full bg-gray-50 dark:bg-[#111] border-b border-gray-300 dark:border-[#333] px-0 py-3 text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-700 focus:outline-none focus:border-[#8A151B] transition-colors"
-                      placeholder="0123456789"
+                      placeholder="abc@gmail.com"
                     />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-xs uppercase text-gray-500 mb-2 font-['Montserrat'] font-semibold">
-                    Thắc mắc/ Câu hỏi của bạn với NDC?
+                    {t("contact.details.message.label")}
                   </label>
                   <textarea
                     required
@@ -155,7 +157,7 @@ export const Footer = () => {
                       setFormData({ ...formData, reason: e.target.value })
                     }
                     className="w-full bg-gray-50 dark:bg-[#111] border-b border-gray-300 dark:border-[#333] px-0 py-3 text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-700 focus:outline-none focus:border-[#8A151B] transition-colors resize-none"
-                    placeholder="Ngắn gọn trong 1-2 câu..."
+                    placeholder={t("contact.details.message.placeholder")}
                   />
                 </div>
 
@@ -163,7 +165,7 @@ export const Footer = () => {
                   type="submit"
                   className="mt-4 flex items-center justify-between w-full bg-black dark:bg-white text-white dark:text-black py-4 px-6 font-bold font-['Montserrat'] uppercase tracking-wider hover:bg-[#8A151B] dark:hover:bg-[#8A151B] hover:text-white dark:hover:text-white transition-all duration-300 group"
                 >
-                  <span>Gửi</span>
+                  <span>{t("contact.details.submit")}</span>
                   <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
               </form>

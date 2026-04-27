@@ -3,9 +3,42 @@
 import React from "react";
 import { useParams, notFound } from "next/navigation";
 import { motion } from "motion/react";
-import { DEPARTMENTS } from "@/components/ui/HomeLayout/Departments";
+import { Triangle, Hexagon, Circle, Square } from "lucide-react";
+import { useLanguage } from "@/provider/LanguageProvider";
 
 export default function DepartmentDetail() {
+  const { t } = useLanguage();
+  const DEPARTMENTS = [
+    {
+      id: "truyen-thong",
+      title: t("departments.detail.media.name"),
+      desc: t("departments.detail.media.desc"),
+      icon: Triangle,
+      delay: 0.1,
+    },
+    {
+      id: "doi-ngoai",
+      title: t("departments.detail.external.name"),
+      desc: t("departments.detail.external.desc"),
+      icon: Hexagon,
+      delay: 0.2,
+    },
+    {
+      id: "su-kien",
+      title: t("departments.detail.event.name"),
+      desc: t("departments.detail.event.desc"),
+      icon: Circle,
+      delay: 0.3,
+    },
+    {
+      id: "chuyen-mon",
+      title: t("departments.detail.academics.name"),
+      desc: t("departments.detail.academics.desc"),
+      icon: Square,
+      delay: 0.4,
+    },
+  ];
+
   const params = useParams<{ slug: string }>();
   const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
 

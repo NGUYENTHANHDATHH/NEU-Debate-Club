@@ -2,6 +2,7 @@ import React from "react";
 import { motion } from "motion/react";
 import { Quote } from "lucide-react";
 import Image from "next/image";
+import { useLanguage } from "@/provider/LanguageProvider";
 
 const TESTIMONIALS = [
   {
@@ -31,6 +32,7 @@ const TESTIMONIALS = [
 ];
 
 export const Comments = () => {
+  const { t } = useLanguage();
   return (
     <section className="py-32 bg-white dark:bg-black text-black dark:text-white px-6 transition-colors duration-500">
       <div className="max-w-7xl mx-auto">
@@ -41,10 +43,10 @@ export const Comments = () => {
           viewport={{ once: true, margin: "-100px" }}
         >
           <span className="uppercase tracking-widest text-[#8A151B] text-sm font-semibold mb-2 block font-['Montserrat']">
-            Tiếng Nói Thành Viên
+            {t("comments.chapter")}
           </span>
           <h2 className="text-4xl md:text-5xl font-bold font-['Montserrat']">
-            Vượt Lên Giới Hạn
+            {t("comments.title")}
           </h2>
         </motion.div>
 

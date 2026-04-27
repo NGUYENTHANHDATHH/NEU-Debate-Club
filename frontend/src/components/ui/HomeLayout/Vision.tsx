@@ -1,9 +1,12 @@
 import React from "react";
 import { motion } from "motion/react";
 import VisionBg from "@/../public/vision-bg.jpg";
+import Image from "next/image";
+import { useLanguage } from "@/provider/LanguageProvider";
+
 export const Vision = () => {
   const bgImageUrl = VisionBg.src; // Assuming VisionBg is imported as a static asset
-
+  const { t } = useLanguage();
   return (
     <section className="relative py-32 bg-gray-50 dark:bg-[#050505] text-black dark:text-white overflow-hidden flex flex-col items-center border-t border-b border-gray-200 dark:border-[#111] transition-colors duration-500">
       {/* Looping Background Images */}
@@ -19,12 +22,18 @@ export const Vision = () => {
         >
           {/* We use 10 images (2 sets of 5) to create a seamless infinite loop effect */}
           {[...Array(10)].map((_, index) => (
-            <img
+            <div
               key={index}
-              src={bgImageUrl}
-              alt="Vision Background Loop"
-              className="h-full w-auto object-cover min-w-[300px] sm:min-w-[400px] md:min-w-[500px] grayscale mix-blend-overlay"
-            />
+              className="relative h-full w-auto object-cover min-w-[300px] sm:min-w-[400px] md:min-w-[500px]"
+            >
+              <Image
+                src={bgImageUrl}
+                alt="Vision Background Loop"
+                fill
+                sizes="(max-width: 640px) 300px, (max-width: 768px) 400px, 500px"
+                className="object-cover grayscale mix-blend-overlay"
+              />
+            </div>
           ))}
         </motion.div>
       </div>
@@ -44,8 +53,8 @@ export const Vision = () => {
             The Cogito
           </span>
           <h2 className="text-4xl md:text-5xl font-bold font-['Montserrat'] mb-10 leading-tight">
-            Tư Duy Sắc Bén, <br className="hidden md:block" /> Hành Động Chuyên
-            Nghiệp.
+            {t("vision.title.title1")}, <br className="hidden md:block" />{" "}
+            {t("vision.title.title2")}
           </h2>
         </motion.div>
 
@@ -61,11 +70,7 @@ export const Vision = () => {
           <div className="absolute -bottom-4 -right-4 w-8 h-8 border-b-2 border-r-2 border-[#8A151B] opacity-30 dark:opacity-50 dark:shadow-[0_0_10px_#8A151B]" />
 
           <p className="text-gray-700 dark:text-gray-400 text-lg md:text-xl font-light font-['Inter'] leading-relaxed max-w-3xl mx-auto py-8 px-4 transition-colors duration-500">
-            Triết lý của chúng tôi không chỉ dừng lại ở suy nghĩ. &quot;Cogito,
-            ergo sum&quot; — &quot;Tôi tư duy, nên tôi tồn tại&quot; là minh
-            chứng cho một cộng đồng không ngừng phân tích, giải quyết vấn đề và
-            chuyển hóa ý tưởng thành hiện thực. Tại đây, mỗi cá nhân đều có cơ
-            hội rèn luyện chiều sâu trí tuệ và quyền lực tư duy để dẫn đầu.
+            {t("vision.desc")}
           </p>
         </motion.div>
       </div>

@@ -4,8 +4,11 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { MOCK_PROJECTS } from "@/constants/projects";
 import { routePath } from "@/constants/routes";
+import { useLanguage } from "@/provider/LanguageProvider";
 
 export const Projects = () => {
+  const { t } = useLanguage();
+
   return (
     <section className="py-32 bg-gray-50 dark:bg-[#050505] text-black dark:text-white px-6 border-t border-gray-200 dark:border-[#111] transition-colors duration-500">
       <div className="max-w-7xl mx-auto">
@@ -20,7 +23,7 @@ export const Projects = () => {
               The Sum
             </span>
             <h2 className="text-4xl md:text-5xl font-bold font-['Montserrat']">
-              Dấu Ấn Thực Tiễn
+              {t("projects.title")}
             </h2>
           </motion.div>
           <motion.div
@@ -33,7 +36,7 @@ export const Projects = () => {
               href="/projects"
               className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-[#8A151B] dark:hover:text-[#8A151B] transition-colors font-['Inter'] group pb-2 border-b border-transparent hover:border-[#8A151B]"
             >
-              Xem Tất Cả Dự Án{" "}
+              {t("projects.viewall")}{" "}
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </motion.div>
