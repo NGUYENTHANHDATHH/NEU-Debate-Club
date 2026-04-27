@@ -1,0 +1,34 @@
+{
+  "vi": {
+    "nav": {
+      "projects": "Dự Án",
+      "achievements": "Thành Tựu",
+      "departments": "Cơ Cấu Tổ Chức",
+      "media": "Truyền Thông",
+      "external": "Đối Ngoại",
+      "events": "Sự Kiện",
+      "academics": "Chuyên Môn"
+    },
+    "auth": {
+      "login": "Đăng nhập",
+      "logout": "Đăng xuất",
+      "hello": "Xin chào"
+    }
+  },
+  "en": {
+    "nav": {
+      "projects": "Projects",
+      "achievements": "Achievements",
+      "departments": "Departments",
+      "media": "Media",
+      "external": "External Relations",
+      "events": "Events",
+      "academics": "Academics"
+    },
+    "auth": {
+      "login": "Login",
+      "logout": "Logout",
+      "hello": "Hello"
+    }
+  }
+}
