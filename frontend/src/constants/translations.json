@@ -29,7 +29,8 @@
       "reward": "Giải thưởng",
       "event": "Sự kiện",
       "member": "Thành viên",
-      "established": "Năm hoạt động"
+      "established": "Năm hoạt động",
+      "viewAll": "Xem tất cả thành tựu"
     },
     "projects": {
       "title": "Dấu Ấn Thực Tiễn",
@@ -137,7 +138,8 @@
       "reward": "Awards",
       "event": "Events",
       "member": "Members",
-      "established": "Years Active"
+      "established": "Years Active",
+      "viewAll": "View all achievements"
     },
     "projects": {
       "title": "Practical Imprints",
