@@ -20,7 +20,7 @@
         "title1": "Tư Duy Sắc Bén",
         "title2": "Hành Động Chuyên Nghiệp"
       },
-      "desc": "Triết lý của chúng tôi không chỉ dừng lại ở suy nghĩ. \"Cogito, ergo sum\" — \"Tôi tư duy, nên tôi tồn tại\" là minh chứng cho một cộng đồng không ngừng phân tích, giải quyết vấn đề và chuyển hóa ý tưởng thành hiện thực. Tại đây, mỗi cá nhân đều có cơ hội rèn luyện chiều sâu trí tuệ và quyền lực tư duy để dẫn đầu."
+      "desc": "Triết lý của chúng tôi không chỉ dừng lại ở suy nghĩ. \"Cogito, ergo sum\" - \"Tôi tư duy, nên tôi tồn tại\" là minh chứng cho một cộng đồng không ngừng phân tích, giải quyết vấn đề và chuyển hóa ý tưởng thành hiện thực. Tại đây, mỗi cá nhân đều có cơ hội rèn luyện chiều sâu trí tuệ và quyền lực tư duy để dẫn đầu."
     },
     "achievements": {
       "chapter": "Cột Mốc Tự Hào",
@@ -39,22 +39,49 @@
     "departments": {
       "chapter": "CƠ CẤU HOẠT ĐỘNG",
       "title": "Nền Tảng Của Hành Động",
+      "work": "Hoat Động Tiêu Biểu",
       "detail": {
         "event": {
-          "name": "Sự kiện",
-          "desc": "Biến ý tưởng thành hiện thực. Đạo diễn và tổ chức chuyên nghiệp mọi chương trình quy mô từ nhỏ đến lớn."
+          "name": "Ban Sự kiện",
+          "title": "Đằng sau thành công là dấu chân sự kiện",
+          "desc": "Biến ý tưởng thành hiện thực. Đạo diễn và tổ chức chuyên nghiệp mọi chương trình quy mô từ nhỏ đến lớn.",
+          "works": [
+            "Xây dựng kịch bản, điều phối nhân sự, tổ chức và giám sát các chương trình của CLB.",
+            "Quản lý tài chính, đảm bảo tiến trình hoạt động diễn ra trọn vẹn, chuyên nghiệp.",
+            "Biến ý tưởng thành trải nghiệm, khiến mỗi “vụ nổ” trong NDC đều trở thành khoảnh khắc đáng nhớ."
+          ]
         },
         "media": {
-          "name": "Truyền thông",
-          "desc": "Khuếch đại tiếng nói của tổ chức qua lăng kính sáng tạo. Quản lý hình ảnh và lan tỏa thông điệp mạnh mẽ."
+          "name": "Ban Truyền Thông",
+          "title": "Bắt trọn khoảnh khắc - Lan tỏa giá trị",
+          "desc": "Khuếch đại tiếng nói của tổ chức qua lăng kính sáng tạo. Quản lý hình ảnh và lan tỏa thông điệp mạnh mẽ.",
+          "works": [
+            "Quản lý, phát triển và định hướng nội dung trên các nền tảng truyền thông của CLB.",
+            "Lên kế hoạch, tổ chức các chiến dịch truyền thông cho sự kiện, hoạt động của NDC.",
+            "Thiết kế, sáng tạo ấn phẩm, định hình phong cách hình ảnh đặc trưng của CLB.",
+            "Phối hợp cùng các Ban khác để lan tỏa thông điệp, thổi bùng tinh thần của NDC."
+          ]
         },
         "external": {
-          "name": "Đối ngoại",
-          "desc": "Cầu nối chiến lược. Xây dựng và duy trì mạng lưới đối tác, tài trợ, kiến tạo các cơ hội hợp tác giá trị."
+          "name": "Ban Đối Ngoại",
+          "title": "Kết nối bền vững - Đồng hành phát triển",
+          "desc": "Cầu nối chiến lược. Xây dựng và duy trì mạng lưới đối tác, tài trợ, kiến tạo các cơ hội hợp tác giá trị.",
+          "works": [
+            "Tìm kiếm, xây dựng và duy trì mạng lưới nhà tài trợ, đối tác và CLB khác.",
+            "Đại diện CLB trong các buổi làm việc, hợp tác và đồng tổ chức chương trình.",
+            "Bảo đảm quyền lợi giữa đôi bên, lan tỏa danh tiếng và tinh thần của NDC đến muôn nơi."
+          ]
         },
         "academics": {
-          "name": "Chuyên môn",
-          "desc": "Cốt lõi trí tuệ. Nghiên cứu, đào tạo và định hướng phát triển kiến thức chuyên sâu cho toàn bộ thành viên."
+          "name": "Ban Chuyên Môn",
+          "title": "Giữ lửa tri thức - Dẫn dắt tư duy",
+          "desc": "Cốt lõi trí tuệ. Nghiên cứu, đào tạo và định hướng phát triển kiến thức chuyên sâu cho toàn bộ thành viên.",
+          "works": [
+            "Đào tạo và rèn luyện kiến thức, kỹ năng chuyên sâu về bộ môn Tranh biện.",
+            "Đại diện CLB tham gia các giải đấu lớn nhỏ trong và ngoài nước, mang về vinh quang cho tập thể.",
+            "Training kỹ năng phản biện, lập luận và phát triển tư duy logic.",
+            "Lên nội dung cho các Talkshow/workshop của CLB."
+          ]
         }
       }
     },
@@ -101,7 +128,7 @@
         "title1": "Sharp Thinking",
         "title2": "Professional Action"
       },
-      "desc": "Our philosophy doesn't stop at thinking alone. \"Cogito, ergo sum\" — \"I think, therefore I am\" is proof of a community that constantly analyzes, solves problems, and transforms ideas into reality. Here, every individual has the opportunity to cultivate intellectual depth and the power of thought to lead."
+      "desc": "Our philosophy doesn't stop at thinking alone. \"Cogito, ergo sum\" - \"I think, therefore I am\" is proof of a community that constantly analyzes, solves problems, and transforms ideas into reality. Here, every individual has the opportunity to cultivate intellectual depth and the power of thought to lead."
     },
     "achievements": {
       "chapter": "Proud Milestones",
@@ -120,22 +147,49 @@
     "departments": {
       "chapter": "STRUCTURE OF OPERATION",
       "title": "Foundation of Action",
+      "work": "Typical Activities",
       "detail": {
         "event": {
           "name": "Events",
-          "desc": "Turning ideas into reality. Directing and professionally organizing programs of all scales from small to large."
+          "title": "Behind Success Lies the Footsteps of Events",
+          "desc": "Turning ideas into reality. Directing and professionally organizing programs of all scales from small to large.",
+          "works": [
+            "Building scripts, coordinating personnel, organizing and supervising the club's programs.",
+            "Managing finances, ensuring the process runs smoothly and professionally.",
+            "Turning ideas into experiences, making every “explosion” in NDC a memorable moment."
+          ]
         },
         "media": {
           "name": "Media",
-          "desc": "Amplifying the organization's voice through a creative lens. Managing image and spreading powerful messages."
+          "title": "Capturing Moments - Spreading Values",
+          "desc": "Amplifying the organization's voice through a creative lens. Managing image and spreading powerful messages.",
+          "works": [
+            "Managing, developing, and directing content on the club's media platforms.",
+            "Planning and organizing media campaigns for NDC's events and activities.",
+            "Designing, creating publications, shaping the club's distinctive image style.",
+            "Coordinating with other departments to spread messages and ignite the spirit of NDC."
+          ]
         },
         "external": {
           "name": "External Relations",
-          "desc": "Strategic bridge. Building and maintaining a network of partners, sponsors, creating valuable collaboration opportunities."
+          "title": "Sustainable Connections - Accompanying Development",
+          "desc": "Strategic bridge. Building and maintaining a network of partners, sponsors, creating valuable collaboration opportunities.",
+          "works": [
+            "Building and maintaining relationships with external partners and sponsors.",
+            "Identifying and pursuing collaboration opportunities that benefit the club.",
+            "Representing the club at external events and conferences."
+          ]
         },
         "academics": {
           "name": "Academics",
-          "desc": "Intellectual core. Researching, training, and guiding the development of in-depth knowledge for all members."
+          "title": "Keeping the Fire of Knowledge - Leading Thinking",
+          "desc": "Intellectual core. Researching, training, and guiding the development of in-depth knowledge for all members.",
+          "works": [
+            "Training and honing in-depth knowledge and skills in the field of Debate.",
+            "Representing the club in various competitions both domestically and internationally, bringing glory to the collective.",
+            "Training critical thinking, reasoning, and developing logical thinking skills.",
+            "Creating content for the club's Talkshows/workshops."
+          ]
         }
       }
     },
