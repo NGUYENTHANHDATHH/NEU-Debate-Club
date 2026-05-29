@@ -89,11 +89,22 @@ export default function DepartmentDetail() {
             {t("departments.work")}
           </h2>
           <ul className="list-disc list-inside text-gray-700 dark:text-gray-300 font-['Inter'] space-y-4 ml-4">
-            {department.works.map((work: string, index: number) => (
-              <li key={index} className="leading-relaxed">
-                {work}
-              </li>
-            ))}
+            {(() => {
+              const works = Array.isArray(department.works)
+                ? department.works
+                : typeof department.works === "string"
+                  ? department.works
+                      .split(/\r?\n/)
+                      .map((s) => s.trim())
+                      .filter(Boolean)
+                  : [];
+
+              return works.map((work: string, index: number) => (
+                <li key={index} className="leading-relaxed">
+                  {work}
+                </li>
+              ));
+            })()}
           </ul>
         </div>
       </motion.div>
