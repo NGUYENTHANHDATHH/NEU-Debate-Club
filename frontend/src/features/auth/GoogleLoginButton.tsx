@@ -3,8 +3,8 @@
 import React from "react";
 import { useUserContext } from "@/context/userContext";
 
-// Import client config (local JSON provided in repo)
-import clientConfig from "../../../client_secret_1003932552081-k2kefin57d8o0b7affc829d8isch6kte.apps.googleusercontent.com.json";
+// Read client ID from environment (NEXT_PUBLIC_* is exposed to the client)
+const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
 declare global {
   interface Window {
@@ -17,8 +17,10 @@ const GoogleLoginButton: React.FC = () => {
   const ref = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
-    const clientId = clientConfig?.web?.client_id;
-    if (!clientId) return;
+    if (!clientId) {
+      console.warn("Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID env var");
+      return;
+    }
 
     const existing = document.getElementById("google-client-script");
     if (!existing) {
