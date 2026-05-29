@@ -6,7 +6,7 @@ import Link from "next/link";
 import clubLogo from "@/../public/logo.png";
 import { useTheme } from "@/provider/ThemeProvider";
 import { useLanguage } from "@/provider/LanguageProvider";
-import LanguageDropdown from "./LanguageDropdown";
+import LanguageDropdown from "../ui/HomeLayout/LanguageDropdown";
 
 export const Header = () => {
   const { theme, setTheme } = useTheme();
