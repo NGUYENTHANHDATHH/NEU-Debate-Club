@@ -3,8 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ROUTES } from "@/constants/routes";
+import { useUserContext } from "@/context/userContext";
+
 export default function SideBar() {
   const pathname = usePathname();
+  const { user } = useUserContext();
 
   const navItems = [
     { name: "Tổng quan", path: ROUTES.dashboard },
@@ -64,16 +67,18 @@ export default function SideBar() {
 
       {/* User profile / Bottom area */}
       <div className="p-4 border-t border-slate-100">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-slate-900 truncate">
-              Minh Anh
+            <p className="text-sm font-semibold text-slate-800 truncate" title={user?.name}>
+              {user?.name || "Thành viên NDC"}
             </p>
-            <p className="text-xs text-slate-500 truncate">Chủ nhiệm (BCN)</p>
+            <p className="text-xs text-slate-500 truncate" title={user?.email}>
+              {user?.email || "member@neudebate.local"}
+            </p>
           </div>
           <Link
-            href="/login"
-            className="p-2 text-slate-400 hover:text-red-600 text-sm font-medium"
+            href="/logout"
+            className="shrink-0 p-2 text-slate-400 hover:text-red-600 transition-colors text-sm font-semibold"
           >
             Đăng xuất
           </Link>
