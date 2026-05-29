@@ -20,11 +20,16 @@ export const LanguageProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const [language, setLanguage] = useState<Language>(() => {
-    if (typeof window === "undefined") return "vi";
+  const [language, setLanguage] = useState<Language>("vi");
+  const [mounted, setMounted] = useState(false);
+
+  React.useEffect(() => {
     const saved = localStorage.getItem("language") as Language | null;
-    return saved ?? "vi";
-  });
+    if (saved) {
+      setLanguage(saved);
+    }
+    setMounted(true);
+  }, []);
 
   const handleSetLanguage = (lang: Language) => {
     setLanguage(lang);
@@ -40,6 +45,11 @@ export const LanguageProvider = ({
     }
     return result as string;
   };
+
+  // Prevent rendering children until language is loaded from local storage to avoid flash
+  if (!mounted) {
+    return <div className="min-h-screen bg-white dark:bg-black" />; // Return an empty layout placeholder
+  }
 
   return (
     <LanguageContext.Provider
