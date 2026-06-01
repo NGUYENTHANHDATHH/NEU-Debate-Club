@@ -2,7 +2,7 @@
 import React from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { NotificationWidget } from "@/components/layout/NotificationWidget";
+import { NotificationWidget } from "@/components/ui/HomeLayout/NotificationWidget";
 import ThemeProvider from "../../provider/ThemeProvider";
 
 export default function PublicLayout({

@@ -12,31 +12,25 @@ interface IUserProfile {
   role?: string;
 }
 
-const mockUser: IUserProfile = {
-  id: "mock-user-1",
-  name: "Demo User",
-  email: "demo@neudebate.local",
-  role: "member",
-};
-
 const authService = {
-  async getCurrentUser(): Promise<IUserProfile> {
-    return mockUser;
-  },
-  async authenticate({
-    email,
-    password,
-  }: {
-    email: string;
-    password: string;
-  }): Promise<{ success: boolean; data?: { token: string }; error?: string }> {
-    if (!email || !password) {
-      return { success: false, error: "Thiếu thông tin đăng nhập" };
+  getCurrentUser(): IUserProfile | null {
+    if (typeof window === "undefined") return null;
+    const data = localStorage.getItem("ndc_user");
+    if (!data) return null;
+    try {
+      return JSON.parse(data);
+    } catch {
+      return null;
     }
-
-    return { success: true, data: { token: "mock-token" } };
   },
-  clearAuthData(): void {},
+  saveCurrentUser(user: IUserProfile): void {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("ndc_user", JSON.stringify(user));
+  },
+  clearAuthData(): void {
+    if (typeof window === "undefined") return;
+    localStorage.removeItem("ndc_user");
+  },
 };
 
 interface IUserContext {
@@ -45,6 +39,7 @@ interface IUserContext {
   isAuthenticated: boolean;
   setUser: React.Dispatch<React.SetStateAction<IUserProfile | null>>;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => void;
   logout: () => void;
 }
 interface IUserProviderProps {
@@ -61,12 +56,19 @@ export const UserProvider: React.FC<IUserProviderProps> = ({ children }) => {
   const [loading, setLoading] = React.useState<boolean>(true);
   const [isAuthenticated, setIsAuthenticated] = React.useState<boolean>(false);
 
+  const isCallbackRoute = pathname === "/callback";
+
   async function fetchUser() {
     try {
       setLoading(true);
-      const response = await authService.getCurrentUser();
-      setUser(response);
-      setIsAuthenticated(true);
+      const response = authService.getCurrentUser();
+      if (response) {
+        setUser(response);
+        setIsAuthenticated(true);
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
+      }
     } catch (error) {
       console.error("Failed to fetch user profile:", error);
       setUser(null);
@@ -77,53 +79,68 @@ export const UserProvider: React.FC<IUserProviderProps> = ({ children }) => {
   }
 
   async function login(email: string, password: string) {
-    try {
-      setLoading(true);
-      // Authenticate user
-      const result = await authService.authenticate({ email, password });
+    toast.error("Đăng nhập bằng mật khẩu đã bị vô hiệu hóa. Vui lòng sử dụng Google Auth.");
+  }
 
-      if (!result.success || !result.data) {
-        toast.error(result.error || "Đăng nhập thất bại");
-        setLoading(false);
-        return;
-      }
+  function loginWithGoogle() {
+    if (typeof window === "undefined") return;
+    const clientId = "1003932552081-k2kefin57d8o0b7affc829d8isch6kte.apps.googleusercontent.com";
+    const redirectUri = window.location.origin + "/callback";
+    const scope = "openid profile email";
+    const responseType = "id_token token";
+    const nonce = Math.random().toString(36).substring(2);
 
-      // Fetch user profile after successful login
-      await fetchUser();
+    const oauth2Url = `https://accounts.google.com/o/oauth2/v2/auth?` +
+      `client_id=${encodeURIComponent(clientId)}&` +
+      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+      `response_type=${encodeURIComponent(responseType)}&` +
+      `scope=${encodeURIComponent(scope)}&` +
+      `nonce=${encodeURIComponent(nonce)}`;
 
-      toast.success("Đăng nhập thành công");
-
-      // Redirect to dashboard
-      router.push("/dashboard");
-    } catch (error: unknown) {
-      toast.error("Đã xảy ra lỗi không mong đợi");
-      console.error("Login error:", error);
-      setLoading(false);
-    }
+    window.location.href = oauth2Url;
   }
 
   function logout() {
     authService.clearAuthData();
     setUser(null);
     setIsAuthenticated(false);
-    router.push("/login");
+    router.push("/");
   }
 
-  // Fetch user on mount if not on login page
+  // Reactively sync user changes to localStorage and update authentication status
   React.useEffect(() => {
-    if (pathname !== "/login") {
+    if (user) {
+      authService.saveCurrentUser(user);
+      setIsAuthenticated(true);
+    } else {
+      if (!loading) {
+        authService.clearAuthData();
+        setIsAuthenticated(false);
+      }
+    }
+  }, [user, loading]);
+
+  // Fetch user on mount if not on the callback route
+  React.useEffect(() => {
+    if (!isCallbackRoute) {
       fetchUser();
     } else {
       setLoading(false);
     }
-  }, [pathname]);
+  }, [pathname, isCallbackRoute]);
 
-  // Redirect to login only after loading completes
+  // Redirect to home "/" if trying to access any route under "/dashboard" and not authorized
   React.useEffect(() => {
-    if (!loading && !isAuthenticated && pathname !== "/login") {
-      router.push("/login");
+    if (!loading && pathname.startsWith("/dashboard")) {
+      const isAuthorized =
+        isAuthenticated &&
+        user?.email?.toLowerCase().endsWith(".ndc.neu@gmail.com");
+      if (!isAuthorized) {
+        router.push("/");
+        toast.error("Chỉ thành viên NDC mới có quyền truy cập trang quản trị!");
+      }
     }
-  }, [isAuthenticated, loading, pathname, router]);
+  }, [isAuthenticated, user, loading, pathname, router]);
 
   return (
     <UserContext.Provider
@@ -133,6 +150,7 @@ export const UserProvider: React.FC<IUserProviderProps> = ({ children }) => {
         isAuthenticated,
         setUser,
         login,
+        loginWithGoogle,
         logout,
       }}
     >

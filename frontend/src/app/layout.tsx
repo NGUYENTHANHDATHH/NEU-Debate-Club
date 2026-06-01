@@ -5,6 +5,7 @@ import { UserProvider } from "@/context/userContext";
 import { QueryProvider } from "@/provider/QueryProvider";
 import { LanguageProvider } from "@/provider/LanguageProvider";
 import { Toaster } from "sonner";
+import Script from "next/script";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -31,9 +32,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <script
-          suppressHydrationWarning
+      <body
+        suppressHydrationWarning
+        className={`${inter.variable} ${montserrat.variable} antialiased`}
+      >
+        <Script
+          id="theme-init"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               try {
@@ -47,8 +52,6 @@ export default function RootLayout({
             `,
           }}
         />
-      </head>
-      <body className={`${inter.variable} ${montserrat.variable} antialiased`}>
         <LanguageProvider>
           <QueryProvider>
             <UserProvider>{children}</UserProvider>
