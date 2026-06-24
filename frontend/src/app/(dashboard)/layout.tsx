@@ -9,7 +9,7 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-screen w-full bg-slate-50 text-slate-900 font-sans mx-auto min-w-5xl">
+    <div className="flex min-h-[100dvh] w-full bg-[#F9FAFB] text-[#18181B] font-sans mx-auto min-w-5xl">
       <SideBar />
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <DashboardHeader />

@@ -9,15 +9,33 @@ export const ROUTES = {
 
   // Dashboard routes
   dashboard: DASHBOARD,
+
+  // -- Thành viên --
+  todoList: `${DASHBOARD}/tasks/todo-list`,
+  updateTask: `${DASHBOARD}/tasks/update`,
+  readNotification: `${DASHBOARD}/notifications/read`,
+  library: `${DASHBOARD}/library`,
+
+  // -- Trưởng ban --
+  assignTask: `${DASHBOARD}/tasks/assign`,
+  createNotification: `${DASHBOARD}/notifications/create`,
+  departmentOperations: `${DASHBOARD}/department-operations`,
+  charts: `${DASHBOARD}/charts`,
+  publications: `${DASHBOARD}/publications`,
+
+  // -- BCN --
   members: `${DASHBOARD}/members`,
-  tasks: `${DASHBOARD}/tasks`,
-  myTasks: `${DASHBOARD}/my-tasks`,
-  announcements: `${DASHBOARD}/announcements`,
-  events: `${DASHBOARD}/events`,
-  calendar: `${DASHBOARD}/calendar`,
-  media: `${DASHBOARD}/media`,
+  roles: `${DASHBOARD}/roles`,
+  finance: `${DASHBOARD}/finance`,
   cms: `${DASHBOARD}/cms`,
-  partners: `${DASHBOARD}/partners`,
+  healthDashboard: `${DASHBOARD}/health-dashboard`,
+  assignAllTasks: `${DASHBOARD}/tasks/assign-all`,
+  activityLog: `${DASHBOARD}/activity-log`,
+  tenure: `${DASHBOARD}/tenure`,
+
+  // Base routes for dynamic path usage
+  tasks: `${DASHBOARD}/tasks`,
+  notifications: `${DASHBOARD}/notifications`,
 } as const;
 
 export const routePath = {
@@ -27,10 +45,6 @@ export const routePath = {
 
   // Dashboard dynamic routes
   memberDetail: (id: string | number) => `${ROUTES.members}/${id}`,
-
   taskDetail: (id: string | number) => `${ROUTES.tasks}/${id}`,
-
-  eventDetail: (id: string | number) => `${ROUTES.events}/${id}`,
-
-  announcementDetail: (id: string | number) => `${ROUTES.announcements}/${id}`,
+  notificationDetail: (id: string | number) => `${ROUTES.notifications}/${id}`,
 } as const;
