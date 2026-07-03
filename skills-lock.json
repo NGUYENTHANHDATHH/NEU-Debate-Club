@@ -1,6 +1,24 @@
 {
   "version": 1,
   "skills": {
+    "caveman": {
+      "source": "JuliusBrussee/skills",
+      "sourceType": "github",
+      "skillPath": "skills/caveman/SKILL.md",
+      "computedHash": "b0e7741886c0c32270cedc1a2fc21c2879d90964d3ce00f24952de7064613404"
+    },
+    "junior-to-senior": {
+      "source": "JuliusBrussee/skills",
+      "sourceType": "github",
+      "skillPath": "skills/junior-to-senior/SKILL.md",
+      "computedHash": "5b41e5ad713680a3a0512f01e4e1db89f2ef6a9da44c77fec18a243fa77c58bf"
+    },
+    "loop-factory": {
+      "source": "JuliusBrussee/skills",
+      "sourceType": "github",
+      "skillPath": "skills/loop-factory/SKILL.md",
+      "computedHash": "b54d4317d4c976d30dfcafb14d1d2f6f928f0fe33fb3273398c84399defcee6a"
+    },
     "stitch-design-taste": {
       "source": "Leonxlnx/taste-skill",
       "sourceType": "github",
