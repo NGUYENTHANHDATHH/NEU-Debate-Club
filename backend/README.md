@@ -1,15 +1,18 @@
 # NEU Debate Club Backend - Developer Setup Guide
 
-Spring Boot backend application. Built with Java 21 and Maven.
+Spring Boot backend application. Built with Java 25 and Maven.
 
 ## Prerequisites
-- **JDK 21** installed and configured in `JAVA_HOME`.
+
+- **JDK 25** installed and configured in `JAVA_HOME`.
 - IDE (e.g., IntelliJ IDEA or VS Code with Java Extension Pack).
 
 ## Step-by-Step Setup
 
 ### 1. Configure Database Connection
+
 Update [application.properties](file:///e:/NEU%20Debate%20Club/backend/src/main/resources/application.properties) with database credentials:
+
 ```properties
 spring.application.name=backend
 
@@ -19,10 +22,13 @@ spring.application.name=backend
 # spring.datasource.password=password
 # spring.jpa.hibernate.ddl-auto=update
 ```
-*(If database driver is needed, add corresponding dependency to [pom.xml](file:///e:/NEU%20Debate%20Club/backend/pom.xml))*
+
+_(If database driver is needed, add corresponding dependency to [pom.xml](file:///e:/NEU%20Debate%20Club/backend/pom.xml))_
 
 ### 2. Run the Application
+
 From `backend` folder:
+
 - **Windows**:
   ```cmd
   mvnw.cmd spring-boot:run
@@ -34,7 +40,9 @@ From `backend` folder:
   ```
 
 ### 3. Create First REST Controller
+
 Create `HelloController.java` in `com.neudebateclub.backend.controller`:
+
 ```java
 package com.neudebateclub.backend.controller;
 
@@ -51,8 +59,11 @@ public class HelloController {
 ```
 
 ### 4. Build and Package
+
 Generate runnable JAR file:
+
 ```bash
 ./mvnw clean package
 ```
+
 Result JAR located in `target/backend-0.0.1-SNAPSHOT.jar`.

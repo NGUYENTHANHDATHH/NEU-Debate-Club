@@ -1,7 +1,7 @@
 # SPRINT 00 — Project Setup & Infrastructure
 
 > **Coding Agent:** GitHub Copilot Workspace  
-> **Stack:** Java 21 · Spring Boot 3.x · PostgreSQL · Google OAuth2  
+> **Stack:** Java 25 · Spring Boot 4.1 · PostgreSQL · Google OAuth2  
 > **Goal:** Khởi tạo project từ scratch, cấu hình đầy đủ để các Sprint sau có thể code ngay
 
 ---

@@ -1,0 +1,9 @@
+# Override cho local dev — KHÔNG commit file này nếu có secret thật
+spring:
+  jpa:
+    show-sql: true
+
+logging:
+  level:
+    com.clubhub: DEBUG
+    org.springframework.security: DEBUG
