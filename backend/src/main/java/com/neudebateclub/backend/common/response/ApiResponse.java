@@ -1,30 +1,28 @@
 package com.neudebateclub.backend.common.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public record ApiResponse<T>(
-        boolean success,
-        String message,
-        T data,
-        Instant timestamp
-) {
+@Data @Builder @NoArgsConstructor @AllArgsConstructor
+public class ApiResponse<T> {
+    private boolean success;
+    private String message;
+    private T data;
+    private LocalDateTime timestamp = LocalDateTime.now();
 
+    public static <T> ApiResponse<T> success(T data) {
+        return ApiResponse.<T>builder().success(true).data(data).build();
+    }
     public static <T> ApiResponse<T> success(String message, T data) {
-        return new ApiResponse<>(true, message, data, Instant.now());
+        return ApiResponse.<T>builder().success(true).message(message).data(data).build();
     }
-
-    public static ApiResponse<Void> success(String message) {
-        return new ApiResponse<>(true, message, null, Instant.now());
-    }
-
-    public static <T> ApiResponse<T> error(String message, T data) {
-        return new ApiResponse<>(false, message, data, Instant.now());
-    }
-
-    public static ApiResponse<Void> error(String message) {
-        return new ApiResponse<>(false, message, null, Instant.now());
+    public static <T> ApiResponse<T> error(String message) {
+        return ApiResponse.<T>builder().success(false).message(message).build();
     }
 }

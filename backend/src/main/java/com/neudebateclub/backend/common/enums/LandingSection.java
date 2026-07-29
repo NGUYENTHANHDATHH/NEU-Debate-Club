@@ -2,11 +2,9 @@ package com.neudebateclub.backend.common.enums;
 
 public enum LandingSection {
     HERO,
-    ABOUT,
-    EVENTS,
+    VISION,
+    PROJECTS,
     ACHIEVEMENTS,
-    PARTNERS,
-    TESTIMONIALS,
-    FAQ,
-    CONTACT
+   DEPARTMENTS,
+   COMMENTS
 }

@@ -1,0 +1,12 @@
+CREATE TYPE role_enum AS ENUM ('guest','member','truong_ban','bcn');
+CREATE TYPE department_enum AS ENUM ('bcn','truyen_thong','noi_dung','su_kien','doi_ngoai');
+CREATE TYPE task_status_enum AS ENUM ('todo','in_progress','done');
+CREATE TYPE task_priority_enum AS ENUM ('low','medium','high');
+CREATE TYPE checklist_status_enum AS ENUM ('pending','in_progress','done');
+CREATE TYPE transaction_type_enum AS ENUM ('income','expense');
+CREATE TYPE event_status_enum AS ENUM ('upcoming','ongoing','finished');
+CREATE TYPE partner_status_enum AS ENUM ('dang_lien_he','da_hop_tac','than_thiet','khong_phan_hoi');
+CREATE TYPE outreach_result_enum AS ENUM ('cho_phan_hoi','dong_y','tu_choi');
+CREATE TYPE platform_enum AS ENUM ('facebook','instagram','youtube','tiktok','other');
+CREATE TYPE content_status_enum AS ENUM ('idea','writing','review','approved','published');
+CREATE TYPE landing_section_enum AS ENUM ('hero','vision','projects','achievements','departments','comments');
