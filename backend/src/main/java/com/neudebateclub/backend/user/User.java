@@ -1,7 +1,11 @@
 package com.neudebateclub.backend.user;
 
+import com.neudebateclub.backend.common.enums.Department;
+import com.neudebateclub.backend.common.enums.Role;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -11,9 +15,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import com.neudebateclub.backend.common.enums.Role;
-import com.neudebateclub.backend.common.enums.Department;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -35,12 +38,22 @@ public class User {
     @Column(unique = true)
     private String googleId;
 
+    @Column(name = "full_name")
+    private String fullName;
+
+    @Column(name = "avatar_url")
+    private String avatarUrl;
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
 
-    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private Department department;
 
     @Column(nullable = false)
     private boolean active;
+
+    @Column(name = "last_login_at")
+    private Instant lastLoginAt;
 }
