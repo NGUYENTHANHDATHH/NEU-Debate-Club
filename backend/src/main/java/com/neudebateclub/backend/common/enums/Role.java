@@ -1,9 +1,8 @@
 package com.neudebateclub.backend.common.enums;
 
 public enum Role {
-    ADMIN,
+    BCN,
     MEMBER,
-    LEADER,
-    MODERATOR,
+    TRUONG_BAN,
     GUEST
 }
