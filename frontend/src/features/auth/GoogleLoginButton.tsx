@@ -13,7 +13,7 @@ declare global {
 }
 
 const GoogleLoginButton: React.FC = () => {
-  const { setUser } = useUserContext();
+  const { completeGoogleLogin } = useUserContext();
   const ref = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
@@ -34,32 +34,13 @@ const GoogleLoginButton: React.FC = () => {
 
         window.google.accounts.id.initialize({
           client_id: clientId,
-          callback: (response: any) => {
+          callback: async (response: any) => {
             const credential = response?.credential;
             if (!credential) return;
             try {
-              const base64Url = credential.split(".")[1];
-              const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-              const jsonPayload = decodeURIComponent(
-                atob(base64)
-                  .split("")
-                  .map(function (c) {
-                    return (
-                      "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2)
-                    );
-                  })
-                  .join(""),
-              );
-              const payload = JSON.parse(jsonPayload);
-
-              setUser({
-                id: payload.sub,
-                name: payload.name,
-                email: payload.email,
-                avatarUrl: payload.picture,
-              });
+              await completeGoogleLogin(credential);
             } catch (err) {
-              console.error("Failed to parse Google credential:", err);
+              console.error("Failed to complete Google login:", err);
             }
           },
         });
@@ -76,30 +57,13 @@ const GoogleLoginButton: React.FC = () => {
     } else if (window.google && ref.current) {
       window.google.accounts.id.initialize({
         client_id: clientId,
-        callback: (response: any) => {
+        callback: async (response: any) => {
           const credential = response?.credential;
           if (!credential) return;
           try {
-            const base64Url = credential.split(".")[1];
-            const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-            const jsonPayload = decodeURIComponent(
-              atob(base64)
-                .split("")
-                .map(function (c) {
-                  return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
-                })
-                .join(""),
-            );
-            const payload = JSON.parse(jsonPayload);
-
-            setUser({
-              id: payload.sub,
-              name: payload.name,
-              email: payload.email,
-              avatarUrl: payload.picture,
-            });
+            await completeGoogleLogin(credential);
           } catch (err) {
-            console.error("Failed to parse Google credential:", err);
+            console.error("Failed to complete Google login:", err);
           }
         },
       });
@@ -112,7 +76,7 @@ const GoogleLoginButton: React.FC = () => {
     }
 
     return () => {};
-  }, [setUser]);
+  }, [completeGoogleLogin]);
 
   return <div ref={ref} />;
 };

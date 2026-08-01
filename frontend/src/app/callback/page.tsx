@@ -8,11 +8,11 @@ import { useUserContext } from "@/context/userContext";
 
 export default function CallbackPage() {
   const router = useRouter();
-  const { setUser, loginWithGoogle } = useUserContext();
+  const { completeGoogleLogin, loginWithGoogle } = useUserContext();
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    const handleCallback = () => {
+    const handleCallback = async () => {
       try {
         const hash = window.location.hash;
         if (!hash) {
@@ -24,7 +24,6 @@ export default function CallbackPage() {
         // Parse hash params
         const params = new URLSearchParams(hash.substring(1));
         const idToken = params.get("id_token");
-        const accessToken = params.get("access_token");
 
         if (!idToken) {
           // Check if error exists in URL search params (e.g. access_denied)
@@ -39,39 +38,11 @@ export default function CallbackPage() {
           return;
         }
 
-        // Decode JWT ID Token
-        const base64Url = idToken.split(".")[1];
-        if (!base64Url) {
-          throw new Error("Mã thông báo ID không đúng định dạng JWT");
-        }
-
-        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-        const jsonPayload = decodeURIComponent(
-          atob(base64)
-            .split("")
-            .map(function (c) {
-              return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
-            })
-            .join(""),
-        );
-        const payload = JSON.parse(jsonPayload);
-
-        if (!payload.email) {
-          throw new Error("Email không tồn tại trong thông tin Google cung cấp");
-        }
-
-        // Set user context
-        setUser({
-          id: payload.sub,
-          name: payload.name || "Thành viên NDC",
-          email: payload.email,
-          avatarUrl: payload.picture,
-          role: "member", // Default role
-        });
+        const profile = await completeGoogleLogin(idToken);
 
         toast.success("Đăng nhập bằng Google thành công!");
 
-        const email = payload.email.toLowerCase();
+        const email = profile.email.toLowerCase();
         const isValidNDCEmail = email.endsWith(".ndc.neu@gmail.com");
 
         if (isValidNDCEmail) {
@@ -85,16 +56,18 @@ export default function CallbackPage() {
             router.push("/");
           }, 1200);
         }
-
       } catch (err: any) {
         console.error("Callback authentication error:", err);
-        setErrorMsg(err.message || "Đã xảy ra lỗi không xác định trong quá trình xác thực.");
+        setErrorMsg(
+          err.message ||
+            "Đã xảy ra lỗi không xác định trong quá trình xác thực.",
+        );
         toast.error("Lỗi xử lý phản hồi đăng nhập");
       }
     };
 
     handleCallback();
-  }, [router, setUser]);
+  }, [completeGoogleLogin, router]);
 
   return (
     <div className="min-h-screen w-full bg-slate-950 text-white flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans">
@@ -149,9 +122,15 @@ export default function CallbackPage() {
 
       <style jsx global>{`
         @keyframes loading-bar {
-          0% { width: 0%; }
-          50% { width: 70%; }
-          100% { width: 100%; }
+          0% {
+            width: 0%;
+          }
+          50% {
+            width: 70%;
+          }
+          100% {
+            width: 100%;
+          }
         }
         .animate-loading-bar {
           animation: loading-bar 1.5s ease-in-out infinite;
