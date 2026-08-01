@@ -53,7 +53,6 @@ interface IUserContext {
   setUser: React.Dispatch<React.SetStateAction<IUserProfile | null>>;
   login: (email: string, password: string) => Promise<void>;
   completeGoogleLogin: (idToken: string) => Promise<IUserProfile>;
-  loginWithGoogle: () => void;
   logout: () => void;
 }
 interface IUserProviderProps {
@@ -95,7 +94,7 @@ export const UserProvider: React.FC<IUserProviderProps> = ({ children }) => {
     }
   }
 
-  async function login(email: string, password: string) {
+  async function login(_email: string, _password: string) {
     toast.error(
       "Đăng nhập bằng mật khẩu đã bị vô hiệu hóa. Vui lòng sử dụng Google Auth.",
     );
@@ -117,26 +116,6 @@ export const UserProvider: React.FC<IUserProviderProps> = ({ children }) => {
     setToken(response.token);
     setIsAuthenticated(true);
     return profile;
-  }
-
-  function loginWithGoogle() {
-    if (typeof window === "undefined") return;
-    const clientId =
-      "1003932552081-k2kefin57d8o0b7affc829d8isch6kte.apps.googleusercontent.com";
-    const redirectUri = window.location.origin + "/callback";
-    const scope = "openid profile email";
-    const responseType = "id_token token";
-    const nonce = Math.random().toString(36).substring(2);
-
-    const oauth2Url =
-      `https://accounts.google.com/o/oauth2/v2/auth?` +
-      `client_id=${encodeURIComponent(clientId)}&` +
-      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-      `response_type=${encodeURIComponent(responseType)}&` +
-      `scope=${encodeURIComponent(scope)}&` +
-      `nonce=${encodeURIComponent(nonce)}`;
-
-    window.location.href = oauth2Url;
   }
 
   function logout() {
@@ -189,7 +168,6 @@ export const UserProvider: React.FC<IUserProviderProps> = ({ children }) => {
         isAuthenticated,
         setUser,
         login,
-        loginWithGoogle,
         completeGoogleLogin,
         logout,
       }}
