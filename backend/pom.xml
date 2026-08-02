@@ -67,6 +67,19 @@
     <scope>runtime</scope>
   </dependency>
 
+  <!-- Local embedded database -->
+  <dependency>
+    <groupId>com.h2database</groupId>
+    <artifactId>h2</artifactId>
+    <scope>runtime</scope>
+  </dependency>
+  
+  <dependency>
+    <groupId>org.springdoc</groupId>
+    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+    <version>2.5.0</version>
+</dependency>
+
   <!-- Flyway -->
   <dependency>
     <groupId>org.flywaydb</groupId>
@@ -108,13 +121,6 @@
     <artifactId>jjwt-jackson</artifactId>
     <version>0.12.3</version>
     <scope>runtime</scope>
-  </dependency>
-
-  <!-- Hibernate Types (PostgreSQL ENUM support) -->
-  <dependency>
-    <groupId>com.vladmihalcea</groupId>
-    <artifactId>hibernate-types-60</artifactId>
-    <version>2.21.1</version>
   </dependency>
 
   <!-- Swagger / OpenAPI -->

@@ -53,7 +53,12 @@ public class AuthService {
         String avatarUrl = (String) payload.get("picture");
 
         // 2. Xác định role dựa vào email domain
-        Role role = email.contains(allowedDomain) ? Role.MEMBER : Role.GUEST;
+        if (email == null || !Boolean.TRUE.equals(payload.getEmailVerified())) {
+            throw new UnauthorizedException("Google account email is not verified");
+        }
+
+        Role role = email.toLowerCase().endsWith(allowedDomain.toLowerCase())
+            ? Role.MEMBER : Role.GUEST;
 
         // 3. Upsert user
         User user = userRepository.findByGoogleId(googleId)

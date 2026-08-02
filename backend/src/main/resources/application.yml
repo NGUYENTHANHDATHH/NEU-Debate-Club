@@ -1,6 +1,10 @@
 spring:
   application:
     name: neudebateclub-backend
+  profiles:
+    default: local
+  config:
+    import: optional:file:.env[.properties]
 
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/neudebateclub}
@@ -36,7 +40,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,mappings
   endpoint:
     health:
       show-details: when-authorized

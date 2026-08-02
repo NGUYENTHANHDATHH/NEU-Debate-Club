@@ -1,8 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import React from "react";
 import { toast } from "sonner";
+import { exchangeGoogleIdToken } from "@/lib/api";
 
 interface IUserProfile {
   id: string;
@@ -12,34 +13,46 @@ interface IUserProfile {
   role?: string;
 }
 
+interface IAuthSession {
+  user: IUserProfile;
+  token: string;
+}
+
 const authService = {
-  getCurrentUser(): IUserProfile | null {
+  getCurrentSession(): IAuthSession | null {
     if (typeof window === "undefined") return null;
     const data = localStorage.getItem("ndc_user");
-    if (!data) return null;
+    const token = localStorage.getItem("ndc_token");
+    if (!data || !token) return null;
     try {
-      return JSON.parse(data);
+      return {
+        user: JSON.parse(data),
+        token,
+      };
     } catch {
       return null;
     }
   },
-  saveCurrentUser(user: IUserProfile): void {
+  saveSession(user: IUserProfile, token: string): void {
     if (typeof window === "undefined") return;
     localStorage.setItem("ndc_user", JSON.stringify(user));
+    localStorage.setItem("ndc_token", token);
   },
   clearAuthData(): void {
     if (typeof window === "undefined") return;
     localStorage.removeItem("ndc_user");
+    localStorage.removeItem("ndc_token");
   },
 };
 
 interface IUserContext {
   user: IUserProfile | null;
+  token: string | null;
   loading: boolean;
   isAuthenticated: boolean;
   setUser: React.Dispatch<React.SetStateAction<IUserProfile | null>>;
   login: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: () => void;
+  completeGoogleLogin: (idToken: string) => Promise<IUserProfile>;
   logout: () => void;
 }
 interface IUserProviderProps {
@@ -50,23 +63,23 @@ const UserContext = React.createContext<IUserContext | undefined>(undefined);
 
 export const UserProvider: React.FC<IUserProviderProps> = ({ children }) => {
   const router = useRouter();
-  const pathname =
-    typeof window !== "undefined" ? window.location.pathname : "";
+  const pathname = usePathname();
   const [user, setUser] = React.useState<IUserProfile | null>(null);
+  const [token, setToken] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState<boolean>(true);
   const [isAuthenticated, setIsAuthenticated] = React.useState<boolean>(false);
-
-  const isCallbackRoute = pathname === "/callback";
 
   async function fetchUser() {
     try {
       setLoading(true);
-      const response = authService.getCurrentUser();
+      const response = authService.getCurrentSession();
       if (response) {
-        setUser(response);
+        setUser(response.user);
+        setToken(response.token);
         setIsAuthenticated(true);
       } else {
         setUser(null);
+        setToken(null);
         setIsAuthenticated(false);
       }
     } catch (error) {
@@ -78,56 +91,53 @@ export const UserProvider: React.FC<IUserProviderProps> = ({ children }) => {
     }
   }
 
-  async function login(email: string, password: string) {
-    toast.error("Đăng nhập bằng mật khẩu đã bị vô hiệu hóa. Vui lòng sử dụng Google Auth.");
+  async function login(_email: string, _password: string) {
+    toast.error(
+      "Đăng nhập bằng mật khẩu đã bị vô hiệu hóa. Vui lòng sử dụng Google Auth.",
+    );
   }
 
-  function loginWithGoogle() {
-    if (typeof window === "undefined") return;
-    const clientId = "1003932552081-k2kefin57d8o0b7affc829d8isch6kte.apps.googleusercontent.com";
-    const redirectUri = window.location.origin + "/callback";
-    const scope = "openid profile email";
-    const responseType = "id_token token";
-    const nonce = Math.random().toString(36).substring(2);
+  async function completeGoogleLogin(idToken: string) {
+    const response = await exchangeGoogleIdToken(idToken);
+    const backendUser = response.user;
+    const profile: IUserProfile = {
+      id: backendUser.id,
+      name: backendUser.fullName,
+      email: backendUser.email,
+      avatarUrl: backendUser.avatarUrl ?? undefined,
+      role: backendUser.role ?? undefined,
+    };
 
-    const oauth2Url = `https://accounts.google.com/o/oauth2/v2/auth?` +
-      `client_id=${encodeURIComponent(clientId)}&` +
-      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-      `response_type=${encodeURIComponent(responseType)}&` +
-      `scope=${encodeURIComponent(scope)}&` +
-      `nonce=${encodeURIComponent(nonce)}`;
-
-    window.location.href = oauth2Url;
+    authService.saveSession(profile, response.token);
+    setUser(profile);
+    setToken(response.token);
+    setIsAuthenticated(true);
+    return profile;
   }
 
   function logout() {
     authService.clearAuthData();
     setUser(null);
+    setToken(null);
     setIsAuthenticated(false);
     router.push("/");
   }
 
-  // Reactively sync user changes to localStorage and update authentication status
   React.useEffect(() => {
-    if (user) {
-      authService.saveCurrentUser(user);
+    if (user && token) {
+      authService.saveSession(user, token);
       setIsAuthenticated(true);
     } else {
       if (!loading) {
-        authService.clearAuthData();
         setIsAuthenticated(false);
       }
     }
-  }, [user, loading]);
+  }, [user, token, loading]);
 
-  // Fetch user on mount if not on the callback route
+  // Fetch user on mount
   React.useEffect(() => {
-    if (!isCallbackRoute) {
-      fetchUser();
-    } else {
-      setLoading(false);
-    }
-  }, [pathname, isCallbackRoute]);
+    fetchUser();
+  }, []);
 
   // Redirect to home "/" if trying to access any route under "/dashboard" and not authorized
   React.useEffect(() => {
@@ -146,11 +156,12 @@ export const UserProvider: React.FC<IUserProviderProps> = ({ children }) => {
     <UserContext.Provider
       value={{
         user,
+        token,
         loading,
         isAuthenticated,
         setUser,
         login,
-        loginWithGoogle,
+        completeGoogleLogin,
         logout,
       }}
     >
