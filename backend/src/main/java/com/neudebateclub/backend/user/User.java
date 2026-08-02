@@ -3,6 +3,7 @@ package com.neudebateclub.backend.user;
 import com.neudebateclub.backend.common.enums.Department;
 import com.neudebateclub.backend.common.enums.Role;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -44,7 +45,7 @@ public class User {
     @Column(name = "avatar_url")
     private String avatarUrl;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = com.neudebateclub.backend.common.converter.RoleConverter.class)
     @Column(nullable = false)
     private Role role;
 

@@ -8,14 +8,12 @@ import { useTheme } from "@/provider/ThemeProvider";
 import { useLanguage } from "@/provider/LanguageProvider";
 import LanguageDropdown from "../ui/HomeLayout/LanguageDropdown";
 import { useUserContext } from "@/context/userContext";
-import { useRouter } from "next/navigation";
 import GoogleLoginButton from "@/features/auth/GoogleLoginButton";
 
 export const Header = () => {
   const { theme, setTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
   const { user, logout } = useUserContext();
-  const router = useRouter();
   return (
     <header className="fixed top-0 left-0 w-full z-50 border-b border-gray-200 dark:border-[#222] bg-white/80 dark:bg-black/80 backdrop-blur-md transition-colors duration-500">
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
@@ -115,7 +113,7 @@ export const Header = () => {
               </div>
             </div>
           ) : (
-            <GoogleLoginButton onSuccess={() => router.refresh()} />
+            <GoogleLoginButton />
           )}
         </div>
       </div>

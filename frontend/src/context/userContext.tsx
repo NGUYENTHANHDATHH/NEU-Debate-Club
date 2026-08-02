@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import React from "react";
 import { toast } from "sonner";
 import { exchangeGoogleIdToken } from "@/lib/api";
@@ -63,14 +63,11 @@ const UserContext = React.createContext<IUserContext | undefined>(undefined);
 
 export const UserProvider: React.FC<IUserProviderProps> = ({ children }) => {
   const router = useRouter();
-  const pathname =
-    typeof window !== "undefined" ? window.location.pathname : "";
+  const pathname = usePathname();
   const [user, setUser] = React.useState<IUserProfile | null>(null);
   const [token, setToken] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState<boolean>(true);
   const [isAuthenticated, setIsAuthenticated] = React.useState<boolean>(false);
-
-  const isCallbackRoute = pathname === "/callback";
 
   async function fetchUser() {
     try {
@@ -137,14 +134,10 @@ export const UserProvider: React.FC<IUserProviderProps> = ({ children }) => {
     }
   }, [user, token, loading]);
 
-  // Fetch user on mount if not on the callback route
+  // Fetch user on mount
   React.useEffect(() => {
-    if (!isCallbackRoute) {
-      fetchUser();
-    } else {
-      setLoading(false);
-    }
-  }, [pathname, isCallbackRoute]);
+    fetchUser();
+  }, []);
 
   // Redirect to home "/" if trying to access any route under "/dashboard" and not authorized
   React.useEffect(() => {
