@@ -16,5 +16,5 @@ spring:
 
 logging:
   level:
-    com.clubhub: DEBUG
+    com.neudebateclub: DEBUG
     org.springframework.security: DEBUG

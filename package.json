@@ -1,5 +1,5 @@
 {
-  "name": "clubhub",
+  "name": "neudebateclub",
   "private": true,
   "scripts": {
     "dev:fe": "pnpm --filter frontend dev",
