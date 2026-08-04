@@ -1,7 +1,9 @@
 package com.neudebateclub.backend.auth;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 import com.neudebateclub.backend.auth.dto.AuthResponse;
@@ -28,8 +30,34 @@ public class AuthService {
     @Value("${app.google.client-id}")
     private String googleClientId;
 
+    @Value("${app.google.client-secret:}")
+    private String googleClientSecret;
+
     @Value("${app.allowed-domain}")
     private String allowedDomain;
+
+    public AuthResponse processGoogleCallback(String code, String redirectUri) {
+        try {
+            GoogleTokenResponse tokenResponse = new GoogleAuthorizationCodeTokenRequest(
+                new NetHttpTransport(),
+                new GsonFactory(),
+                "https://oauth2.googleapis.com/token",
+                googleClientId,
+                googleClientSecret,
+                code,
+                redirectUri
+            ).execute();
+
+            String idToken = tokenResponse.getIdToken();
+            if (idToken == null) {
+                throw new UnauthorizedException("No ID token returned from Google token exchange");
+            }
+            return loginWithGoogle(idToken);
+        } catch (Exception e) {
+            log.error("Failed to exchange Google code for token: ", e);
+            throw new UnauthorizedException("Google code exchange failed: " + e.getMessage());
+        }
+    }
 
     public AuthResponse loginWithGoogle(String idToken) {
         // 1. Verify Google ID Token

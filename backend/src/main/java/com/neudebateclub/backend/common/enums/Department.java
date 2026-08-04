@@ -1,13 +1,9 @@
 package com.neudebateclub.backend.common.enums;
 
 public enum Department {
-    ADMINISTRATION,
-    EVENTS,
-    FINANCE,
-    MEDIA,
-    OUTREACH,
-    OPERATIONS,
-    PARTNERSHIPS,
-    TECHNOLOGY,
-    OTHER
+    BCN,
+    TRUYEN_THONG,
+    DOI_NGOAI,
+    NOI_DUNG,
+    SU_KIEN
 }

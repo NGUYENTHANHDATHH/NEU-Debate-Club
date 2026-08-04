@@ -52,6 +52,7 @@ app:
 
   google:
     client-id: ${GOOGLE_CLIENT_ID}
+    client-secret: ${GOOGLE_CLIENT_SECRET:}
 
   allowed-domain: ${ALLOWED_DOMAIN:.ndc.neu@gmail.com}
 

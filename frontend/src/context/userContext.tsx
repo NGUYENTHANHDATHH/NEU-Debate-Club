@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import React from "react";
 import { toast } from "sonner";
-import { exchangeGoogleIdToken } from "@/lib/api";
+import { API_BASE_URL, exchangeGoogleIdToken } from "@/lib/api";
 
 interface IUserProfile {
   id: string;
@@ -72,6 +72,48 @@ export const UserProvider: React.FC<IUserProviderProps> = ({ children }) => {
   async function fetchUser() {
     try {
       setLoading(true);
+      if (typeof window !== "undefined") {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tokenParam = urlParams.get("token");
+        const loginSuccess = urlParams.get("loginSuccess");
+        const googleError = urlParams.get("googleError");
+
+        if (googleError) {
+          toast.error(`Đăng nhập Google thất bại: ${googleError}`);
+        } else if (tokenParam && loginSuccess === "true") {
+          localStorage.setItem("ndc_token", tokenParam);
+          const res = await fetch(`${API_BASE_URL}/auth/me`, {
+            headers: { Authorization: `Bearer ${tokenParam}` },
+          });
+          if (res.ok) {
+            const body = await res.json();
+            const u = body.data ?? body;
+            const profile: IUserProfile = {
+              id: u.id,
+              name: u.fullName,
+              email: u.email,
+              avatarUrl: u.avatarUrl ?? undefined,
+              role: u.role ?? undefined,
+            };
+            authService.saveSession(profile, tokenParam);
+            setUser(profile);
+            setToken(tokenParam);
+            setIsAuthenticated(true);
+            toast.success("Đăng nhập Google thành công.");
+          }
+        }
+
+        if (tokenParam || googleError || loginSuccess) {
+          urlParams.delete("token");
+          urlParams.delete("loginSuccess");
+          urlParams.delete("googleError");
+          const newSearch = urlParams.toString();
+          const cleanUrl =
+            window.location.pathname + (newSearch ? `?${newSearch}` : "") + window.location.hash;
+          window.history.replaceState(null, "", cleanUrl);
+        }
+      }
+
       const response = authService.getCurrentSession();
       if (response) {
         setUser(response.user);
