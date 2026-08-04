@@ -26,7 +26,7 @@ export const Header = () => {
             priority
             className="w-10 h-10 object-contain dark:drop-shadow-[0_0_8px_rgba(138,21,27,0.5)] group-hover:scale-110 transition-transform duration-300"
           />
-          <span className="font-bold font-montserrat text-xl tracking-widest text-black dark:text-white">
+          <span className="font-bold font-montserrat text-xl tracking-widest text-black dark:text-white hidden min-[450px]:block">
             NEU DEBATE CLUB
           </span>
         </Link>

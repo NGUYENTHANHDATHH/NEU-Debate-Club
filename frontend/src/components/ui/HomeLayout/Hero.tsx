@@ -70,22 +70,6 @@ export const Hero = () => {
             {t("history")}
           </p>
         </motion.div>
-
-        <motion.button
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 3 }}
-          className="group relative flex items-center justify-center gap-3 bg-[#8A151B] hover:bg-black dark:hover:bg-white text-white dark:hover:text-black font-semibold text-lg py-4 px-10 rounded-full transition-all duration-300 shadow-[0_0_20px_rgba(138,21,27,0.4)] hover:shadow-[0_0_30px_rgba(0,0,0,0.3)] dark:hover:shadow-[0_0_30px_rgba(255,255,255,0.6)]"
-          style={{ fontFamily: "'Montserrat', sans-serif" }}
-          onClick={() => {
-            document
-              .getElementById("join-form")
-              ?.scrollIntoView({ behavior: "smooth" });
-          }}
-        >
-          <span>Liên hệ với chúng tôi</span>
-          <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-        </motion.button>
       </div>
 
       {/* Decorative vertical lines */}

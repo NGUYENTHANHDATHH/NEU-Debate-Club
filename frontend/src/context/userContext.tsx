@@ -68,42 +68,48 @@ export const UserProvider: React.FC<IUserProviderProps> = ({ children }) => {
   const [token, setToken] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState<boolean>(true);
   const [isAuthenticated, setIsAuthenticated] = React.useState<boolean>(false);
+  const hasProcessedAuthRef = React.useRef<boolean>(false);
 
   async function fetchUser() {
     try {
       setLoading(true);
-      if (typeof window !== "undefined") {
+      if (typeof window !== "undefined" && !hasProcessedAuthRef.current) {
         const urlParams = new URLSearchParams(window.location.search);
         const tokenParam = urlParams.get("token");
         const loginSuccess = urlParams.get("loginSuccess");
         const googleError = urlParams.get("googleError");
 
-        if (googleError) {
-          toast.error(`Đăng nhập Google thất bại: ${googleError}`);
-        } else if (tokenParam && loginSuccess === "true") {
-          localStorage.setItem("ndc_token", tokenParam);
-          const res = await fetch(`${API_BASE_URL}/auth/me`, {
-            headers: { Authorization: `Bearer ${tokenParam}` },
-          });
-          if (res.ok) {
-            const body = await res.json();
-            const u = body.data ?? body;
-            const profile: IUserProfile = {
-              id: u.id,
-              name: u.fullName,
-              email: u.email,
-              avatarUrl: u.avatarUrl ?? undefined,
-              role: u.role ?? undefined,
-            };
-            authService.saveSession(profile, tokenParam);
-            setUser(profile);
-            setToken(tokenParam);
-            setIsAuthenticated(true);
-            toast.success("Đăng nhập Google thành công.");
-          }
-        }
-
         if (tokenParam || googleError || loginSuccess) {
+          hasProcessedAuthRef.current = true;
+          if (googleError) {
+            toast.error(`Đăng nhập Google thất bại: ${googleError}`, {
+              id: "google-login-toast",
+            });
+          } else if (tokenParam && loginSuccess === "true") {
+            localStorage.setItem("ndc_token", tokenParam);
+            const res = await fetch(`${API_BASE_URL}/auth/me`, {
+              headers: { Authorization: `Bearer ${tokenParam}` },
+            });
+            if (res.ok) {
+              const body = await res.json();
+              const u = body.data ?? body;
+              const profile: IUserProfile = {
+                id: u.id,
+                name: u.fullName,
+                email: u.email,
+                avatarUrl: u.avatarUrl ?? undefined,
+                role: u.role ?? undefined,
+              };
+              authService.saveSession(profile, tokenParam);
+              setUser(profile);
+              setToken(tokenParam);
+              setIsAuthenticated(true);
+              toast.success("Đăng nhập Google thành công.", {
+                id: "google-login-toast",
+              });
+            }
+          }
+
           urlParams.delete("token");
           urlParams.delete("loginSuccess");
           urlParams.delete("googleError");
