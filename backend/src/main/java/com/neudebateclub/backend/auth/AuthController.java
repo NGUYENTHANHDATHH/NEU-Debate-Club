@@ -34,12 +34,28 @@ public class AuthController {
     @Value("${app.cors.allowed-origins:http://localhost:3000}")
     private String allowedOrigins;
 
-    private String getFrontendBaseUrl() {
-        if (allowedOrigins != null && !allowedOrigins.isBlank()) {
-            return allowedOrigins.split(",")[0].trim();
-        }
-        return "http://localhost:3000";
+    private String getFrontendBaseUrl(HttpServletRequest request) {
+    String origin = request.getHeader("Origin");
+    String referer = request.getHeader("Referer");
+
+    // Ưu tiên dùng Origin hoặc Referer gửi từ Client nếu nằm trong danh sách CORS cho phép
+    if (origin != null && !origin.isBlank()) {
+        return origin;
     }
+    if (referer != null && !referer.isBlank()) {
+        // Cắt bớt path chỉ lấy scheme://host:port
+        try {
+            java.net.URI uri = new java.net.URI(referer);
+            return uri.getScheme() + "://" + uri.getAuthority();
+        } catch (Exception ignored) {}
+    }
+
+    // Fallback về cấu hình mặc định
+    if (allowedOrigins != null && !allowedOrigins.isBlank()) {
+        return allowedOrigins.split(",")[0].trim();
+    }
+    return "http://localhost:3000";
+}
 
     private String getCallbackUrl(HttpServletRequest request) {
         String scheme = request.getScheme();
