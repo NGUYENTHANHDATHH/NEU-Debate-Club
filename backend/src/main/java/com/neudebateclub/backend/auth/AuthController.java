@@ -35,27 +35,33 @@ public class AuthController {
     private String allowedOrigins;
 
     private String getFrontendBaseUrl(HttpServletRequest request) {
-    String origin = request.getHeader("Origin");
-    String referer = request.getHeader("Referer");
+        String origin = request.getHeader("Origin");
+        String referer = request.getHeader("Referer");
 
-    // Ưu tiên dùng Origin hoặc Referer gửi từ Client nếu nằm trong danh sách CORS cho phép
-    if (origin != null && !origin.isBlank()) {
-        return origin;
-    }
-    if (referer != null && !referer.isBlank()) {
-        // Cắt bớt path chỉ lấy scheme://host:port
-        try {
-            java.net.URI uri = new java.net.URI(referer);
-            return uri.getScheme() + "://" + uri.getAuthority();
-        } catch (Exception ignored) {}
-    }
+        java.util.List<String> allowedList = java.util.Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(o -> !o.isEmpty())
+                .toList();
 
-    // Fallback về cấu hình mặc định
-    if (allowedOrigins != null && !allowedOrigins.isBlank()) {
-        return allowedOrigins.split(",")[0].trim();
+        if (origin != null && !origin.isBlank() && allowedList.contains(origin)) {
+            return origin;
+        }
+        if (referer != null && !referer.isBlank()) {
+            try {
+                java.net.URI uri = new java.net.URI(referer);
+                String refererOrigin = uri.getScheme() + "://" + uri.getAuthority();
+                if (allowedList.contains(refererOrigin)) {
+                    return refererOrigin;
+                }
+            } catch (Exception ignored) {}
+        }
+
+        // Fallback về cấu hình mặc định
+        if (!allowedList.isEmpty()) {
+            return allowedList.get(0);
+        }
+        return "http://localhost:3000";
     }
-    return "http://localhost:3000";
-}
 
     private String getCallbackUrl(HttpServletRequest request) {
         String scheme = request.getScheme();
@@ -99,7 +105,7 @@ public class AuthController {
             @RequestParam(value = "state", required = false, defaultValue = "/") String state,
             HttpServletRequest request) {
 
-        String frontendBase = getFrontendBaseUrl();
+        String frontendBase = getFrontendBaseUrl(request);
         String targetReturnUrl = (state != null && !state.isBlank()) ? state : "/";
 
         if (error != null || code == null || code.isBlank()) {
