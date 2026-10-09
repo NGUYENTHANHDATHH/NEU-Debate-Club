@@ -1,12 +1,22 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import VisionBg from "@/../public/vision-bg.jpg";
 import Image from "next/image";
 import { useLanguage } from "@/provider/LanguageProvider";
+import { fetchLandingSection } from "@/lib/api";
+
+type VisionContent = { title1: string; title2: string; description: string };
 
 export const Vision = () => {
   const bgImageUrl = VisionBg.src; // Assuming VisionBg is imported as a static asset
   const { t } = useLanguage();
+  const [content, setContent] = useState<VisionContent | null>(null);
+
+  useEffect(() => {
+    fetchLandingSection<VisionContent>("vision")
+      .then(setContent)
+      .catch(console.error);
+  }, []);
   return (
     <section className="relative py-32 bg-gray-50 dark:bg-[#050505] text-black dark:text-white overflow-hidden flex flex-col items-center border-t border-b border-gray-200 dark:border-[#111] transition-colors duration-500">
       {/* Looping Background Images */}
@@ -53,8 +63,9 @@ export const Vision = () => {
             The Cogito
           </span>
           <h2 className="text-4xl md:text-5xl font-bold font-['Montserrat'] mb-10 leading-tight">
-            {t("vision.title.title1")}, <br className="hidden md:block" />{" "}
-            {t("vision.title.title2")}
+            {content?.title1 ?? t("vision.title.title1")},{" "}
+            <br className="hidden md:block" />{" "}
+            {content?.title2 ?? t("vision.title.title2")}
           </h2>
         </motion.div>
 
@@ -70,7 +81,7 @@ export const Vision = () => {
           <div className="absolute -bottom-4 -right-4 w-8 h-8 border-b-2 border-r-2 border-[#8A151B] opacity-30 dark:opacity-50 dark:shadow-[0_0_10px_#8A151B]" />
 
           <p className="text-gray-700 dark:text-gray-400 text-lg md:text-xl font-light font-['Inter'] leading-relaxed max-w-3xl mx-auto py-8 px-4 transition-colors duration-500">
-            {t("vision.desc")}
+            {content?.description ?? t("vision.desc")}
           </p>
         </motion.div>
       </div>

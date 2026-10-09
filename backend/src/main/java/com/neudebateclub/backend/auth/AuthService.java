@@ -90,7 +90,9 @@ public class AuthService {
 
         // 3. Upsert user
         User user = userRepository.findByGoogleId(googleId)
+            .or(() -> userRepository.findByEmail(email))
             .map(existing -> {
+                existing.setGoogleId(googleId);
                 existing.setLastLoginAt(Instant.now());
                 existing.setAvatarUrl(avatarUrl);
                 existing.setFullName(fullName);

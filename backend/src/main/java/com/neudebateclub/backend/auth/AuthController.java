@@ -128,8 +128,11 @@ public class AuthController {
 
             return new RedirectView(redirectUrl);
         } catch (Exception e) {
+            String errorMessage = e.getMessage() == null
+                ? "Google authentication failed"
+                : e.getMessage().replaceAll("[\\r\\n]+", " ").trim();
             String redirectUrl = UriComponentsBuilder.fromUriString(frontendBase + targetReturnUrl)
-                    .queryParam("googleError", e.getMessage())
+                .queryParam("googleError", errorMessage)
                     .build()
                     .toUriString();
             return new RedirectView(redirectUrl);

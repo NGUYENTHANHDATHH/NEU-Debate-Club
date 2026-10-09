@@ -10,3 +10,5 @@ CREATE TYPE outreach_result_enum AS ENUM ('cho_phan_hoi','dong_y','tu_choi');
 CREATE TYPE platform_enum AS ENUM ('facebook','instagram','youtube','tiktok','other');
 CREATE TYPE content_status_enum AS ENUM ('idea','writing','review','approved','published');
 CREATE TYPE landing_section_enum AS ENUM ('hero','vision','projects','achievements','departments','comments');
+CREATE TYPE landing_project_enum AS ENUM ('talkshow','workshop','debate_tournament','debate_camp','debate_training','other');
+CREATE TYPE landing_achievement_enum AS ENUM ('championship','award','event','other');

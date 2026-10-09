@@ -1,4 +1,4 @@
-import { CmsPage } from "@/components/dashboard/MockPages";
+import { CmsPage } from "@/components/dashboard/CmsPage";
 
 export default function Page() {
   return <CmsPage />;

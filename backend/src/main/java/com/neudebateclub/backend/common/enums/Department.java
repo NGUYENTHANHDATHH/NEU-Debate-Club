@@ -5,5 +5,7 @@ public enum Department {
     TRUYEN_THONG,
     DOI_NGOAI,
     NOI_DUNG,
-    SU_KIEN
+    SU_KIEN,
+    KY_THUAT,
+    NHAN_SU
 }

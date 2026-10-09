@@ -2,11 +2,9 @@ package com.neudebateclub.backend.user;
 
 import com.neudebateclub.backend.common.enums.Department;
 import com.neudebateclub.backend.common.enums.Role;
-import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -16,6 +14,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnTransformer;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -47,12 +46,15 @@ public class User {
 
     @Convert(converter = com.neudebateclub.backend.common.converter.RoleConverter.class)
     @Column(nullable = false)
+    @ColumnTransformer(write = "?::role_enum")
     private Role role;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = com.neudebateclub.backend.common.converter.DepartmentConverter.class)
+    @Column(columnDefinition = "department_enum")
+    @ColumnTransformer(write = "?::department_enum")
     private Department department;
 
-    @Column(nullable = false)
+    @Column(name = "is_active", nullable = false)
     private boolean active;
 
     @Column(name = "last_login_at")

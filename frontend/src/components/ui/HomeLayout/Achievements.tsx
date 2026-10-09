@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import {
   Trophy,
@@ -11,67 +11,41 @@ import {
 import { useLanguage } from "@/provider/LanguageProvider";
 import Link from "next/link";
 import Image from "next/image";
+import { API_BASE_URL } from "@/lib/api";
+
+const ICON_MAP: Record<string, React.ReactNode> = {
+  trophy: <Trophy className="w-8 h-8" />,
+  target: <Target className="w-8 h-8" />,
+  users: <Users className="w-8 h-8" />,
+  star: <Star className="w-8 h-8" />,
+};
+
+type Stat = { id: number; iconType: string; value: string; label: string };
+type Achievement = {
+  id: number;
+  title: string;
+  category: string;
+  date: string;
+  image: string;
+  desc: string;
+  delay: number;
+};
 
 export const Achievements = () => {
   const { t } = useLanguage();
-  const stats = [
-    {
-      id: 1,
-      icon: <Trophy className="w-8 h-8" />,
-      value: "50+",
-      label: t("achievements.reward"),
-    },
-    {
-      id: 2,
-      icon: <Target className="w-8 h-8" />,
-      value: "100+",
-      label: t("achievements.event"),
-    },
-    {
-      id: 3,
-      icon: <Users className="w-8 h-8" />,
-      value: "500+",
-      label: t("achievements.member"),
-    },
-    {
-      id: 4,
-      icon: <Star className="w-8 h-8" />,
-      value: "10+",
-      label: t("achievements.established"),
-    },
-  ];
-  const MOCK_ACHIEVEMENTS = [
-    {
-      id: 1,
-      title: "CLB Xuất Sắc Nhất NEU 2025",
-      category: "Giải Thưởng",
-      date: "Tháng 12, 2025",
-      image:
-        "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/ndo2025.jpg",
-      desc: "Đạt danh hiệu Top 1 câu lạc bộ sinh viên tiêu biểu có ảnh hưởng nhất khối Đại học Kinh tế Quốc dân nhờ các hoạt động sôi nổi và đóng góp tích cực cho cộng đồng sinh viên.",
-      delay: 0.1,
-    },
-    {
-      id: 2,
-      title: "Quán Quân VUDC 2024",
-      category: "Thành Tích Thi Đấu",
-      date: "Tháng 8, 2024",
-      image:
-        "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/ndo2025.jpg",
-      desc: "Đội tuyển Cogito xuất sắc vượt qua hơn 60 đội thi từ khắp cả nước để lên ngôi Vô địch Giải Tranh biện Sinh viên Toàn quốc (Vietnam Universities Debating Championship).",
-      delay: 0.3,
-    },
-    {
-      id: 3,
-      title: "Cột mốc 100.000 Followers",
-      category: "Truyền Thông",
-      date: "Tháng 3, 2025",
-      image:
-        "https://lzefoyqkqqppbsyzmmuw.supabase.co/storage/v1/object/public/projects/ndo2025.jpg",
-      desc: "Chính thức cán mốc 100.000 người theo dõi trên Fanpage, trở thành một trong những Fanpage học thuật và kỹ năng có sức ảnh hưởng lớn nhất trong giới sinh viên.",
-      delay: 0.5,
-    },
-  ];
+  const [stats, setStats] = useState<Stat[]>([]);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/public/landing/achievements`)
+      .then((r) => r.json())
+      .then((res) => {
+        const data = res.data ?? res;
+        setStats(data.stats ?? []);
+        setAchievements(data.items ?? []);
+      })
+      .catch(console.error);
+  }, []);
 
   return (
     <section
@@ -83,8 +57,6 @@ export const Achievements = () => {
       <div className="absolute bottom-0 left-0 w-125 h-125 bg-linear-to-tr from-amber-500/5 dark:from-amber-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
-        {/* STATS SECTION */}
-
         {/* HIGHLIGHTED ACHIEVEMENTS SECTION */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
           <motion.div
@@ -119,6 +91,8 @@ export const Achievements = () => {
             </Link>
           </motion.div>
         </div>
+
+        {/* STATS */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -137,7 +111,7 @@ export const Achievements = () => {
                 className="flex flex-col items-center justify-center p-8 rounded-2xl bg-gray-50/50 dark:bg-[#0A0A0A]/50 border border-gray-100 dark:border-[#222] backdrop-blur-sm transition-colors group relative overflow-hidden"
               >
                 <div className="text-[#8A151B] mb-4 group-hover:scale-110 group-hover:-translate-y-1 transition-all duration-300">
-                  {stat.icon}
+                  {ICON_MAP[stat.iconType] ?? <Star className="w-8 h-8" />}
                 </div>
                 <div className="text-4xl md:text-5xl font-bold font-['Montserrat'] text-black dark:text-white mb-2">
                   {stat.value}
@@ -149,8 +123,10 @@ export const Achievements = () => {
             ))}
           </div>
         </motion.div>
+
+        {/* ACHIEVEMENT CARDS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {MOCK_ACHIEVEMENTS.map((achievement, idx) => (
+          {achievements.map((achievement, idx) => (
             <motion.div
               key={idx}
               initial={{ opacity: 0, y: 50 }}

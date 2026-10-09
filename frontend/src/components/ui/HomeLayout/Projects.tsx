@@ -1,13 +1,30 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { MOCK_PROJECTS } from "@/constants/projects";
 import { routePath } from "@/constants/routes";
 import { useLanguage } from "@/provider/LanguageProvider";
+import { API_BASE_URL } from "@/lib/api";
+
+type Project = {
+  id: number;
+  title: string;
+  category: string;
+  image: string;
+  desc: string;
+  delay: number;
+};
 
 export const Projects = () => {
   const { t } = useLanguage();
+  const [projects, setProjects] = useState<Project[]>([]);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/public/landing/projects`)
+      .then((r) => r.json())
+      .then((res) => setProjects((res.data ?? res).items ?? []))
+      .catch(console.error);
+  }, []);
 
   return (
     <section className="py-32 bg-gray-50 dark:bg-[#050505] text-black dark:text-white px-6 border-t border-gray-200 dark:border-[#111] transition-colors duration-500">
@@ -43,7 +60,7 @@ export const Projects = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-          {MOCK_PROJECTS.map((project, idx) => (
+          {projects.map((project, idx) => (
             <motion.div
               key={idx}
               initial={{ opacity: 0, y: 50 }}

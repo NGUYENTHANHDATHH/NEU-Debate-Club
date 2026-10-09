@@ -1,13 +1,21 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { ArrowRight } from "lucide-react";
 import clubLogo from "@/../public/logo.png";
 import Image from "next/image";
 import { useLanguage } from "@/provider/LanguageProvider";
+import { fetchLandingSection } from "@/lib/api";
+
+type HeroContent = { headline: string; subtext: string };
 
 export const Hero = () => {
   const { t } = useLanguage();
-  const slogan = "Cogito, ergo sum";
+  const [content, setContent] = useState<HeroContent | null>(null);
+
+  useEffect(() => {
+    fetchLandingSection<HeroContent>("hero")
+      .then(setContent)
+      .catch(console.error);
+  }, []);
 
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center bg-white dark:bg-black overflow-hidden font-sans transition-colors duration-500 pt-20">
@@ -45,7 +53,7 @@ export const Hero = () => {
             className="text-4xl md:text-6xl lg:text-7xl font-bold text-black dark:text-white mb-6 tracking-tight transition-colors duration-500"
             style={{ fontFamily: "'Montserrat', sans-serif" }}
           >
-            {slogan.split("").map((char, index) => (
+            {(content?.headline ?? "").split("").map((char, index) => (
               <motion.span
                 key={index}
                 initial={{ opacity: 0 }}
@@ -67,7 +75,7 @@ export const Hero = () => {
             className="text-gray-600 dark:text-gray-400 text-lg md:text-xl max-w-2xl mx-auto mb-12 font-light transition-colors duration-500"
             style={{ fontFamily: "'Inter', sans-serif" }}
           >
-            {t("history")}
+            {content?.subtext ?? t("history")}
           </p>
         </motion.div>
       </div>

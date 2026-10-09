@@ -19,6 +19,7 @@ public class RoleGuard {
     public void requireBCN(UserPrincipal user)                { requireRole(user, Role.BCN); }
     public void requireTruongBanOrAbove(UserPrincipal user)   { requireRole(user, Role.TRUONG_BAN); }
     public void requireMemberOrAbove(UserPrincipal user)      { requireRole(user, Role.MEMBER); }
+    public void requireCmsEditor(UserPrincipal user)          { requireTruongBanOrAbove(user); }
 
     public void requireSameDepartmentOrBCN(UserPrincipal user, Department department) {
         if (!user.isInDepartment(department)) {

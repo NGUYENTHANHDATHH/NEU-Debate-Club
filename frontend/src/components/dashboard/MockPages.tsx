@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { ActionButton } from "@/components/ui/Dashboard/ActionButton";
+import { PageFrame } from "@/components/ui/Dashboard/PageFrame";
+import { Section } from "@/components/ui/Dashboard/Section";
 import {
   ArrowRight,
   BarChart3,
@@ -77,16 +80,6 @@ type TaskCardData = {
   overdue?: boolean;
 };
 
-type SectionProps = {
-  title: string;
-  subtitle?: string;
-  action?: ReactNode;
-  children: ReactNode;
-  className?: string;
-};
-
-type ButtonVariant = "primary" | "ghost" | "outline";
-
 const toneClasses: Record<NonNullable<Stat["tone"]>, string> = {
   rose: "bg-rose-50 text-rose-700 border-rose-100",
   emerald: "bg-emerald-50 text-emerald-700 border-emerald-100",
@@ -96,103 +89,6 @@ const toneClasses: Record<NonNullable<Stat["tone"]>, string> = {
 
 function toneBadge(tone: NonNullable<Stat["tone"]>) {
   return toneClasses[tone];
-}
-
-export function PageFrame({
-  eyebrow,
-  title,
-  description,
-  children,
-  action,
-  aside,
-}: {
-  eyebrow?: string;
-  title: string;
-  description?: string;
-  children: ReactNode;
-  action?: ReactNode;
-  aside?: ReactNode;
-}) {
-  return (
-    <div className="min-h-[100dvh] bg-[#F9FAFB] px-4 py-6 md:px-6 lg:px-8">
-      <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-6">
-        <div className="flex flex-col gap-4 rounded-[2rem] border border-slate-200/60 bg-white px-6 py-6 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl">
-            {eyebrow ? (
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.24em] text-[#71717A]">
-                {eyebrow}
-              </p>
-            ) : null}
-            <h1 className="text-3xl font-semibold tracking-tight text-[#18181B] md:text-4xl">
-              {title}
-            </h1>
-            {description ? (
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-[#71717A] md:text-base">
-                {description}
-              </p>
-            ) : null}
-          </div>
-          {action ? <div className="shrink-0">{action}</div> : null}
-        </div>
-
-        {aside ? <div>{aside}</div> : null}
-        <div className="grid gap-6">{children}</div>
-      </div>
-    </div>
-  );
-}
-
-export function Section({
-  title,
-  subtitle,
-  action,
-  children,
-  className,
-}: SectionProps) {
-  return (
-    <section
-      className={`rounded-[2rem] border border-slate-200/60 bg-white p-6 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] ${className ?? ""}`}
-    >
-      <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight text-[#18181B]">
-            {title}
-          </h2>
-          {subtitle ? (
-            <p className="mt-1 text-sm text-[#71717A]">{subtitle}</p>
-          ) : null}
-        </div>
-        {action ? <div className="shrink-0">{action}</div> : null}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-export function ActionButton({
-  children,
-  icon,
-  variant = "primary",
-}: {
-  children: ReactNode;
-  icon?: ReactNode;
-  variant?: ButtonVariant;
-}) {
-  const base =
-    "inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 active:translate-y-px";
-  const styles: Record<ButtonVariant, string> = {
-    primary:
-      "bg-[#E11D48] text-white shadow-[0_10px_30px_-12px_rgba(225,29,72,0.45)] hover:bg-[#be123c]",
-    ghost: "bg-transparent text-[#18181B] hover:bg-slate-100",
-    outline:
-      "border border-slate-200 bg-white text-[#18181B] hover:bg-slate-50",
-  };
-  return (
-    <button className={`${base} ${styles[variant]}`}>
-      {icon}
-      <span>{children}</span>
-    </button>
-  );
 }
 
 export function StatGrid({ items }: { items: Stat[] }) {
@@ -1710,55 +1606,6 @@ export function FinancePage() {
           ))}
         </div>
       </Section>
-    </PageFrame>
-  );
-}
-
-export function CmsPage() {
-  return (
-    <PageFrame
-      eyebrow="BCN"
-      title="CMS"
-      description="Tree content bên trái, editor bên phải, version history và publish controls."
-    >
-      <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
-        <Section title="Cây nội dung" subtitle="Draft / Published / Archived.">
-          <div className="space-y-3">
-            {["Tài liệu", "Thông báo", "Template", "Biểu mẫu"].map(
-              (item, index) => (
-                <div
-                  key={item}
-                  className={`rounded-2xl border px-4 py-3 ${index === 0 ? "border-rose-200 bg-rose-50 text-[#E11D48]" : "border-slate-200 bg-white text-[#18181B]"}`}
-                >
-                  {item}
-                </div>
-              ),
-            )}
-          </div>
-        </Section>
-        <Section
-          title="Editor"
-          subtitle="WYSIWYG mock với metadata và publish controls."
-        >
-          <div className="space-y-4">
-            <input
-              className="w-full rounded-[1.5rem] border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#E11D48]"
-              placeholder="Tiêu đề SEO"
-            />
-            <div className="rounded-[1.5rem] border border-slate-200/60 bg-slate-50 p-5 text-sm leading-7 text-[#18181B]">
-              Nội dung editor mô phỏng Notion-style WYSIWYG, hỗ trợ heading,
-              link, image, table và divider.
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <ActionButton variant="outline">Lưu nháp</ActionButton>
-              <ActionButton variant="outline">Xuất bản</ActionButton>
-              <ActionButton icon={<Sparkles className="h-4 w-4" />}>
-                Lên lịch
-              </ActionButton>
-            </div>
-          </div>
-        </Section>
-      </div>
     </PageFrame>
   );
 }
