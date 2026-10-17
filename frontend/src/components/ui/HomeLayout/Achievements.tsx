@@ -10,8 +10,7 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/provider/LanguageProvider";
 import Link from "next/link";
-import Image from "next/image";
-import { API_BASE_URL } from "@/lib/api";
+import { CmsCatalogItem, fetchLandingSection, fetchPublicCatalog } from "@/lib/api";
 
 const ICON_MAP: Record<string, React.ReactNode> = {
   trophy: <Trophy className="w-8 h-8" />,
@@ -21,30 +20,16 @@ const ICON_MAP: Record<string, React.ReactNode> = {
 };
 
 type Stat = { id: number; iconType: string; value: string; label: string };
-type Achievement = {
-  id: number;
-  title: string;
-  category: string;
-  date: string;
-  image: string;
-  desc: string;
-  delay: number;
-};
-
 export const Achievements = () => {
   const { t } = useLanguage();
   const [stats, setStats] = useState<Stat[]>([]);
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [achievements, setAchievements] = useState<CmsCatalogItem[]>([]);
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/public/landing/achievements`)
-      .then((r) => r.json())
-      .then((res) => {
-        const data = res.data ?? res;
-        setStats(data.stats ?? []);
-        setAchievements(data.items ?? []);
-      })
+    fetchLandingSection<{ stats?: Stat[] }>("achievements")
+      .then((data) => setStats(data.stats ?? []))
       .catch(console.error);
+    fetchPublicCatalog("achievements").then(setAchievements).catch(console.error);
   }, []);
 
   return (
@@ -132,17 +117,18 @@ export const Achievements = () => {
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: achievement.delay }}
+              transition={{ duration: 0.8, delay: idx * 0.1 }}
               className="relative group rounded-3xl overflow-hidden h-120 flex flex-col shadow-lg hover:shadow-2xl transition-all duration-500 cursor-default"
             >
               {/* Background Image Container */}
               <div className="absolute inset-0 z-0">
-                <Image
-                  src={achievement.image}
-                  alt={achievement.title}
-                  fill
-                  className="object-cover transform group-hover:scale-110 transition-transform duration-700 ease-out filter brightness-90 group-hover:brightness-100"
-                />
+                {achievement.imageUrl && (
+                  <motion.img
+                    src={achievement.imageUrl}
+                    alt={achievement.imageAlt || achievement.title}
+                    className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-out filter brightness-90 group-hover:brightness-100"
+                  />
+                )}
                 {/* Gradient Overlays */}
                 <div className="absolute inset-0 bg-linear-to-t from-black/95 via-black/50 to-black/10 z-10 transition-colors duration-500" />
                 {/* Additional color tint on hover */}
@@ -154,7 +140,7 @@ export const Achievements = () => {
                 {/* Top Info */}
                 <div className="flex items-start mb-6">
                   <span className="text-xs font-bold px-3.5 py-1.5 bg-black/30 backdrop-blur-md text-white/90 rounded-full font-['Montserrat'] border border-white/10 shadow-sm">
-                    {achievement.date}
+                    {new Date(achievement.updatedAt).toLocaleDateString()}
                   </span>
                 </div>
 
@@ -168,7 +154,7 @@ export const Achievements = () => {
                     {achievement.title}
                   </h3>
                   <p className="text-gray-300 font-light font-['Inter'] text-sm leading-relaxed transition-colors opacity-90 group-hover:opacity-100 line-clamp-3 md:line-clamp-4">
-                    {achievement.desc}
+                    {achievement.description}
                   </p>
                 </div>
               </div>

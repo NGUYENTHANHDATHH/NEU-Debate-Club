@@ -99,6 +99,24 @@ export type CmsCatalogItem = {
   updatedAt: string;
 };
 
+export async function fetchPublicCatalog(
+  type: "projects" | "achievements",
+): Promise<CmsCatalogItem[]> {
+  const response = await fetch(`${API_BASE_URL}/public/${type}`);
+  if (!response.ok) throw new Error(`Unable to load ${type}.`);
+  return response.json();
+}
+
+export async function fetchPublicCatalogItem(
+  type: "projects" | "achievements",
+  slug: string,
+): Promise<CmsCatalogItem | null> {
+  const response = await fetch(`${API_BASE_URL}/public/${type}/${slug}`);
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error(`Unable to load ${type} item.`);
+  return response.json();
+}
+
 async function cmsRequest<T>(input: string, init?: RequestInit): Promise<T> {
   const response = await authorizedFetch(`${API_BASE_URL}${input}`, init);
   const payload = await response.json().catch(() => null);
@@ -109,22 +127,22 @@ async function cmsRequest<T>(input: string, init?: RequestInit): Promise<T> {
 }
 
 export function fetchCmsSections() {
-  return cmsRequest<CmsSection[]>("/cms/landing");
+  return cmsRequest<CmsSection[]>("/public/landing/cms/landing");
 }
 
 export function fetchCmsSection(section: string) {
-  return cmsRequest<CmsSection>(`/cms/landing/${section}`);
+  return cmsRequest<CmsSection>(`/public/landing/cms/landing/${section}`);
 }
 
 export function fetchCmsCatalog(type: "projects" | "achievements") {
-  return cmsRequest<CmsCatalogItem[]>(`/cms/landing/catalog/${type}`);
+  return cmsRequest<CmsCatalogItem[]>(`/public/cms/landing/catalog/${type}`);
 }
 
 export function publishCmsCatalog(
   type: "projects" | "achievements",
   items: Record<string, unknown>[],
 ) {
-  return cmsRequest<CmsCatalogItem[]>(`/cms/landing/catalog/${type}/publish`, {
+  return cmsRequest<CmsCatalogItem[]>(`/public/cms/landing/catalog/${type}/publish`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ items }),
@@ -139,7 +157,7 @@ export function saveCmsDraft(
     section: string;
     content: Record<string, unknown>;
     savedAt: string;
-  }>(`/cms/landing/${section}/draft`, {
+  }>(`/public/landing/cms/landing/${section}/draft`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(content),
@@ -151,9 +169,9 @@ export function publishCmsSection(section: string) {
     section: string;
     content: Record<string, unknown>;
     publishedAt: string;
-  }>(`/cms/landing/${section}/publish`, { method: "POST" });
+  }>(`/public/landing/cms/landing/${section}/publish`, { method: "POST" });
 }
 
 export function fetchCmsHistory(section: string) {
-  return cmsRequest<CmsHistoryItem[]>(`/cms/landing/${section}/history`);
+  return cmsRequest<CmsHistoryItem[]>(`/public/landing/cms/landing/${section}/history`);
 }

@@ -4,25 +4,15 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { routePath } from "@/constants/routes";
 import { useLanguage } from "@/provider/LanguageProvider";
-import { API_BASE_URL } from "@/lib/api";
-
-type Project = {
-  id: number;
-  title: string;
-  category: string;
-  image: string;
-  desc: string;
-  delay: number;
-};
+import { CmsCatalogItem, fetchPublicCatalog } from "@/lib/api";
 
 export const Projects = () => {
   const { t } = useLanguage();
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<CmsCatalogItem[]>([]);
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/public/landing/projects`)
-      .then((r) => r.json())
-      .then((res) => setProjects((res.data ?? res).items ?? []))
+    fetchPublicCatalog("projects")
+      .then(setProjects)
       .catch(console.error);
   }, []);
 
@@ -66,22 +56,24 @@ export const Projects = () => {
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: project.delay }}
+              transition={{ duration: 0.8, delay: idx * 0.1 }}
               className="group cursor-pointer relative"
             >
               <Link
-                href={routePath.projectDetail(project.id)}
+                href={routePath.projectDetail(project.slug)}
                 className="absolute inset-0 z-40"
                 aria-label={`Xem chi tiết dự án ${project.title}`}
               />
               {/* Image Container with Dark Overlay */}
-              <div className="overflow-hidden aspect-4/3 mb-6 relative rounded-sm">
+              <div className="overflow-hidden aspect-4/3 mb-6 relative rounded-sm bg-gray-200 dark:bg-[#111]">
                 <div className="absolute inset-0 bg-black/10 dark:bg-black/40 group-hover:bg-transparent dark:group-hover:bg-black/10 transition-colors duration-500 z-10" />
-                <motion.img
-                  src={project.image}
-                  alt={project.title}
-                  className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
-                />
+                {project.imageUrl && (
+                  <motion.img
+                    src={project.imageUrl}
+                    alt={project.imageAlt || project.title}
+                    className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
+                  />
+                )}
 
                 {/* Red Overlay Effect */}
                 <div className="absolute inset-0 bg-[#8A151B]/10 dark:bg-[#8A151B]/20 opacity-0 group-hover:opacity-100 mix-blend-color z-20 transition-opacity duration-500" />
@@ -95,7 +87,7 @@ export const Projects = () => {
                   {project.title}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 font-light font-['Inter'] text-sm leading-relaxed transition-colors line-clamp-2">
-                  {project.desc}
+                  {project.description}
                 </p>
               </div>
 
