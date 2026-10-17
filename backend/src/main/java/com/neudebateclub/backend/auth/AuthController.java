@@ -5,6 +5,8 @@ import com.neudebateclub.backend.auth.dto.GoogleLoginRequest;
 import com.neudebateclub.backend.common.response.ApiResponse;
 import com.neudebateclub.backend.common.annotation.CurrentUser;
 import com.neudebateclub.backend.auth.security.UserPrincipal;
+import com.neudebateclub.backend.common.enums.AdminModule;
+import com.neudebateclub.backend.common.security.RoleGuard;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -20,6 +22,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 import org.springframework.web.servlet.view.RedirectView;
 
@@ -27,6 +31,7 @@ import org.springframework.web.servlet.view.RedirectView;
 public class AuthController {
 
     private final AuthService authService;
+    private final RoleGuard roleGuard;
 
     @Value("${app.google.client-id}")
     private String googleClientId;
@@ -150,6 +155,16 @@ public class AuthController {
     public ResponseEntity<ApiResponse<AuthResponse.UserDTO>> getMe(
         @CurrentUser UserPrincipal currentUser) {
         return ResponseEntity.ok(ApiResponse.success(authService.getMe(currentUser)));
+    }
+
+    @GetMapping("/modules")
+    public ResponseEntity<ApiResponse<List<String>>> getAccessibleModules(
+        @CurrentUser UserPrincipal currentUser) {
+        List<String> modules = Arrays.stream(AdminModule.values())
+            .filter(module -> roleGuard.canManageModule(currentUser, module))
+            .map(Enum::name)
+            .toList();
+        return ResponseEntity.ok(ApiResponse.success(modules));
     }
 
     @PostMapping("/logout")

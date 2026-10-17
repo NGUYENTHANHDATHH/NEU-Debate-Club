@@ -3,7 +3,12 @@
 import { usePathname, useRouter } from "next/navigation";
 import React from "react";
 import { toast } from "sonner";
-import { API_BASE_URL, exchangeGoogleIdToken } from "@/lib/api";
+import {
+  API_BASE_URL,
+  exchangeGoogleIdToken,
+  fetchAccessibleModules,
+} from "@/lib/api";
+import type { AdminModuleKey } from "@/constants/dashboard-modules";
 
 interface IUserProfile {
   id: string;
@@ -11,6 +16,8 @@ interface IUserProfile {
   email: string;
   avatarUrl?: string;
   role?: string;
+  department?: string;
+  modules?: AdminModuleKey[];
 }
 
 interface IAuthSession {
@@ -99,6 +106,8 @@ export const UserProvider: React.FC<IUserProviderProps> = ({ children }) => {
                 email: u.email,
                 avatarUrl: u.avatarUrl ?? undefined,
                 role: u.role ?? undefined,
+                department: u.department ?? undefined,
+                modules: await fetchAccessibleModules(tokenParam).catch(() => []),
               };
               authService.saveSession(profile, tokenParam);
               setUser(profile);
@@ -122,7 +131,10 @@ export const UserProvider: React.FC<IUserProviderProps> = ({ children }) => {
 
       const response = authService.getCurrentSession();
       if (response) {
-        setUser(response.user);
+        const modules = await fetchAccessibleModules(response.token).catch(
+          () => response.user.modules ?? [],
+        );
+        setUser({ ...response.user, modules });
         setToken(response.token);
         setIsAuthenticated(true);
       } else {
@@ -139,7 +151,7 @@ export const UserProvider: React.FC<IUserProviderProps> = ({ children }) => {
     }
   }
 
-  async function login(_email: string, _password: string) {
+  async function login() {
     toast.error(
       "Đăng nhập bằng mật khẩu đã bị vô hiệu hóa. Vui lòng sử dụng Google Auth.",
     );
@@ -154,6 +166,8 @@ export const UserProvider: React.FC<IUserProviderProps> = ({ children }) => {
       email: backendUser.email,
       avatarUrl: backendUser.avatarUrl ?? undefined,
       role: backendUser.role ?? undefined,
+      department: backendUser.department ?? undefined,
+      modules: await fetchAccessibleModules(response.token).catch(() => []),
     };
 
     authService.saveSession(profile, response.token);

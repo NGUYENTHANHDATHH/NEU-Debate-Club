@@ -3,6 +3,7 @@ package com.neudebateclub.backend.cms;
 import com.neudebateclub.backend.auth.security.UserPrincipal;
 import com.neudebateclub.backend.common.annotation.CurrentUser;
 import com.neudebateclub.backend.common.security.RoleGuard;
+import com.neudebateclub.backend.common.enums.AdminModule;
 import com.neudebateclub.backend.user.UserRepository;
 import tools.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
@@ -52,7 +53,7 @@ public class LandingCatalogController {
     public ResponseEntity<List<?>> cmsItems(
             @PathVariable String type,
             @CurrentUser UserPrincipal user) {
-        roleGuard.requireCmsEditor(user);
+        roleGuard.requireModuleManager(user, AdminModule.LANDING_CMS);
         return switch (normalizeType(type)) {
             case "projects" -> ResponseEntity.ok(projectRepository.findAllByOrderByDisplayOrderAscUpdatedAtDesc());
             case "achievements" -> ResponseEntity.ok(achievementRepository.findAllByOrderByDisplayOrderAscUpdatedAtDesc());
@@ -65,7 +66,7 @@ public class LandingCatalogController {
             @PathVariable String type,
             @RequestBody JsonNode request,
             @CurrentUser UserPrincipal user) {
-        roleGuard.requireCmsEditor(user);
+        roleGuard.requireModuleManager(user, AdminModule.LANDING_CMS);
         JsonNode items = request == null ? null : request.get("items");
         if (items == null || !items.isArray()) {
             return ResponseEntity.badRequest().build();
@@ -91,7 +92,7 @@ public class LandingCatalogController {
             entity.setImageUrl(text(item, "imageUrl", "image"));
             entity.setImageAlt(text(item, "imageAlt"));
             entity.setCategory(requiredText(item, "category"));
-            entity.setDisplayOrder(pinned(item) ? 0 : 1);
+            entity.setDisplayOrder(displayOrder(item));
             entity.setVisible(!item.path("hidden").asBoolean(false));
             entity.setUpdatedBy(user);
             if (entity.getCreatedAt() == null) entity.setCreatedAt(LocalDateTime.now());
@@ -116,7 +117,7 @@ public class LandingCatalogController {
             entity.setImageUrl(text(item, "imageUrl", "image"));
             entity.setImageAlt(text(item, "imageAlt"));
             entity.setCategory(requiredText(item, "category"));
-            entity.setDisplayOrder(pinned(item) ? 0 : 1);
+            entity.setDisplayOrder(displayOrder(item));
             entity.setVisible(!item.path("hidden").asBoolean(false));
             entity.setUpdatedBy(user);
             if (entity.getCreatedAt() == null) entity.setCreatedAt(LocalDateTime.now());
@@ -161,6 +162,18 @@ public class LandingCatalogController {
 
     private boolean pinned(JsonNode item) {
         return item.path("pinned").asBoolean(false) || item.path("displayOrder").asInt(1) == 0;
+    }
+
+    private int displayOrder(JsonNode item) {
+        JsonNode value = item.get("displayOrder");
+        if (value != null) {
+            try {
+                return Integer.parseInt(value.asText());
+            } catch (NumberFormatException ignored) {
+                // Fall back to the existing pinned-item convention.
+            }
+        }
+        return pinned(item) ? 0 : 1;
     }
 
     private String slug(JsonNode item, UUID existingId) {

@@ -11,6 +11,7 @@ Detailed evidence is retained in [architecture.md](architecture.md), [dependency
 | Module | Database | Backend API | Frontend | Test coverage | Status |
 |---|---|---|---|---|---|
 | Google authentication | `users` | Implemented | Implemented | Context only | Partial vertical slice |
+| Dashboard module access | Existing `users.role` and `users.department` | `AdminModule`, `RoleGuard`, `/auth/modules` | Module-filtered navigation and route guard | RoleGuard unit test | Implemented |
 | Landing section CMS | `landing_content`, versions | Implemented | CMS client paths aligned; home owns independent landing sections/statistics | None | Partial vertical slice |
 | Landing catalog | `projects`, `achievements` | Implemented | CMS and public project/achievement pages use catalog APIs | None | Partial vertical slice |
 | Tasks, events, announcements, members, finance, partners, media, check-in, equipment, assets | Schema tables exist | Not implemented | Mock/static pages or absent | None | Planned only |
@@ -56,7 +57,7 @@ flowchart LR
 | Closed | Java department values appeared to exceed the PostgreSQL enum values. | V9 already extends the enum; documentation corrected. |
 | Closed | Root pnpm backend scripts did not correspond to the Maven backend. | Invalid backend workspace scripts were removed; Maven remains the documented backend entry point. |
 | P1 | API types are handwritten on both sides. | One selected contract workflow detects backend/frontend drift in CI. |
-| P1 | Domain dashboard pages present mock content for schema-only modules. | Each page is labelled as mock until its API vertical slice is implemented, or is replaced per product decision. |
+| P1 | Domain dashboard pages present mock content for schema-only modules. | Each page is labelled as mock until its API vertical slice is implemented, or is replaced per product decision. Module visibility is now centrally filtered by department access. |
 | P2 | Automated tests cover only context startup. | Layer-appropriate integration and UI tests protect implemented contracts. |
 
 ## Assumptions requiring owner confirmation
@@ -68,4 +69,4 @@ flowchart LR
 
 ## Audit constraints and result
 
-This master plan began as a documentation audit. The catalog/CMS alignment changes recorded above modify application code and add a forward-only seed migration; they do not edit applied migrations, install dependencies, or modify production configuration. The remaining contract, test, and schema-only-module risks remain open work.
+This master plan began as a documentation audit. The catalog/CMS alignment changes recorded above modify application code and add forward-only seed migrations; they do not edit applied migrations, install dependencies, or modify production configuration. The remaining contract, test, and schema-only-module risks remain open work.

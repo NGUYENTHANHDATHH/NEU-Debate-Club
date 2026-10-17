@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element -- catalog images are CMS-configured URLs. */
+
 import {
   ChevronLeft,
   ChevronRight,
@@ -104,7 +106,7 @@ export function CmsPage() {
   const [sections, setSections] = useState<CmsSection[]>([]);
   const [selected, setSelected] = useState("hero");
   const [content, setContent] = useState<ContentItem>({});
-  const [activeItem, setActiveItem] = useState(0);
+  const [activeItem, setActiveItem] = useState<number | null>(null);
   const [page, setPage] = useState(1);
   const [busy, setBusy] = useState<"loading" | "saving" | "publishing" | null>(
     "loading",
@@ -130,7 +132,7 @@ export function CmsPage() {
   const pageCount = Math.max(1, Math.ceil(items.length / pageSize));
   const pageItems = items.slice((page - 1) * pageSize, page * pageSize);
   const itemOffset = (page - 1) * pageSize;
-  const currentItem = items[activeItem];
+  const currentItem = activeItem === null ? undefined : items[activeItem];
 
   useEffect(() => {
     fetchCmsSections()
@@ -147,21 +149,31 @@ export function CmsPage() {
   useEffect(() => {
     let cancelled = false;
     setBusy("loading");
-    setActiveItem(0);
+    setActiveItem(null);
     setPage(1);
     setMessage(null);
 
-    const load =
-      selected === "projects" || selected === "achievements"
-        ? fetchCmsCatalog(selected).then((loaded) => ({
-            section: selected,
-            draft: { items: loaded.map(catalogItemContent) },
-            published: { items: loaded.map(catalogItemContent) },
-            publishedAt: null,
-            draftAt: null,
-            status: "PUBLISHED" as const,
-          }))
-        : fetchCmsSection(selected);
+    const load = isCatalogSection
+      ? Promise.all([
+          fetchCmsCatalog(selected),
+          selected === "achievements"
+            ? fetchCmsSection("achievements")
+            : Promise.resolve(null),
+        ]).then(([catalog, achievementSection]) => ({
+          section: selected,
+          draft: {
+            ...(achievementSection?.draft ?? achievementSection?.published ?? {}),
+            items: catalog.map(catalogItemContent),
+          },
+          published: {
+            ...(achievementSection?.published ?? {}),
+            items: catalog.map(catalogItemContent),
+          },
+          publishedAt: achievementSection?.publishedAt ?? null,
+          draftAt: achievementSection?.draftAt ?? null,
+          status: achievementSection?.status ?? ("PUBLISHED" as const),
+        }))
+      : fetchCmsSection(selected);
 
     load
       .then((loaded) => {
@@ -186,13 +198,18 @@ export function CmsPage() {
     return () => {
       cancelled = true;
     };
-  }, [selected]);
+  }, [isCatalogSection, selected]);
 
   function updateContent(key: string, value: string) {
     setContent((current) => ({ ...current, [key]: value }));
   }
 
-  function updateItem(index: number, key: string, value: string | boolean) {
+  function updateItem(
+    index: number | null,
+    key: string,
+    value: string | boolean,
+  ) {
+    if (index === null) return;
     setContent((current) => {
       const nextItems = Array.isArray(current.items)
         ? [...(current.items as ContentItem[])]
@@ -220,12 +237,33 @@ export function CmsPage() {
     });
   }
 
+  function updateStat(index: number, key: string, value: string) {
+    setContent((current) => {
+      const stats = Array.isArray(current.stats)
+        ? [...(current.stats as ContentItem[])]
+        : [];
+      stats[index] = { ...stats[index], [key]: value };
+      return { ...current, stats };
+    });
+  }
+
   function addItem() {
     const newItem: ContentItem =
       selected === "departments"
-        ? { id: crypto.randomUUID(), name: "", slogan: "", description: "" }
+        ? {
+            id: crypto.randomUUID(),
+            nameKey: "",
+            descKey: "",
+            iconType: "square",
+          }
         : selected === "comments"
-          ? { id: crypto.randomUUID(), name: "", role: "", description: "" }
+          ? {
+              id: crypto.randomUUID(),
+              author: "",
+              role: "",
+              quote: "",
+              img: "",
+            }
           : {
               id: crypto.randomUUID(),
               title: "",
@@ -250,7 +288,16 @@ export function CmsPage() {
     try {
       if (isCatalogSection) {
         const saved = await publishCmsCatalog(selected, items);
-        setContent({ items: saved.map(catalogItemContent) });
+        const nextContent = {
+          ...content,
+          items: saved.map(catalogItemContent),
+        };
+        if (selected === "achievements") {
+          const stats = Array.isArray(content.stats) ? content.stats : [];
+          await saveCmsDraft("achievements", { stats });
+          await publishCmsSection("achievements");
+        }
+        setContent(nextContent);
         setMessage({ type: "success", text: "Đã lưu bài viết vào database." });
         return;
       }
@@ -329,10 +376,41 @@ export function CmsPage() {
               </span>
             }
           >
+            {selected === "achievements" && Array.isArray(content.stats) ? (
+              <div className="mb-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <p className="mb-3 text-sm font-semibold text-[#18181B]">
+                  Achievement statistics
+                </p>
+                <div className="grid gap-3 md:grid-cols-3">
+                  {(content.stats as ContentItem[]).map((stat, index) => (
+                    <div
+                      key={String(stat.id ?? index)}
+                      className="grid gap-2 rounded-lg bg-white p-3"
+                    >
+                      <Field
+                        label="Value"
+                        value={textValue(stat.value)}
+                        onChange={(value) => updateStat(index, "value", value)}
+                      />
+                      <Field
+                        label="Label"
+                        value={textValue(stat.label)}
+                        onChange={(value) => updateStat(index, "label", value)}
+                      />
+                      <Field
+                        label="Icon"
+                        value={textValue(stat.iconType)}
+                        onChange={(value) => updateStat(index, "iconType", value)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
             {selected === "hero" || selected === "vision" ? (
               <div className="grid gap-3 md:grid-cols-2">
                 <Field
-                  label="Title"
+                  label={selected === "hero" ? "Headline" : "Title line 1"}
                   value={
                     selected === "hero"
                       ? textValue(content.headline)
@@ -346,7 +424,7 @@ export function CmsPage() {
                   }
                 />
                 <Field
-                  label="Description"
+                  label={selected === "hero" ? "Subtext" : "Description"}
                   multiline
                   value={
                     selected === "hero"
@@ -360,6 +438,38 @@ export function CmsPage() {
                     )
                   }
                 />
+                {selected === "hero" ? (
+                  <>
+                    <Field
+                      label="Slogan"
+                      value={textValue(content.slogan)}
+                      onChange={(value) => updateContent("slogan", value)}
+                    />
+                    <Field
+                      label="CTA label"
+                      value={textValue(content.ctaLabel)}
+                      onChange={(value) => updateContent("ctaLabel", value)}
+                    />
+                    <Field
+                      label="CTA link"
+                      value={textValue(content.ctaLink)}
+                      onChange={(value) => updateContent("ctaLink", value)}
+                    />
+                    <Field
+                      label="Background image URL"
+                      value={textValue(content.backgroundImageUrl)}
+                      onChange={(value) =>
+                        updateContent("backgroundImageUrl", value)
+                      }
+                    />
+                  </>
+                ) : (
+                  <Field
+                    label="Title line 2"
+                    value={textValue(content.title2)}
+                    onChange={(value) => updateContent("title2", value)}
+                  />
+                )}
               </div>
             ) : isListSection ? (
               <div className="grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
@@ -370,9 +480,33 @@ export function CmsPage() {
                       <button
                         key={String(item.id ?? actualIndex)}
                         onClick={() => setActiveItem(actualIndex)}
-                        className={`w-full rounded-xl border px-3 py-2.5 text-left text-sm ${activeItem === actualIndex ? "border-rose-200 bg-rose-50 text-[#E11D48]" : "border-slate-200 bg-white text-[#18181B]"}`}
+                        className={`w-full overflow-hidden rounded-xl border text-left text-sm ${activeItem === actualIndex ? "border-rose-200 bg-rose-50 text-[#E11D48]" : "border-slate-200 bg-white text-[#18181B]"}`}
                       >
-                        {itemLabel(item, selected, actualIndex)}
+                        {isCatalogSection ? (
+                          <div>
+                            <div className="aspect-video bg-slate-100">
+                              {textValue(item.imageUrl ?? item.image) ? (
+                                <img
+                                  src={textValue(item.imageUrl ?? item.image)}
+                                  alt={textValue(item.imageAlt) || textValue(item.title)}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : null}
+                            </div>
+                            <div className="space-y-1 px-3 py-2.5">
+                              <p className="line-clamp-1 font-semibold">
+                                {itemLabel(item, selected, actualIndex)}
+                              </p>
+                              <p className="line-clamp-2 text-xs text-slate-500">
+                                {textValue(item.description ?? item.desc)}
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="block px-3 py-2.5">
+                            {itemLabel(item, selected, actualIndex)}
+                          </span>
+                        )}
                       </button>
                     );
                   })}
@@ -421,29 +555,24 @@ export function CmsPage() {
                     {selected === "departments" ? (
                       <>
                         <Field
-                          label="Name"
-                          value={textValue(
-                            currentItem.name ?? currentItem.nameKey,
-                          )}
+                          label="Name translation key"
+                          value={textValue(currentItem.nameKey)}
                           onChange={(value) =>
-                            updateItem(activeItem, "name", value)
+                            updateItem(activeItem, "nameKey", value)
                           }
                         />
                         <Field
-                          label="Slogan"
-                          value={textValue(currentItem.slogan)}
+                          label="Description translation key"
+                          value={textValue(currentItem.descKey)}
                           onChange={(value) =>
-                            updateItem(activeItem, "slogan", value)
+                            updateItem(activeItem, "descKey", value)
                           }
                         />
                         <Field
-                          label="Description"
-                          multiline
-                          value={textValue(
-                            currentItem.description ?? currentItem.descKey,
-                          )}
+                          label="Icon type"
+                          value={textValue(currentItem.iconType)}
                           onChange={(value) =>
-                            updateItem(activeItem, "description", value)
+                            updateItem(activeItem, "iconType", value)
                           }
                         />
                       </>
@@ -452,11 +581,9 @@ export function CmsPage() {
                       <>
                         <Field
                           label="Tên"
-                          value={textValue(
-                            currentItem.name ?? currentItem.author,
-                          )}
+                          value={textValue(currentItem.author)}
                           onChange={(value) =>
-                            updateItem(activeItem, "name", value)
+                            updateItem(activeItem, "author", value)
                           }
                         />
                         <Field
@@ -469,11 +596,16 @@ export function CmsPage() {
                         <Field
                           label="Description"
                           multiline
-                          value={textValue(
-                            currentItem.description ?? currentItem.quote,
-                          )}
+                          value={textValue(currentItem.quote)}
                           onChange={(value) =>
-                            updateItem(activeItem, "description", value)
+                            updateItem(activeItem, "quote", value)
+                          }
+                        />
+                        <Field
+                          label="Image URL"
+                          value={textValue(currentItem.img)}
+                          onChange={(value) =>
+                            updateItem(activeItem, "img", value)
                           }
                         />
                       </>
@@ -485,6 +617,13 @@ export function CmsPage() {
                           value={textValue(currentItem.title)}
                           onChange={(value) =>
                             updateItem(activeItem, "title", value)
+                          }
+                        />
+                        <Field
+                          label="Slug"
+                          value={textValue(currentItem.slug)}
+                          onChange={(value) =>
+                            updateItem(activeItem, "slug", value)
                           }
                         />
                         <Field
@@ -545,6 +684,13 @@ export function CmsPage() {
                             ))}
                           </select>
                         </label>
+                        <Field
+                          label="Display order"
+                          value={String(currentItem.displayOrder ?? "")}
+                          onChange={(value) =>
+                            updateItem(activeItem, "displayOrder", value)
+                          }
+                        />
                         <div className="flex flex-wrap gap-2 sm:col-span-2">
                           <button
                             type="button"

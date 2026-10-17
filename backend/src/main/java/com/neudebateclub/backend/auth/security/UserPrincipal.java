@@ -35,8 +35,8 @@ public class UserPrincipal implements UserDetails {
     public boolean hasRole(Role requiredRole) {
         return switch (requiredRole) {
             case GUEST      -> true;
-            case MEMBER     -> role == Role.MEMBER;
-            case TRUONG_BAN -> role == Role.TRUONG_BAN;
+            case MEMBER     -> role == Role.MEMBER || role == Role.TRUONG_BAN || role == Role.BCN;
+            case TRUONG_BAN -> role == Role.TRUONG_BAN || role == Role.BCN;
             case BCN        -> role == Role.BCN;
         };
     }

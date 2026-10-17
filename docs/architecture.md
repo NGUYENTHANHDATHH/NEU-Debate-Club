@@ -46,6 +46,7 @@ Only three application domains have Spring MVC controllers:
 | Authentication | `User`, `UserRepository` | `AuthService`, `AuthController`, JWT filter/service | `users` |
 | Landing sections | `LandingContent`, `LandingContentVersion` and repositories | `LandingContentController` | `landing_content`, `landing_content_versions` |
 | Landing catalog | `LandingProject`, `LandingAchievement` and repositories | `LandingCatalogController` | `projects`, `achievements` |
+| Module access | `AdminModule`, `RoleGuard` | `AuthController` module discovery | No additional tables |
 
 All other migrated domains are schema-only at this revision: no Java entity, repository, service, controller, DTO, or frontend API client was found for them. See [schema-backed-unimplemented.md](modules/schema-backed-unimplemented.md).
 
@@ -53,7 +54,7 @@ Spring uses `/api` as its servlet context path. The Springdoc dependency supplie
 
 ## Database ownership and migration behavior
 
-**Verified primary schema input:** [V1__create_enums.sql](../backend/src/main/resources/db/migration/V1__create_enums.sql) through [V16__seed_landing_catalogs_from_legacy_sections.sql](../backend/src/main/resources/db/migration/V16__seed_landing_catalogs_from_legacy_sections.sql), configured in [application.yml](../backend/src/main/resources/application.yml) as Flyway's migration location. [CREATE_NEU_DEBATE_CLUB.sql](../backend/src/main/resources/db/CREATE_NEU_DEBATE_CLUB.sql) is a `psql` bootstrap wrapper that includes that same ordered migration sequence; it is not an independent schema definition.
+**Verified primary schema input:** [V1__create_enums.sql](../backend/src/main/resources/db/migration/V1__create_enums.sql) through [V17__seed_remaining_public_catalog_items.sql](../backend/src/main/resources/db/migration/V17__seed_remaining_public_catalog_items.sql), configured in [application.yml](../backend/src/main/resources/application.yml) as Flyway's migration location. [CREATE_NEU_DEBATE_CLUB.sql](../backend/src/main/resources/db/CREATE_NEU_DEBATE_CLUB.sql) is a `psql` bootstrap wrapper that includes that same ordered migration sequence; it is not an independent schema definition.
 
 Hibernate is configured with `ddl-auto: validate`, so it validates rather than creates or changes tables. This makes the migration set the database schema authority in code.
 
@@ -91,7 +92,7 @@ Run from the repository root in PowerShell. These are commands present in manife
 
 1. **Resolved in this change:** CMS client route strings now target the implemented controller mappings.
 2. **Resolved in this change:** public project and achievement cards/list/detail pages now use the catalog endpoints; the obsolete static project module was removed. `landing_content.achievements` remains the source for landing-page statistics only.
-   V16 copies the existing landing JSON seed into an empty catalog, while preserving an already populated catalog.
+   V16 copies the existing landing JSON seed into an empty catalog, while V17 adds the remaining public-page mock records without overwriting existing slugs.
 3. **Corrected audit finding:** V9 already extends `department_enum` with `ky_thuat` and `nhan_su`, matching the Java enum.
 4. The database contains many domain tables but the code implements only authentication and landing CMS. Dashboard routes predominantly import [MockPages.tsx](../frontend/src/components/dashboard/MockPages.tsx), so visible UI scope exceeds implemented API scope.
 5. There is no shared or checked-in API contract and no client generation. Frontend catalog and CMS types remain handwritten.

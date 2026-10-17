@@ -14,6 +14,7 @@ All paths below include the verified Spring context path `/api`.
 | Google callback | `GET /api/auth/google/callback` | `AuthController` + `AuthService` | Google redirect target | Inferred external OAuth hop. |
 | Google ID-token exchange | `POST /api/auth/google` | `AuthController` + `AuthService` | `exchangeGoogleIdToken`; no component call found | Verified endpoint; client helper is otherwise unused. |
 | Current user | `GET /api/auth/me` | `AuthController` | `UserProvider` after callback token | Verified. |
+| Accessible modules | `GET /api/auth/modules` | `AuthController` + `RoleGuard` | `UserProvider`, sidebar, dashboard route guard | Verified. |
 | Logout | `POST /api/auth/logout` | `AuthController` | None; UI clears local storage | Verified endpoint; no server token revocation. |
 | Published landing sections | `GET /api/public/landing` and `GET /api/public/landing/{section}` | `LandingContentController` | Home section components | Verified. |
 | Public catalog rows | `GET /api/public/projects`, `GET /api/public/projects/{slug}`, `GET /api/public/achievements`, `GET /api/public/achievements/{slug}` | `LandingCatalogController` | Home/list/detail pages through `fetchPublicCatalog*` | Verified. |
@@ -29,6 +30,7 @@ All paths below include the verified Spring context path `/api`.
 | Landing catalog | `projects` in V14; `achievements` in V15 | Two entities/repositories and `LandingCatalogController` | CMS and public home/list/detail pages through `api.ts` | No catalog tests. |
 
 Detailed traces are in [auth.md](modules/auth.md) and [landing-cms.md](modules/landing-cms.md).
+Dashboard access rules are documented in [access-control.md](modules/access-control.md).
 
 ## Schema-defined modules without application implementations
 
@@ -51,7 +53,7 @@ See [schema-backed-unimplemented.md](modules/schema-backed-unimplemented.md) for
 
 ```mermaid
 flowchart TD
-  Migrations[Flyway V1-V16] --> PostgreSQL[(PostgreSQL schema)]
+  Migrations[Flyway V1-V17] --> PostgreSQL[(PostgreSQL schema)]
   PostgreSQL --> JPA[Four JPA entity families]
   JPA --> Controllers[Auth and landing controllers]
   Controllers --> RuntimeOpenAPI[Springdoc runtime documentation]

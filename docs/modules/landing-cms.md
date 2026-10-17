@@ -20,9 +20,9 @@ This split is verified in controllers, migrations, and frontend calls. Whether i
 
 ## Catalog trace
 
-- **Schema:** V14 creates `projects`; V15 creates `achievements`; V16 copies the legacy JSON seed only when the corresponding catalog is empty. Both catalog tables reference `users` for creation/update metadata.
+- **Schema:** V14 creates `projects`; V15 creates `achievements`; V16 copies the legacy JSON seed only when the corresponding catalog is empty; V17 adds the remaining public mock rows without overwriting an existing slug. Both catalog tables reference `users` for creation/update metadata.
 - **Backend:** [LandingCatalogController.java](../../backend/src/main/java/com/neudebateclub/backend/cms/LandingCatalogController.java) exposes visible public rows and privileged catalog replacement-style publish operations.
-- **Frontend:** [CmsPage.tsx](../../frontend/src/components/dashboard/CmsPage.tsx) uses catalog helpers. Public home/list/detail pages use `fetchPublicCatalog` and `fetchPublicCatalogItem`.
+- **Frontend:** [CmsPage.tsx](../../frontend/src/components/dashboard/CmsPage.tsx) loads all section fields from the CMS APIs. Catalog entries render as image/title/description cards; selecting one reveals its editable table-backed fields. Public home/list/detail pages use `fetchPublicCatalog` and `fetchPublicCatalogItem`.
 
 ## Contract alignment
 

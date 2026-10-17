@@ -6,6 +6,7 @@ import com.neudebateclub.backend.auth.security.UserPrincipal;
 import com.neudebateclub.backend.common.annotation.CurrentUser;
 import com.neudebateclub.backend.common.enums.LandingSection;
 import com.neudebateclub.backend.common.security.RoleGuard;
+import com.neudebateclub.backend.common.enums.AdminModule;
 import com.neudebateclub.backend.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -62,7 +63,7 @@ public class LandingContentController {
 
     @GetMapping(value = "/cms/landing", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> getCms(@CurrentUser UserPrincipal user) {
-        roleGuard.requireCmsEditor(user);
+        roleGuard.requireModuleManager(user, AdminModule.LANDING_CMS);
         List<Map<String, Object>> sections = Arrays.stream(LandingSection.values()).map(section -> {
             String name = section.name().toLowerCase();
             LandingContent published = repo.findBySection(name).orElse(null);
@@ -84,7 +85,7 @@ public class LandingContentController {
     public ResponseEntity<Map<String, Object>> getCmsSection(
             @PathVariable String section,
             @CurrentUser UserPrincipal user) {
-        roleGuard.requireCmsEditor(user);
+        roleGuard.requireModuleManager(user, AdminModule.LANDING_CMS);
         String normalized = validateSection(section);
         LandingContent published = repo.findBySection(normalized).orElse(null);
         LandingContentVersion draft = versionRepo
@@ -104,7 +105,7 @@ public class LandingContentController {
             @PathVariable String section,
             @RequestBody JsonNode content,
             @CurrentUser UserPrincipal user) {
-        roleGuard.requireCmsEditor(user);
+        roleGuard.requireModuleManager(user, AdminModule.LANDING_CMS);
         String normalized = validateSection(section);
         if (!content.isObject()) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Content must be a JSON object"));
@@ -124,7 +125,7 @@ public class LandingContentController {
     public ResponseEntity<Map<String, Object>> publish(
             @PathVariable String section,
             @CurrentUser UserPrincipal user) {
-        roleGuard.requireCmsEditor(user);
+        roleGuard.requireModuleManager(user, AdminModule.LANDING_CMS);
         String normalized = validateSection(section);
         LandingContentVersion draft = versionRepo
                 .findFirstBySectionAndStatusOrderByCreatedAtDesc(normalized, DRAFT)
@@ -148,7 +149,7 @@ public class LandingContentController {
     public ResponseEntity<Map<String, Object>> history(
             @PathVariable String section,
             @CurrentUser UserPrincipal user) {
-        roleGuard.requireCmsEditor(user);
+        roleGuard.requireModuleManager(user, AdminModule.LANDING_CMS);
         String normalized = validateSection(section);
         List<Map<String, Object>> items = versionRepo.findTop20BySectionOrderByCreatedAtDesc(normalized).stream()
                 .map(version -> Map.<String, Object>of(

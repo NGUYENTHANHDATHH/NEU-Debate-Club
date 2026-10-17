@@ -7,7 +7,8 @@
 3. [AuthService.java](../../backend/src/main/java/com/neudebateclub/backend/auth/AuthService.java) exchanges the authorization code, verifies the Google ID token, upserts [User.java](../../backend/src/main/java/com/neudebateclub/backend/user/User.java), and creates a JWT.
 4. The callback redirects to the supplied frontend path with `token` and `loginSuccess` query parameters.
 5. [userContext.tsx](../../frontend/src/context/userContext.tsx) stores the token in `localStorage`, calls `GET /api/auth/me`, then stores a reduced user profile in `localStorage`.
-6. [JwtAuthenticationFilter.java](../../backend/src/main/java/com/neudebateclub/backend/auth/jwt/JwtAuthenticationFilter.java) verifies later bearer tokens and reloads the user from `users`.
+6. The same provider calls `GET /api/auth/modules` to obtain module permissions for the stored role and department.
+7. [JwtAuthenticationFilter.java](../../backend/src/main/java/com/neudebateclub/backend/auth/jwt/JwtAuthenticationFilter.java) verifies later bearer tokens and reloads the user from `users`.
 
 ## Cross-layer map
 
@@ -18,6 +19,7 @@
 | Service/security | `AuthService`, `JwtService`, JWT filter, `SecurityConfig` | Google identity verification, role assignment, token issue/validation, bearer authentication. |
 | API DTO | `GoogleLoginRequest`, `AuthResponse` | Direct ID-token exchange input and login/current-user output. |
 | Frontend | `api.ts`, `GoogleLoginButton`, `UserProvider` | Starts redirect authentication and holds browser session state. |
+| Dashboard access | `AdminModule`, `RoleGuard`, `/auth/modules`, dashboard module registry | Resolves BCN and department-leader module access. |
 | Tests | `BackendApplicationTests` | Only Spring context startup coverage; no auth flow coverage. |
 
 ## Verified authorization rules

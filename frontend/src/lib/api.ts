@@ -107,6 +107,15 @@ export async function fetchPublicCatalog(
   return response.json();
 }
 
+export async function fetchAccessibleModules(token?: string): Promise<AdminModuleKey[]> {
+  const response = await fetch(`${API_BASE_URL}/auth/modules`, {
+    headers: { Authorization: `Bearer ${token ?? getAuthToken() ?? ""}` },
+  });
+  if (!response.ok) throw new Error("Unable to load dashboard permissions.");
+  const payload = await response.json();
+  return (payload.data ?? payload) as AdminModuleKey[];
+}
+
 export async function fetchPublicCatalogItem(
   type: "projects" | "achievements",
   slug: string,
@@ -175,3 +184,4 @@ export function publishCmsSection(section: string) {
 export function fetchCmsHistory(section: string) {
   return cmsRequest<CmsHistoryItem[]>(`/public/landing/cms/landing/${section}/history`);
 }
+import type { AdminModuleKey } from "@/constants/dashboard-modules";
