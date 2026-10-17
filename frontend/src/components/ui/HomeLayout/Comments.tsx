@@ -1,0 +1,87 @@
+import React, { useEffect, useState } from "react";
+import { motion } from "motion/react";
+import { Quote } from "lucide-react";
+import Image from "next/image";
+import { useLanguage } from "@/provider/LanguageProvider";
+import { fetchLandingSection } from "@/lib/api";
+
+type Testimonial = {
+  id: number;
+  img: string;
+  quote: string;
+  author: string;
+  role: string;
+  delay: number;
+};
+
+export const Comments = () => {
+  const { t } = useLanguage();
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+
+  useEffect(() => {
+    fetchLandingSection<{ items: Testimonial[] }>("comments")
+      .then((data) => setTestimonials(data.items ?? []))
+      .catch(console.error);
+  }, []);
+
+  return (
+    <section className="py-32 bg-white dark:bg-black text-black dark:text-white px-6 transition-colors duration-500">
+      <div className="max-w-7xl mx-auto">
+        <motion.div
+          className="text-center mb-24"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+        >
+          <span className="uppercase tracking-widest text-[#8A151B] text-sm font-semibold mb-2 block font-['Montserrat']">
+            {t("comments.chapter")}
+          </span>
+          <h2 className="text-4xl md:text-5xl font-bold font-['Montserrat']">
+            {t("comments.title")}
+          </h2>
+        </motion.div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {testimonials.map((testi, idx) => (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6, delay: testi.delay }}
+              className="relative p-10 border border-gray-200 dark:border-[#222] bg-gray-50 dark:bg-[#050505] hover:border-[#8A151B] dark:hover:border-[#8A151B] transition-colors duration-500 group flex flex-col rounded-sm"
+            >
+              <Quote className="w-10 h-10 text-[#8A151B] opacity-10 dark:opacity-30 group-hover:opacity-100 transition-opacity duration-300 absolute top-6 right-6" />
+              <div className="flex-1 mb-8 pt-8 relative z-10">
+                <p className="text-gray-700 dark:text-gray-300 font-['Inter'] font-light italic text-lg leading-relaxed transition-colors">
+                  &quot;{testi.quote}&quot;
+                </p>
+              </div>
+              <div className="border-t border-gray-200 dark:border-[#222] pt-6 group-hover:border-[#8A151B] dark:group-hover:border-[#8A151B] transition-colors duration-500">
+                <div className="flex items-center gap-4">
+                  <div className="relative h-12 w-12 overflow-hidden rounded-full border border-gray-200 dark:border-[#222] shrink-0">
+                    <Image
+                      src={testi.img}
+                      alt={`Ảnh của ${testi.author}`}
+                      fill
+                      sizes="48px"
+                      className="object-cover"
+                    />
+                  </div>
+                  <div>
+                    <h4 className="text-black dark:text-white font-bold font-['Montserrat'] mb-1 group-hover:text-[#8A151B] dark:group-hover:text-[#8A151B] transition-colors">
+                      {testi.author}
+                    </h4>
+                    <p className="text-gray-500 text-sm font-['Inter']">
+                      {testi.role}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};

@@ -5,12 +5,12 @@ ALTER TYPE landing_section_enum ADD VALUE IF NOT EXISTS 'comments';
 INSERT INTO users (id, email, full_name, role, is_active)
 VALUES (
   '00000000-0000-0000-0000-000000000001',
-  'system.ndc.neu@gmail.com',
+  'datnt.ndc.neu@gmail.com',
   'System Admin',
   'bcn',
   true
 )
-ON CONFLICT (email) DO NOTHING;
+ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO landing_content (section, content_json, is_published, updated_by)
 VALUES
