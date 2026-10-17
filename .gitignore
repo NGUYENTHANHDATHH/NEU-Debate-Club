@@ -4,3 +4,5 @@ dist/
 .agents
 agent
 .claude
+.pnpm-store
+frontend/.next
