@@ -97,11 +97,10 @@ export function StatGrid({ items }: { items: Stat[] }) {
       {items.map((item) => (
         <div
           key={item.label}
-          className={`rounded-[1.75rem] border p-5 shadow-[0_16px_32px_-18px_rgba(0,0,0,0.08)] ${
-            item.tone
-              ? toneBadge(item.tone)
-              : "border-slate-200/60 bg-white text-[#18181B]"
-          }`}
+          className={`rounded-[1.75rem] border p-5 shadow-[0_16px_32px_-18px_rgba(0,0,0,0.08)] ${item.tone
+            ? toneBadge(item.tone)
+            : "border-slate-200/60 bg-white text-[#18181B]"
+            }`}
         >
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-current/70">
             {item.label}
@@ -126,11 +125,10 @@ export function ChipRow({ chips }: { chips: Chip[] }) {
       {chips.map((chip) => (
         <span
           key={chip.label}
-          className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm ${
-            chip.active
-              ? "border-rose-200 bg-rose-50 text-[#E11D48]"
-              : "border-slate-200 bg-white text-[#71717A]"
-          }`}
+          className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm ${chip.active
+            ? "border-rose-200 bg-rose-50 text-[#E11D48]"
+            : "border-slate-200 bg-white text-[#71717A]"
+            }`}
         >
           {chip.label}
           {chip.count !== undefined ? (
@@ -302,13 +300,12 @@ export function TableCard({
               {columns.map((column) => (
                 <th
                   key={column.label}
-                  className={`px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#94A3B8] ${
-                    column.align === "right"
-                      ? "text-right"
-                      : column.align === "center"
-                        ? "text-center"
-                        : "text-left"
-                  }`}
+                  className={`px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#94A3B8] ${column.align === "right"
+                    ? "text-right"
+                    : column.align === "center"
+                      ? "text-center"
+                      : "text-left"
+                    }`}
                 >
                   {column.label}
                 </th>
@@ -321,13 +318,12 @@ export function TableCard({
                 {row.map((cell, cellIndex) => (
                   <td
                     key={cellIndex}
-                    className={`px-4 py-4 text-sm text-[#18181B] ${
-                      columns[cellIndex]?.align === "right"
-                        ? "text-right"
-                        : columns[cellIndex]?.align === "center"
-                          ? "text-center"
-                          : "text-left"
-                    }`}
+                    className={`px-4 py-4 text-sm text-[#18181B] ${columns[cellIndex]?.align === "right"
+                      ? "text-right"
+                      : columns[cellIndex]?.align === "center"
+                        ? "text-center"
+                        : "text-left"
+                      }`}
                   >
                     {cell}
                   </td>
@@ -782,11 +778,10 @@ export function UpdateTaskPage() {
               {["Cần làm", "Đang làm", "Hoàn thành"].map((item, index) => (
                 <button
                   key={item}
-                  className={`rounded-2xl border px-4 py-3 text-sm font-medium ${
-                    index === 1
-                      ? "border-rose-200 bg-rose-50 text-[#E11D48]"
-                      : "border-slate-200 bg-white text-[#18181B]"
-                  }`}
+                  className={`rounded-2xl border px-4 py-3 text-sm font-medium ${index === 1
+                    ? "border-rose-200 bg-rose-50 text-[#E11D48]"
+                    : "border-slate-200 bg-white text-[#18181B]"
+                    }`}
                 >
                   {item}
                 </button>
@@ -1311,7 +1306,7 @@ export function DepartmentOperationsPage() {
             "Trưởng ban",
             "4",
             "91%",
-            <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
+            <span key="an-status" className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
               Hoạt động
             </span>,
           ],
@@ -1320,7 +1315,7 @@ export function DepartmentOperationsPage() {
             "Thành viên",
             "2",
             "78%",
-            <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-700">
+            <span key="vy-status" className="rounded-full bg-amber-50 px-3 py-1 text-amber-700">
               Bình thường
             </span>,
           ],
@@ -1329,7 +1324,7 @@ export function DepartmentOperationsPage() {
             "Thành viên",
             "1",
             "46%",
-            <span className="rounded-full bg-rose-50 px-3 py-1 text-rose-700">
+            <span key="minh-status" className="rounded-full bg-rose-50 px-3 py-1 text-rose-700">
               Cần chú ý
             </span>,
           ],
@@ -1649,85 +1644,7 @@ export function HealthDashboardPage() {
   );
 }
 
-export function AssignAllTasksPage() {
-  return (
-    <PageFrame
-      eyebrow="BCN"
-      title="Giao task mọi ban"
-      description="Mở rộng phạm vi phân phối task liên ban, chọn ban trước rồi thành viên sau."
-    >
-      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <Section
-          title="Form liên ban"
-          subtitle="Assign nhiều ban, clone task hoặc task nhóm."
-        >
-          <div className="grid gap-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#E11D48]">
-                <option>Chọn ban</option>
-                <option>Truyền thông</option>
-                <option>Nội dung</option>
-                <option>Sự kiện</option>
-              </select>
-              <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#E11D48]">
-                <option>Chọn trưởng ban phụ trách</option>
-                <option>An</option>
-                <option>Vy</option>
-              </select>
-            </div>
-            <textarea
-              className="min-h-40 rounded-[1.5rem] border border-slate-200 bg-white p-4 text-sm outline-none focus:border-[#E11D48]"
-              placeholder="Mô tả task..."
-            />
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-                <p className="text-sm font-medium text-[#18181B]">
-                  Nhân bản task cho từng người
-                </p>
-                <p className="mt-2 text-sm text-[#71717A]">
-                  Mỗi người nhận một bản task riêng.
-                </p>
-              </div>
-              <div className="rounded-[1.5rem] border border-rose-200 bg-rose-50 p-5 text-[#E11D48]">
-                <p className="text-sm font-medium">Task chung cho nhóm</p>
-                <p className="mt-2 text-sm">
-                  Chỉ 1 task, nhiều người theo dõi.
-                </p>
-              </div>
-            </div>
-          </div>
-        </Section>
-        <Section
-          title="Tổng hợp toàn tổ chức"
-          subtitle="Preview board cho tất cả các ban."
-        >
-          <DetailList
-            items={[
-              {
-                title: "Truyền thông: 4 task",
-                meta: "Hôm nay",
-                detail: "Đang chờ phân công thêm.",
-                tone: "rose",
-              },
-              {
-                title: "Sự kiện: 2 task",
-                meta: "Hôm nay",
-                detail: "Đang cần người phụ trách.",
-                tone: "amber",
-              },
-              {
-                title: "Nội dung: 3 task",
-                meta: "Hôm nay",
-                detail: "Đã có deadline và file đính kèm.",
-                tone: "emerald",
-              },
-            ]}
-          />
-        </Section>
-      </div>
-    </PageFrame>
-  );
-}
+export { AssignAllTasksPage } from "./AssignAllTasksPage";
 
 export function ActivityLogPage() {
   return (
