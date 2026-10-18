@@ -44,6 +44,11 @@ public class User {
     @Column(name = "avatar_url")
     private String avatarUrl;
 
+    private String phone;
+
+    @Column(name = "student_id")
+    private String studentId;
+
     @Convert(converter = com.neudebateclub.backend.common.converter.RoleConverter.class)
     @Column(nullable = false)
     @ColumnTransformer(write = "?::role_enum")

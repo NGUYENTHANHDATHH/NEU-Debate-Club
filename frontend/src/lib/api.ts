@@ -107,6 +107,61 @@ export async function fetchPublicCatalog(
   return response.json();
 }
 
+export type Member = {
+  id: string;
+  fullName: string;
+  email: string;
+  studentId: string | null;
+  phone: string | null;
+  department: string | null;
+  role: string;
+  active: boolean;
+};
+
+export type CreateMemberInput = {
+  fullName: string;
+  email: string;
+  studentId: string;
+  phone: string;
+  department: string;
+  role: string;
+  active: boolean;
+};
+
+async function memberRequest<T>(path = "", init?: RequestInit): Promise<T> {
+  const response = await authorizedFetch(`${API_BASE_URL}/members${path}`, init);
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    const validationMessage = payload?.data
+      ? Object.values(payload.data).join(". ")
+      : null;
+    throw new Error(
+      validationMessage || payload?.message || "Không thể cập nhật thành viên.",
+    );
+  }
+  return (payload?.data ?? payload) as T;
+}
+
+export function fetchMembers() {
+  return memberRequest<Member[]>();
+}
+
+export function createMember(member: CreateMemberInput) {
+  return memberRequest<Member>("", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(member),
+  });
+}
+
+export function updateMember(id: string, member: CreateMemberInput) {
+  return memberRequest<Member>(`/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(member),
+  });
+}
+
 export async function fetchAccessibleModules(token?: string): Promise<AdminModuleKey[]> {
   const response = await fetch(`${API_BASE_URL}/auth/modules`, {
     headers: { Authorization: `Bearer ${token ?? getAuthToken() ?? ""}` },

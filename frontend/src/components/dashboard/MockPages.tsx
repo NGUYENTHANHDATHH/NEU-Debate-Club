@@ -1434,64 +1434,6 @@ export function PublicationsPage() {
   );
 }
 
-export function MembersPage() {
-  return (
-    <PageFrame
-      eyebrow="BCN"
-      title="Quản lý thành viên"
-      description="Data table full-width, search, filter, bulk actions và drawer detail."
-      action={
-        <ActionButton icon={<Plus className="h-4 w-4" />}>
-          Thêm thành viên
-        </ActionButton>
-      }
-    >
-      <Section title="Toolbar" subtitle="Tìm kiếm, lọc, import/export.">
-        <InputToolbar />
-      </Section>
-      <TableCard
-        title="Danh sách thành viên"
-        columns={[
-          { label: "Tên" },
-          { label: "Mã" },
-          { label: "Ban" },
-          { label: "Chức vụ" },
-          { label: "Trạng thái", align: "right" },
-        ]}
-        rows={[
-          [
-            "An",
-            <span className="font-mono text-[#71717A]">NDC-001</span>,
-            "Truyền thông",
-            "BCN",
-            <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
-              Hoạt động
-            </span>,
-          ],
-          [
-            "Vy",
-            <span className="font-mono text-[#71717A]">NDC-024</span>,
-            "Nội dung",
-            "Thành viên",
-            <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-700">
-              Tạm nghỉ
-            </span>,
-          ],
-          [
-            "Minh",
-            <span className="font-mono text-[#71717A]">NDC-031</span>,
-            "Sự kiện",
-            "Trưởng ban",
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
-              Đã nghỉ
-            </span>,
-          ],
-        ]}
-      />
-    </PageFrame>
-  );
-}
-
 export function RolesPage() {
   return (
     <PageFrame

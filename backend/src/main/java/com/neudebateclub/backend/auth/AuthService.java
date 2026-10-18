@@ -96,7 +96,6 @@ public class AuthService {
                 existing.setLastLoginAt(Instant.now());
                 existing.setAvatarUrl(avatarUrl);
                 existing.setFullName(fullName);
-                existing.setActive(true);
                 // Không downgrade role đã được BCN set
                 if (existing.getRole() == Role.GUEST && role == Role.MEMBER) {
                     existing.setRole(Role.MEMBER);
@@ -112,6 +111,10 @@ public class AuthService {
                 .active(true)
                 .lastLoginAt(Instant.now())
                 .build()));
+
+        if (!user.isActive()) {
+            throw new UnauthorizedException("Account is inactive");
+        }
 
         // 4. Generate JWT
         UserPrincipal principal = UserPrincipal.builder()

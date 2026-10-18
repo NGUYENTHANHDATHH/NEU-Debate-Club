@@ -14,7 +14,8 @@ Detailed evidence is retained in [architecture.md](architecture.md), [dependency
 | Dashboard module access | Existing `users.role` and `users.department` | `AdminModule`, `RoleGuard`, `/auth/modules` | Module-filtered navigation and route guard | RoleGuard unit test | Implemented |
 | Landing section CMS | `landing_content`, versions | Implemented | CMS client paths aligned; home owns independent landing sections/statistics | Opt-in PostgreSQL HTTP publish/read/history tests | Partial vertical slice |
 | Landing catalog | `projects`, `achievements` | Implemented | CMS and public project/achievement pages use catalog APIs | Opt-in PostgreSQL HTTP publish/rollback tests | Partial vertical slice |
-| Tasks, events, announcements, members, finance, partners, media, check-in, equipment, assets | Schema tables exist | Not implemented | Mock/static pages or absent | None | Planned only |
+| Member directory | Existing `users` profile columns; V18 sample seed | List/create/update API with membership-module authorization | Live list, shared create/edit form, client pagination | Controller unit tests | Partial vertical slice |
+| Tasks, events, announcements, tenure, finance, partners, media, check-in, equipment, assets | Schema tables exist | Not implemented | Mock/static pages or absent | None | Planned only |
 
 ## Prioritized implementation order
 

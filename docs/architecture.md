@@ -18,7 +18,7 @@ flowchart LR
   Compose[Docker Compose] --> Browser
   Compose --> API
   Compose --> DB
-  Flyway[Flyway migrations V1-V15] --> DB
+  Flyway[Flyway migrations V1-V18] --> DB
 ```
 
 The repository is a pnpm workspace at the root with one actual Java application outside pnpm:
@@ -27,7 +27,7 @@ The repository is a pnpm workspace at the root with one actual Java application 
 |---|---|---|
 | Frontend | Next.js 16.2, React 19, TypeScript, App Router, client-side `fetch`, React Query provider | [frontend/](../frontend/) `package.json` |
 | Backend | Java 21, Spring Boot 4.1, Spring MVC, Spring Security, Spring Data JPA, Flyway, springdoc | [backend/](../backend/) `pom.xml` |
-| Database | PostgreSQL 16; versioned SQL migrations V1-V15; Hibernate schema validation | [migration/](../backend/src/main/resources/db/migration/) |
+| Database | PostgreSQL 16; versioned SQL migrations V1-V18; Hibernate schema validation | [migration/](../backend/src/main/resources/db/migration/) |
 | Local/container orchestration | `db`, `backend`, and `frontend` Compose services; named PostgreSQL volume | [docker-compose.yml](../docker-compose.yml) |
 
 ### Repository boundaries
@@ -39,7 +39,7 @@ The repository is a pnpm workspace at the root with one actual Java application 
 
 ## Backend implementation surface
 
-Only three application domains have Spring MVC controllers:
+The application has Spring MVC controllers for authentication, landing content/catalog, and the first member-directory slice:
 
 | Domain | Entities/repositories | Service/controller | Persistence |
 |---|---|---|---|
@@ -47,6 +47,7 @@ Only three application domains have Spring MVC controllers:
 | Landing sections | `LandingContent`, `LandingContentVersion` and repositories | `LandingContentController` | `landing_content`, `landing_content_versions` |
 | Landing catalog | `LandingProject`, `LandingAchievement` and repositories | `LandingCatalogController` | `projects`, `achievements` |
 | Module access | `AdminModule`, `RoleGuard` | `AuthController` module discovery | No additional tables |
+| Member directory | `User`, `UserRepository` | `MemberController` list/create/update | `users` |
 
 All other migrated domains are schema-only at this revision: no Java entity, repository, service, controller, DTO, or frontend API client was found for them. See [schema-backed-unimplemented.md](modules/schema-backed-unimplemented.md).
 
@@ -54,7 +55,7 @@ Spring uses `/api` as its servlet context path. The Springdoc dependency supplie
 
 ## Database ownership and migration behavior
 
-**Verified primary schema input:** [V1__create_enums.sql](../backend/src/main/resources/db/migration/V1__create_enums.sql) through [V17__seed_remaining_public_catalog_items.sql](../backend/src/main/resources/db/migration/V17__seed_remaining_public_catalog_items.sql), configured in [application.yml](../backend/src/main/resources/application.yml) as Flyway's migration location. [CREATE_NEU_DEBATE_CLUB.sql](../backend/src/main/resources/db/CREATE_NEU_DEBATE_CLUB.sql) is a `psql` bootstrap wrapper that includes that same ordered migration sequence; it is not an independent schema definition.
+**Verified primary schema input:** [V1__create_enums.sql](../backend/src/main/resources/db/migration/V1__create_enums.sql) through [V18__seed_sample_members.sql](../backend/src/main/resources/db/migration/V18__seed_sample_members.sql), configured in [application.yml](../backend/src/main/resources/application.yml) as Flyway's migration location. [CREATE_NEU_DEBATE_CLUB.sql](../backend/src/main/resources/db/CREATE_NEU_DEBATE_CLUB.sql) is a `psql` bootstrap wrapper that includes that same ordered migration sequence; it is not an independent schema definition.
 
 Hibernate is configured with `ddl-auto: validate`, so it validates rather than creates or changes tables. This makes the migration set the database schema authority in code.
 
