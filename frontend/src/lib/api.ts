@@ -147,6 +147,18 @@ export function fetchCmsCatalog(type: "projects" | "achievements") {
   return cmsRequest<CmsCatalogItem[]>(`/public/cms/landing/catalog/${type}`);
 }
 
+export function checkCmsCatalogSlug(
+  type: "projects" | "achievements",
+  slug: string,
+  excludeId?: string,
+) {
+  const params = new URLSearchParams({ slug });
+  if (excludeId) params.set("excludeId", excludeId);
+  return cmsRequest<{ available: boolean }>(
+    `/public/cms/landing/catalog/${type}/slug-available?${params}`,
+  );
+}
+
 export function publishCmsCatalog(
   type: "projects" | "achievements",
   items: Record<string, unknown>[],

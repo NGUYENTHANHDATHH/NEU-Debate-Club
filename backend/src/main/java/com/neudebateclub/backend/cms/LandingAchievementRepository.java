@@ -10,4 +10,6 @@ public interface LandingAchievementRepository extends JpaRepository<LandingAchie
     List<LandingAchievement> findByVisibleTrueOrderByDisplayOrderAscUpdatedAtDesc();
     List<LandingAchievement> findAllByOrderByDisplayOrderAscUpdatedAtDesc();
     Optional<LandingAchievement> findBySlugAndVisibleTrue(String slug);
+    boolean existsBySlug(String slug);
+    boolean existsBySlugAndIdNot(String slug, UUID id);
 }

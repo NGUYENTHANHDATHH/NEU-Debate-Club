@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -63,6 +64,27 @@ public class LandingCatalogController {
             case "achievements" -> ResponseEntity.ok(achievementRepository.findAllByOrderByDisplayOrderAscUpdatedAtDesc());
             default -> throw new ValidationException("Unknown landing catalog: " + type);
         };
+    }
+
+    @GetMapping("/cms/landing/catalog/{type}/slug-available")
+    public ResponseEntity<Map<String, Boolean>> slugAvailable(
+            @PathVariable String type,
+            @RequestParam String slug,
+            @RequestParam(required = false) UUID excludeId,
+            @CurrentUser UserPrincipal user) {
+        roleGuard.requireModuleManager(user, AdminModule.LANDING_CMS);
+        String normalizedSlug = normalizeSlug(slug);
+        if (normalizedSlug.isBlank()) throw new ValidationException("slug is required");
+        boolean exists = switch (normalizeType(type)) {
+            case "projects" -> excludeId == null
+                    ? projectRepository.existsBySlug(normalizedSlug)
+                    : projectRepository.existsBySlugAndIdNot(normalizedSlug, excludeId);
+            case "achievements" -> excludeId == null
+                    ? achievementRepository.existsBySlug(normalizedSlug)
+                    : achievementRepository.existsBySlugAndIdNot(normalizedSlug, excludeId);
+            default -> false;
+        };
+        return ResponseEntity.ok(Map.of("available", !exists));
     }
 
     @PutMapping(value = "/cms/landing/catalog/{type}/publish", consumes = "application/json")
@@ -191,8 +213,11 @@ public class LandingCatalogController {
     }
 
     private String slug(JsonNode item, UUID existingId) {
-        String value = text(item, "slug", "title").toLowerCase()
-                .replaceAll("[^a-z0-9]+", "-").replaceAll("^-|-$", "");
+        String value = normalizeSlug(text(item, "slug", "title"));
         return value.isBlank() ? "landing-" + (existingId == null ? UUID.randomUUID() : existingId) : value;
+    }
+
+    private String normalizeSlug(String value) {
+        return value.toLowerCase().replaceAll("[^a-z0-9]+", "-").replaceAll("^-|-$", "");
     }
 }

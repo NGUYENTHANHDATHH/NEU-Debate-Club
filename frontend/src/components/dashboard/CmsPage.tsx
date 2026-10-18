@@ -10,6 +10,7 @@ import {
   Pin,
   Plus,
   Upload,
+  X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ActionButton } from "@/components/ui/Dashboard/ActionButton";
@@ -18,6 +19,7 @@ import { Section } from "@/components/ui/Dashboard/Section";
 import {
   CmsCatalogItem,
   CmsSection,
+  checkCmsCatalogSlug,
   fetchCmsCatalog,
   fetchCmsSection,
   fetchCmsSections,
@@ -51,6 +53,17 @@ function textValue(value: unknown) {
   return typeof value === "string" ? value : "";
 }
 
+function slugFromTitle(title: string) {
+  return title
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/đ/g, "d")
+    .replace(/\bclub\b/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 function inputClassName() {
   return "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-[#18181B] outline-none transition focus:border-[#E11D48]";
 }
@@ -60,14 +73,16 @@ function Field({
   value,
   onChange,
   multiline = false,
+  className = "",
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   multiline?: boolean;
+  className?: string;
 }) {
   return (
-    <label className="space-y-1 text-xs font-medium text-slate-700">
+    <label className={`space-y-1 text-xs font-medium text-slate-700 ${className}`}>
       <span>{label}</span>
       {multiline ? (
         <textarea
@@ -115,6 +130,9 @@ export function CmsPage() {
     type: "success" | "error";
     text: string;
   } | null>(null);
+  const [slugStatus, setSlugStatus] = useState<
+    "idle" | "checking" | "available" | "duplicate" | "error"
+  >("idle");
 
   const selectedSection = sections.find((item) => item.section === selected);
   const items = Array.isArray(content.items)
@@ -162,7 +180,9 @@ export function CmsPage() {
         ]).then(([catalog, achievementSection]) => ({
           section: selected,
           draft: {
-            ...(achievementSection?.draft ?? achievementSection?.published ?? {}),
+            ...(achievementSection?.draft ??
+              achievementSection?.published ??
+              {}),
             items: catalog.map(catalogItemContent),
           },
           published: {
@@ -199,6 +219,8 @@ export function CmsPage() {
       cancelled = true;
     };
   }, [isCatalogSection, selected]);
+
+  useEffect(() => setSlugStatus("idle"), [activeItem]);
 
   function updateContent(key: string, value: string) {
     setContent((current) => ({ ...current, [key]: value }));
@@ -245,6 +267,27 @@ export function CmsPage() {
       stats[index] = { ...stats[index], [key]: value };
       return { ...current, stats };
     });
+  }
+
+  async function generateAndCheckSlug() {
+    if (activeItem === null || !currentItem || !isCatalogSection) return;
+    const slug = slugFromTitle(textValue(currentItem.title));
+    updateItem(activeItem, "slug", slug);
+    if (!slug) {
+      setSlugStatus("error");
+      return;
+    }
+    setSlugStatus("checking");
+    try {
+      const result = await checkCmsCatalogSlug(
+        selected as "projects" | "achievements",
+        slug,
+        textValue(currentItem.id) || undefined,
+      );
+      setSlugStatus(result.available ? "available" : "duplicate");
+    } catch {
+      setSlugStatus("error");
+    }
   }
 
   function addItem() {
@@ -402,7 +445,9 @@ export function CmsPage() {
                       <Field
                         label="Icon"
                         value={textValue(stat.iconType)}
-                        onChange={(value) => updateStat(index, "iconType", value)}
+                        onChange={(value) =>
+                          updateStat(index, "iconType", value)
+                        }
                       />
                     </div>
                   ))}
@@ -474,23 +519,32 @@ export function CmsPage() {
                 )}
               </div>
             ) : isListSection ? (
-              <div className="grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
-                <div className="space-y-2">
-                  {pageItems.map((item, index) => {
-                    const actualIndex = itemOffset + index;
-                    return (
-                      <button
-                        key={String(item.id ?? actualIndex)}
-                        onClick={() => setActiveItem(actualIndex)}
-                        className={`w-full overflow-hidden rounded-xl border text-left text-sm ${activeItem === actualIndex ? "border-rose-200 bg-rose-50 text-[#E11D48]" : "border-slate-200 bg-white text-[#18181B]"}`}
-                      >
-                        {isCatalogSection ? (
-                          <div>
+              <div
+                className={
+                  isCatalogSection
+                    ? "space-y-5"
+                    : "grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)]"
+                }
+              >
+                <div className={isCatalogSection ? "space-y-3" : "space-y-2"}>
+                  {isCatalogSection ? (
+                    <div className="flex flex-wrap gap-3 pb-2">
+                      {pageItems.map((item, index) => {
+                        const actualIndex = itemOffset + index;
+                        return (
+                          <button
+                            key={String(item.id ?? actualIndex)}
+                            onClick={() => setActiveItem(actualIndex)}
+                            className={`w-full shrink-0 overflow-hidden rounded-xl border text-left text-sm transition sm:w-64 ${activeItem === actualIndex ? "border-rose-300 bg-rose-50 text-[#E11D48] ring-2 ring-rose-100" : "border-slate-200 bg-white text-[#18181B] hover:border-slate-300"}`}
+                          >
                             <div className="aspect-video bg-slate-100">
                               {textValue(item.imageUrl ?? item.image) ? (
                                 <img
                                   src={textValue(item.imageUrl ?? item.image)}
-                                  alt={textValue(item.imageAlt) || textValue(item.title)}
+                                  alt={
+                                    textValue(item.imageAlt) ||
+                                    textValue(item.title)
+                                  }
                                   className="h-full w-full object-cover"
                                 />
                               ) : null}
@@ -503,15 +557,27 @@ export function CmsPage() {
                                 {textValue(item.description ?? item.desc)}
                               </p>
                             </div>
-                          </div>
-                        ) : (
-                          <span className="block px-3 py-2.5">
-                            {itemLabel(item, selected, actualIndex)}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                  {!isCatalogSection
+                    ? pageItems.map((item, index) => {
+                        const actualIndex = itemOffset + index;
+                        return (
+                          <button
+                            key={String(item.id ?? actualIndex)}
+                            onClick={() => setActiveItem(actualIndex)}
+                            className={`w-full overflow-hidden rounded-xl border text-left text-sm ${activeItem === actualIndex ? "border-rose-200 bg-rose-50 text-[#E11D48]" : "border-slate-200 bg-white text-[#18181B]"}`}
+                          >
+                            <span className="block px-3 py-2.5">
+                              {itemLabel(item, selected, actualIndex)}
+                            </span>
+                          </button>
+                        );
+                      })
+                    : null}
                   <ActionButton
                     variant="outline"
                     icon={<Plus className="h-4 w-4" />}
@@ -531,7 +597,7 @@ export function CmsPage() {
                         disabled={page === 1}
                         onClick={() => {
                           setPage(page - 1);
-                          setActiveItem((page - 2) * pageSize);
+                          setActiveItem(null);
                         }}
                       >
                         <ChevronLeft className="h-4 w-4" />
@@ -544,7 +610,7 @@ export function CmsPage() {
                         disabled={page === pageCount}
                         onClick={() => {
                           setPage(page + 1);
-                          setActiveItem(page * pageSize);
+                          setActiveItem(null);
                         }}
                       >
                         <ChevronRight className="h-4 w-4" />
@@ -553,7 +619,40 @@ export function CmsPage() {
                   ) : null}
                 </div>
                 {currentItem ? (
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <>
+                    {isCatalogSection ? (
+                      <div
+                        className="absolute inset-0 z-40 bg-slate-950/50"
+                        onClick={() => setActiveItem(null)}
+                      />
+                    ) : null}
+                    <div
+                      className={
+                        isCatalogSection
+                          ? "absolute inset-4 z-50 mx-auto grid max-w-5xl content-start gap-5 overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl sm:grid-cols-2 sm:p-8"
+                          : "grid gap-3 sm:grid-cols-2"
+                      }
+                    >
+                    {isCatalogSection ? (
+                      <div className="col-span-full flex items-center justify-between border-b border-slate-200 pb-4">
+                        <div>
+                          <h3 className="text-lg font-semibold text-[#18181B]">
+                            Chỉnh sửa {selected === "projects" ? "project" : "achievement"}
+                          </h3>
+                          <p className="mt-1 text-sm text-slate-500">
+                            Cập nhật thông tin hiển thị trên landing page.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setActiveItem(null)}
+                          aria-label="Đóng form chỉnh sửa"
+                          className="rounded-full p-2 text-rose-600 transition hover:bg-rose-50"
+                        >
+                          <X className="h-6 w-6" />
+                        </button>
+                      </div>
+                    ) : null}
                     {selected === "departments" ? (
                       <>
                         <Field
@@ -614,6 +713,9 @@ export function CmsPage() {
                     ) : null}
                     {selected === "achievements" || selected === "projects" ? (
                       <>
+                        <p className="col-span-full border-b border-slate-100 pb-2 text-sm font-semibold text-slate-800">
+                          Thông tin cơ bản
+                        </p>
                         <Field
                           label="Title"
                           value={textValue(currentItem.title)}
@@ -621,15 +723,48 @@ export function CmsPage() {
                             updateItem(activeItem, "title", value)
                           }
                         />
-                        <Field
-                          label="Slug"
-                          value={textValue(currentItem.slug)}
-                          onChange={(value) =>
-                            updateItem(activeItem, "slug", value)
-                          }
-                        />
+                        <label className="space-y-1 text-xs font-medium text-slate-700">
+                          <span>Slug</span>
+                          <div className="flex gap-2">
+                            <input
+                              value={textValue(currentItem.slug)}
+                              onChange={(event) => {
+                                updateItem(activeItem, "slug", event.target.value);
+                                setSlugStatus("idle");
+                              }}
+                              className={inputClassName()}
+                            />
+                            <button
+                              type="button"
+                              onClick={generateAndCheckSlug}
+                              disabled={
+                                slugStatus === "checking" ||
+                                !textValue(currentItem.title).trim()
+                              }
+                              className="shrink-0 rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {slugStatus === "checking" ? "Đang kiểm tra..." : "Tạo slug"}
+                            </button>
+                          </div>
+                          {slugStatus === "duplicate" ? (
+                            <span className="block text-xs font-medium text-rose-600">
+                              Slug này đã tồn tại. Hãy sửa title khác.
+                            </span>
+                          ) : null}
+                          {slugStatus === "available" ? (
+                            <span className="block text-xs font-medium text-emerald-600">
+                              Slug có thể sử dụng.
+                            </span>
+                          ) : null}
+                          {slugStatus === "error" ? (
+                            <span className="block text-xs font-medium text-rose-600">
+                              Không thể tạo hoặc kiểm tra slug.
+                            </span>
+                          ) : null}
+                        </label>
                         <Field
                           label="Description"
+                          className="sm:col-span-2"
                           value={textValue(
                             currentItem.description ?? currentItem.desc,
                           )}
@@ -640,11 +775,15 @@ export function CmsPage() {
                         <Field
                           label="Content"
                           multiline
+                          className="sm:col-span-2"
                           value={textValue(currentItem.content)}
                           onChange={(value) =>
                             updateItem(activeItem, "content", value)
                           }
                         />
+                        <p className="col-span-full mt-2 border-b border-slate-100 pb-2 text-sm font-semibold text-slate-800">
+                          Hình ảnh và phân loại
+                        </p>
                         <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2">
                           <Field
                             label="Image URL"
@@ -693,6 +832,9 @@ export function CmsPage() {
                             updateItem(activeItem, "displayOrder", value)
                           }
                         />
+                        <p className="col-span-full mt-2 border-b border-slate-100 pb-2 text-sm font-semibold text-slate-800">
+                          Hiển thị
+                        </p>
                         <div className="flex flex-wrap gap-2 sm:col-span-2">
                           <button
                             type="button"
@@ -724,7 +866,26 @@ export function CmsPage() {
                         </div>
                       </>
                     ) : null}
-                  </div>
+                    {isCatalogSection ? (
+                      <div className="col-span-full flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 pt-4">
+                        {message ? (
+                          <span
+                            className={`mr-auto text-sm ${message.type === "error" ? "text-rose-600" : "text-emerald-600"}`}
+                          >
+                            {message.text}
+                          </span>
+                        ) : null}
+                        <ActionButton
+                          icon={<Upload className="h-4 w-4" />}
+                          onClick={handlePublish}
+                          disabled={busy !== null}
+                        >
+                          {busy === "publishing" ? "Đang xuất bản..." : "Xuất bản"}
+                        </ActionButton>
+                      </div>
+                    ) : null}
+                    </div>
+                  </>
                 ) : (
                   <p className="rounded-xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-500">
                     Chưa có dữ liệu. Hãy thêm một mục.

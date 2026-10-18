@@ -15,7 +15,7 @@ export default function MainLayout({
         <SideBar />
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <DashboardHeader />
-          <div className="flex-1 overflow-auto">{children}</div>
+          <div className="relative flex-1 overflow-auto">{children}</div>
         </main>
       </div>
     </DashboardAccessGuard>

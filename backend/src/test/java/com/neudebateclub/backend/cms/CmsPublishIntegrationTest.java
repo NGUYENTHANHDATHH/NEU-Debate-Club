@@ -92,6 +92,23 @@ class CmsPublishIntegrationTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"projects", "achievements"})
+    void checksCatalogSlugAvailability(String type) throws Exception {
+        String slug = "slug-check-" + UUID.randomUUID();
+        var item = mapper.createObjectNode().put("title", "Slug check").put("slug", slug)
+                .put("category", "other");
+        var body = mapper.createObjectNode();
+        body.putArray("items").add(item);
+        JsonNode saved = json(request("PUT", "/public/cms/landing/catalog/" + type + "/publish",
+                body.toString())).get(0);
+        String checkPath = "/public/cms/landing/catalog/" + type + "/slug-available?slug=" + slug;
+        assertFalse(json(request("GET", checkPath, null)).path("available").asBoolean());
+        assertTrue(json(request("GET", checkPath + "&excludeId=" + saved.path("id").asText(), null))
+                .path("available").asBoolean());
+        assertTrue(json(request("GET", checkPath + "-new", null)).path("available").asBoolean());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"projects", "achievements"})
     void invalidCatalogBatchDoesNotPublishEarlierItems(String type) throws Exception {
         String slug = "rollback-test-" + UUID.randomUUID();
         String body = "{\"items\":[{\"title\":\"Valid\",\"slug\":\"" + slug
@@ -121,6 +138,7 @@ class CmsPublishIntegrationTest {
         assertTrue(paths.path("/public/landing/cms/landing/{section}/draft").has("put"));
         assertTrue(paths.path("/public/landing/cms/landing/{section}/publish").has("post"));
         assertTrue(paths.path("/public/cms/landing/catalog/{type}/publish").has("put"));
+        assertTrue(paths.path("/public/cms/landing/catalog/{type}/slug-available").has("get"));
     }
 
     private String tokenFor(Role role) {

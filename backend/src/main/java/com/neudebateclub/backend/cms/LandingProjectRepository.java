@@ -10,4 +10,6 @@ public interface LandingProjectRepository extends JpaRepository<LandingProject, 
     List<LandingProject> findByVisibleTrueOrderByDisplayOrderAscUpdatedAtDesc();
     List<LandingProject> findAllByOrderByDisplayOrderAscUpdatedAtDesc();
     Optional<LandingProject> findBySlugAndVisibleTrue(String slug);
+    boolean existsBySlug(String slug);
+    boolean existsBySlugAndIdNot(String slug, UUID id);
 }
