@@ -31,7 +31,6 @@ import {
 const sectionLabels: Record<string, string> = {
   hero: "Hero",
   vision: "Tầm nhìn",
-  departments: "Departments",
   comments: "Comments",
   achievements: "Achievements",
   projects: "Projects",
@@ -82,7 +81,9 @@ function Field({
   className?: string;
 }) {
   return (
-    <label className={`space-y-1 text-xs font-medium text-slate-700 ${className}`}>
+    <label
+      className={`space-y-1 text-xs font-medium text-slate-700 ${className}`}
+    >
       <span>{label}</span>
       {multiline ? (
         <textarea
@@ -423,10 +424,10 @@ export function CmsPage() {
           >
             {selected === "achievements" && Array.isArray(content.stats) ? (
               <div className="mb-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <p className="mb-3 text-sm font-semibold text-[#18181B]">
+                {/* <p className="mb-3 text-sm font-semibold text-[#18181B]">
                   Achievement statistics
-                </p>
-                <div className="grid gap-3 md:grid-cols-3">
+                </p> */}
+                {/* <div className="grid gap-3 md:grid-cols-3">
                   {(content.stats as ContentItem[]).map((stat, index) => (
                     <div
                       key={String(stat.id ?? index)}
@@ -442,16 +443,9 @@ export function CmsPage() {
                         value={textValue(stat.label)}
                         onChange={(value) => updateStat(index, "label", value)}
                       />
-                      <Field
-                        label="Icon"
-                        value={textValue(stat.iconType)}
-                        onChange={(value) =>
-                          updateStat(index, "iconType", value)
-                        }
-                      />
                     </div>
                   ))}
-                </div>
+                </div> */}
               </div>
             ) : null}
             {selected === "hero" || selected === "vision" ? (
@@ -542,7 +536,7 @@ export function CmsPage() {
                                 <img
                                   src={textValue(item.imageUrl ?? item.image)}
                                   alt={
-                                    textValue(item.imageAlt) ||
+                                    textValue(item.description ?? item.desc) ||
                                     textValue(item.title)
                                   }
                                   className="h-full w-full object-cover"
@@ -633,257 +627,262 @@ export function CmsPage() {
                           : "grid gap-3 sm:grid-cols-2"
                       }
                     >
-                    {isCatalogSection ? (
-                      <div className="col-span-full flex items-center justify-between border-b border-slate-200 pb-4">
-                        <div>
-                          <h3 className="text-lg font-semibold text-[#18181B]">
-                            Chỉnh sửa {selected === "projects" ? "project" : "achievement"}
-                          </h3>
-                          <p className="mt-1 text-sm text-slate-500">
-                            Cập nhật thông tin hiển thị trên landing page.
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setActiveItem(null)}
-                          aria-label="Đóng form chỉnh sửa"
-                          className="rounded-full p-2 text-rose-600 transition hover:bg-rose-50"
-                        >
-                          <X className="h-6 w-6" />
-                        </button>
-                      </div>
-                    ) : null}
-                    {selected === "departments" ? (
-                      <>
-                        <Field
-                          label="Name translation key"
-                          value={textValue(currentItem.nameKey)}
-                          onChange={(value) =>
-                            updateItem(activeItem, "nameKey", value)
-                          }
-                        />
-                        <Field
-                          label="Description translation key"
-                          value={textValue(currentItem.descKey)}
-                          onChange={(value) =>
-                            updateItem(activeItem, "descKey", value)
-                          }
-                        />
-                        <Field
-                          label="Icon type"
-                          value={textValue(currentItem.iconType)}
-                          onChange={(value) =>
-                            updateItem(activeItem, "iconType", value)
-                          }
-                        />
-                      </>
-                    ) : null}
-                    {selected === "comments" ? (
-                      <>
-                        <Field
-                          label="Tên"
-                          value={textValue(currentItem.author)}
-                          onChange={(value) =>
-                            updateItem(activeItem, "author", value)
-                          }
-                        />
-                        <Field
-                          label="Chức vụ"
-                          value={textValue(currentItem.role)}
-                          onChange={(value) =>
-                            updateItem(activeItem, "role", value)
-                          }
-                        />
-                        <Field
-                          label="Description"
-                          multiline
-                          value={textValue(currentItem.quote)}
-                          onChange={(value) =>
-                            updateItem(activeItem, "quote", value)
-                          }
-                        />
-                        <Field
-                          label="Image URL"
-                          value={textValue(currentItem.img)}
-                          onChange={(value) =>
-                            updateItem(activeItem, "img", value)
-                          }
-                        />
-                      </>
-                    ) : null}
-                    {selected === "achievements" || selected === "projects" ? (
-                      <>
-                        <p className="col-span-full border-b border-slate-100 pb-2 text-sm font-semibold text-slate-800">
-                          Thông tin cơ bản
-                        </p>
-                        <Field
-                          label="Title"
-                          value={textValue(currentItem.title)}
-                          onChange={(value) =>
-                            updateItem(activeItem, "title", value)
-                          }
-                        />
-                        <label className="space-y-1 text-xs font-medium text-slate-700">
-                          <span>Slug</span>
-                          <div className="flex gap-2">
-                            <input
-                              value={textValue(currentItem.slug)}
-                              onChange={(event) => {
-                                updateItem(activeItem, "slug", event.target.value);
-                                setSlugStatus("idle");
-                              }}
-                              className={inputClassName()}
-                            />
-                            <button
-                              type="button"
-                              onClick={generateAndCheckSlug}
-                              disabled={
-                                slugStatus === "checking" ||
-                                !textValue(currentItem.title).trim()
-                              }
-                              className="shrink-0 rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                              {slugStatus === "checking" ? "Đang kiểm tra..." : "Tạo slug"}
-                            </button>
+                      {isCatalogSection ? (
+                        <div className="col-span-full flex items-center justify-between border-b border-slate-200 pb-4">
+                          <div>
+                            <h3 className="text-lg font-semibold text-[#18181B]">
+                              Chỉnh sửa{" "}
+                              {selected === "projects"
+                                ? "project"
+                                : "achievement"}
+                            </h3>
+                            <p className="mt-1 text-sm text-slate-500">
+                              Cập nhật thông tin hiển thị trên landing page.
+                            </p>
                           </div>
-                          {slugStatus === "duplicate" ? (
-                            <span className="block text-xs font-medium text-rose-600">
-                              Slug này đã tồn tại. Hãy sửa title khác.
-                            </span>
-                          ) : null}
-                          {slugStatus === "available" ? (
-                            <span className="block text-xs font-medium text-emerald-600">
-                              Slug có thể sử dụng.
-                            </span>
-                          ) : null}
-                          {slugStatus === "error" ? (
-                            <span className="block text-xs font-medium text-rose-600">
-                              Không thể tạo hoặc kiểm tra slug.
-                            </span>
-                          ) : null}
-                        </label>
-                        <Field
-                          label="Description"
-                          className="sm:col-span-2"
-                          value={textValue(
-                            currentItem.description ?? currentItem.desc,
-                          )}
-                          onChange={(value) =>
-                            updateItem(activeItem, "description", value)
-                          }
-                        />
-                        <Field
-                          label="Content"
-                          multiline
-                          className="sm:col-span-2"
-                          value={textValue(currentItem.content)}
-                          onChange={(value) =>
-                            updateItem(activeItem, "content", value)
-                          }
-                        />
-                        <p className="col-span-full mt-2 border-b border-slate-100 pb-2 text-sm font-semibold text-slate-800">
-                          Hình ảnh và phân loại
-                        </p>
-                        <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2">
+                          <button
+                            type="button"
+                            onClick={() => setActiveItem(null)}
+                            aria-label="Đóng form chỉnh sửa"
+                            className="rounded-full p-2 text-rose-600 transition hover:bg-rose-50"
+                          >
+                            <X className="h-6 w-6" />
+                          </button>
+                        </div>
+                      ) : null}
+                      {selected === "departments" ? (
+                        <>
+                          <Field
+                            label="Name translation key"
+                            value={textValue(currentItem.nameKey)}
+                            onChange={(value) =>
+                              updateItem(activeItem, "nameKey", value)
+                            }
+                          />
+                          <Field
+                            label="Description translation key"
+                            value={textValue(currentItem.descKey)}
+                            onChange={(value) =>
+                              updateItem(activeItem, "descKey", value)
+                            }
+                          />
+                          <Field
+                            label="Icon type"
+                            value={textValue(currentItem.iconType)}
+                            onChange={(value) =>
+                              updateItem(activeItem, "iconType", value)
+                            }
+                          />
+                        </>
+                      ) : null}
+                      {selected === "comments" ? (
+                        <>
+                          <Field
+                            label="Tên"
+                            value={textValue(currentItem.author)}
+                            onChange={(value) =>
+                              updateItem(activeItem, "author", value)
+                            }
+                          />
+                          <Field
+                            label="Chức vụ"
+                            value={textValue(currentItem.role)}
+                            onChange={(value) =>
+                              updateItem(activeItem, "role", value)
+                            }
+                          />
+                          <Field
+                            label="Description"
+                            multiline
+                            value={textValue(currentItem.quote)}
+                            onChange={(value) =>
+                              updateItem(activeItem, "quote", value)
+                            }
+                          />
                           <Field
                             label="Image URL"
+                            value={textValue(currentItem.img)}
+                            onChange={(value) =>
+                              updateItem(activeItem, "img", value)
+                            }
+                          />
+                        </>
+                      ) : null}
+                      {selected === "achievements" ||
+                      selected === "projects" ? (
+                        <>
+                          <p className="col-span-full border-b border-slate-100 pb-2 text-sm font-semibold text-slate-800">
+                            Thông tin cơ bản
+                          </p>
+                          <Field
+                            label="Title"
+                            value={textValue(currentItem.title)}
+                            onChange={(value) =>
+                              updateItem(activeItem, "title", value)
+                            }
+                          />
+                          <label className="space-y-1 text-xs font-medium text-slate-700">
+                            <span>Slug</span>
+                            <div className="flex gap-2">
+                              <input
+                                value={textValue(currentItem.slug)}
+                                onChange={(event) => {
+                                  updateItem(
+                                    activeItem,
+                                    "slug",
+                                    event.target.value,
+                                  );
+                                  setSlugStatus("idle");
+                                }}
+                                className={inputClassName()}
+                              />
+                              <button
+                                type="button"
+                                onClick={generateAndCheckSlug}
+                                disabled={
+                                  slugStatus === "checking" ||
+                                  !textValue(currentItem.title).trim()
+                                }
+                                className="shrink-0 rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                {slugStatus === "checking"
+                                  ? "Đang kiểm tra..."
+                                  : "Tạo slug"}
+                              </button>
+                            </div>
+                            {slugStatus === "duplicate" ? (
+                              <span className="block text-xs font-medium text-rose-600">
+                                Slug này đã tồn tại. Hãy sửa title khác.
+                              </span>
+                            ) : null}
+                            {slugStatus === "available" ? (
+                              <span className="block text-xs font-medium text-emerald-600">
+                                Slug có thể sử dụng.
+                              </span>
+                            ) : null}
+                            {slugStatus === "error" ? (
+                              <span className="block text-xs font-medium text-rose-600">
+                                Không thể tạo hoặc kiểm tra slug.
+                              </span>
+                            ) : null}
+                          </label>
+                          <Field
+                            label="Description"
+                            className="sm:col-span-2"
                             value={textValue(
-                              currentItem.imageUrl ?? currentItem.image,
+                              currentItem.description ?? currentItem.desc,
                             )}
                             onChange={(value) =>
-                              updateItem(activeItem, "imageUrl", value)
+                              updateItem(activeItem, "description", value)
                             }
                           />
                           <Field
-                            label="Image alt"
-                            value={textValue(currentItem.imageAlt)}
+                            label="Content"
+                            multiline
+                            className="sm:col-span-2"
+                            value={textValue(currentItem.content)}
                             onChange={(value) =>
-                              updateItem(activeItem, "imageAlt", value)
+                              updateItem(activeItem, "content", value)
                             }
                           />
+                          <p className="col-span-full mt-2 border-b border-slate-100 pb-2 text-sm font-semibold text-slate-800">
+                            Hình ảnh và phân loại
+                          </p>
+                          <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2">
+                            <Field
+                              label="Image URL"
+                              value={textValue(
+                                currentItem.imageUrl ?? currentItem.image,
+                              )}
+                              onChange={(value) =>
+                                updateItem(activeItem, "imageUrl", value)
+                              }
+                            />
+                          </div>
+                          <label className="space-y-1 text-xs font-medium text-slate-700">
+                            <span>Category</span>
+                            <select
+                              value={textValue(currentItem.category)}
+                              onChange={(event) =>
+                                updateItem(
+                                  activeItem,
+                                  "category",
+                                  event.target.value,
+                                )
+                              }
+                              className={inputClassName()}
+                            >
+                              {(selected === "projects"
+                                ? projectCategories
+                                : achievementCategories
+                              ).map((category) => (
+                                <option key={category} value={category}>
+                                  {category}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <Field
+                            label="Display order"
+                            value={String(currentItem.displayOrder ?? "")}
+                            onChange={(value) =>
+                              updateItem(activeItem, "displayOrder", value)
+                            }
+                          />
+                          <p className="col-span-full mt-2 border-b border-slate-100 pb-2 text-sm font-semibold text-slate-800">
+                            Hiển thị
+                          </p>
+                          <div className="flex flex-wrap gap-2 sm:col-span-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateItem(
+                                  activeItem,
+                                  "pinned",
+                                  !currentItem.pinned,
+                                )
+                              }
+                              className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm ${currentItem.pinned ? "border-amber-300 bg-amber-50 text-amber-700" : "border-slate-200 text-slate-600"}`}
+                            >
+                              <Pin className="h-4 w-4" /> Ghim
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateItem(
+                                  activeItem,
+                                  "hidden",
+                                  !currentItem.hidden,
+                                )
+                              }
+                              className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm ${currentItem.hidden ? "border-slate-400 bg-slate-100 text-slate-700" : "border-slate-200 text-slate-600"}`}
+                            >
+                              <EyeOff className="h-4 w-4" />{" "}
+                              {currentItem.hidden ? "Đang ẩn" : "Ẩn"}
+                            </button>
+                          </div>
+                        </>
+                      ) : null}
+                      {isCatalogSection ? (
+                        <div className="col-span-full flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 pt-4">
+                          {message ? (
+                            <span
+                              className={`mr-auto text-sm ${message.type === "error" ? "text-rose-600" : "text-emerald-600"}`}
+                            >
+                              {message.text}
+                            </span>
+                          ) : null}
+                          <ActionButton
+                            icon={<Upload className="h-4 w-4" />}
+                            onClick={handlePublish}
+                            disabled={busy !== null}
+                          >
+                            {busy === "publishing"
+                              ? "Đang xuất bản..."
+                              : "Xuất bản"}
+                          </ActionButton>
                         </div>
-                        <label className="space-y-1 text-xs font-medium text-slate-700">
-                          <span>Category</span>
-                          <select
-                            value={textValue(currentItem.category)}
-                            onChange={(event) =>
-                              updateItem(
-                                activeItem,
-                                "category",
-                                event.target.value,
-                              )
-                            }
-                            className={inputClassName()}
-                          >
-                            {(selected === "projects"
-                              ? projectCategories
-                              : achievementCategories
-                            ).map((category) => (
-                              <option key={category} value={category}>
-                                {category}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <Field
-                          label="Display order"
-                          value={String(currentItem.displayOrder ?? "")}
-                          onChange={(value) =>
-                            updateItem(activeItem, "displayOrder", value)
-                          }
-                        />
-                        <p className="col-span-full mt-2 border-b border-slate-100 pb-2 text-sm font-semibold text-slate-800">
-                          Hiển thị
-                        </p>
-                        <div className="flex flex-wrap gap-2 sm:col-span-2">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              updateItem(
-                                activeItem,
-                                "pinned",
-                                !currentItem.pinned,
-                              )
-                            }
-                            className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm ${currentItem.pinned ? "border-amber-300 bg-amber-50 text-amber-700" : "border-slate-200 text-slate-600"}`}
-                          >
-                            <Pin className="h-4 w-4" /> Ghim
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              updateItem(
-                                activeItem,
-                                "hidden",
-                                !currentItem.hidden,
-                              )
-                            }
-                            className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm ${currentItem.hidden ? "border-slate-400 bg-slate-100 text-slate-700" : "border-slate-200 text-slate-600"}`}
-                          >
-                            <EyeOff className="h-4 w-4" />{" "}
-                            {currentItem.hidden ? "Đang ẩn" : "Ẩn"}
-                          </button>
-                        </div>
-                      </>
-                    ) : null}
-                    {isCatalogSection ? (
-                      <div className="col-span-full flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 pt-4">
-                        {message ? (
-                          <span
-                            className={`mr-auto text-sm ${message.type === "error" ? "text-rose-600" : "text-emerald-600"}`}
-                          >
-                            {message.text}
-                          </span>
-                        ) : null}
-                        <ActionButton
-                          icon={<Upload className="h-4 w-4" />}
-                          onClick={handlePublish}
-                          disabled={busy !== null}
-                        >
-                          {busy === "publishing" ? "Đang xuất bản..." : "Xuất bản"}
-                        </ActionButton>
-                      </div>
-                    ) : null}
+                      ) : null}
                     </div>
                   </>
                 ) : (
