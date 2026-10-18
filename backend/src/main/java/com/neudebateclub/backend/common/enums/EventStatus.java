@@ -1,9 +1,7 @@
 package com.neudebateclub.backend.common.enums;
 
 public enum EventStatus {
-    DRAFT,
-    SCHEDULED,
+    UPCOMING,
     ONGOING,
-    COMPLETED,
-    CANCELLED
+    FINISHED
 }

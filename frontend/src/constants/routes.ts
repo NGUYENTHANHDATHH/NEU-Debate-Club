@@ -27,6 +27,7 @@ export const ROUTES = {
   members: `${DASHBOARD}/members`,
   roles: `${DASHBOARD}/roles`,
   finance: `${DASHBOARD}/finance`,
+  events: `${DASHBOARD}/events`,
   cms: `${DASHBOARD}/cms`,
   healthDashboard: `${DASHBOARD}/health-dashboard`,
   assignAllTasks: `${DASHBOARD}/tasks/assign-all`,

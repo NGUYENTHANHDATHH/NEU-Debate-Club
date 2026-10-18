@@ -162,6 +162,69 @@ export function updateMember(id: string, member: CreateMemberInput) {
   });
 }
 
+export type ClubEvent = {
+  id: string;
+  title: string;
+  description: string | null;
+  location: string | null;
+  eventDate: string;
+  budget: number;
+  status: "UPCOMING" | "ONGOING" | "FINISHED";
+  resourceUrls: string[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type SaveEventInput = {
+  title: string;
+  description: string;
+  location?: string | null;
+  eventDate: string;
+  budget: number;
+  status: ClubEvent["status"];
+  resourceUrls: string[];
+};
+
+async function eventRequest<T>(path = "", init?: RequestInit): Promise<T> {
+  const response = await authorizedFetch(`${API_BASE_URL}/events${path}`, init);
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    const validationMessage = payload?.data
+      ? Object.values(payload.data).join(". ")
+      : null;
+    throw new Error(
+      validationMessage || payload?.message || "Không thể cập nhật sự kiện.",
+    );
+  }
+  return (payload?.data ?? payload) as T;
+}
+
+export function fetchEvents() {
+  return eventRequest<ClubEvent[]>();
+}
+
+export function createEvent(event: SaveEventInput) {
+  return eventRequest<ClubEvent>("", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(event),
+  });
+}
+
+export function updateEvent(id: string, event: SaveEventInput) {
+  return eventRequest<ClubEvent>(`/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(event),
+  });
+}
+
+export function deleteEvent(id: string) {
+  return eventRequest<void>(`/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+}
+
 export async function fetchAccessibleModules(token?: string): Promise<AdminModuleKey[]> {
   const response = await fetch(`${API_BASE_URL}/auth/modules`, {
     headers: { Authorization: `Bearer ${token ?? getAuthToken() ?? ""}` },

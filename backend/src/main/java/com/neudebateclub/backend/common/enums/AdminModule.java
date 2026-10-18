@@ -12,6 +12,7 @@ public enum AdminModule {
     ASSET_LIBRARY(EnumSet.of(Department.KY_THUAT)),
     LANDING_CMS(EnumSet.of(Department.TRUYEN_THONG)),
     FINANCE(EnumSet.of(Department.DOI_NGOAI)),
+    EVENT_MANAGEMENT(EnumSet.of(Department.SU_KIEN)),
     MEMBERSHIP(EnumSet.of(Department.NHAN_SU)),
     TENURE(EnumSet.of(Department.NHAN_SU)),
     CROSS_DEPARTMENT_TASKS(EnumSet.noneOf(Department.class)),
