@@ -285,6 +285,7 @@ export function CmsPage() {
 
   async function handlePublish() {
     setBusy("publishing");
+    setMessage(null);
     try {
       if (isCatalogSection) {
         const saved = await publishCmsCatalog(selected, items);
@@ -292,12 +293,13 @@ export function CmsPage() {
           ...content,
           items: saved.map(catalogItemContent),
         };
+        // Keep persisted IDs if publishing achievement statistics needs a retry.
+        setContent(nextContent);
         if (selected === "achievements") {
           const stats = Array.isArray(content.stats) ? content.stats : [];
           await saveCmsDraft("achievements", { stats });
           await publishCmsSection("achievements");
         }
-        setContent(nextContent);
         setMessage({ type: "success", text: "Đã lưu bài viết vào database." });
         return;
       }

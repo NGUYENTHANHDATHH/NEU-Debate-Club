@@ -4,10 +4,13 @@ import com.neudebateclub.backend.auth.security.UserPrincipal;
 import com.neudebateclub.backend.common.annotation.CurrentUser;
 import com.neudebateclub.backend.common.security.RoleGuard;
 import com.neudebateclub.backend.common.enums.AdminModule;
+import com.neudebateclub.backend.common.exception.ValidationException;
 import com.neudebateclub.backend.user.UserRepository;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -24,6 +27,7 @@ public class LandingCatalogController {
     private final LandingAchievementRepository achievementRepository;
     private final UserRepository userRepository;
     private final RoleGuard roleGuard;
+    private final ObjectMapper objectMapper;
 
     @GetMapping("/projects")
     public ResponseEntity<List<LandingProject>> projects() {
@@ -57,11 +61,12 @@ public class LandingCatalogController {
         return switch (normalizeType(type)) {
             case "projects" -> ResponseEntity.ok(projectRepository.findAllByOrderByDisplayOrderAscUpdatedAtDesc());
             case "achievements" -> ResponseEntity.ok(achievementRepository.findAllByOrderByDisplayOrderAscUpdatedAtDesc());
-            default -> throw new IllegalArgumentException("Unknown landing catalog: " + type);
+            default -> throw new ValidationException("Unknown landing catalog: " + type);
         };
     }
 
     @PutMapping(value = "/cms/landing/catalog/{type}/publish", consumes = "application/json")
+    @Transactional
     public ResponseEntity<List<?>> publishItems(
             @PathVariable String type,
             @RequestBody JsonNode request,
@@ -69,7 +74,7 @@ public class LandingCatalogController {
         roleGuard.requireModuleManager(user, AdminModule.LANDING_CMS);
         JsonNode items = request == null ? null : request.get("items");
         if (items == null || !items.isArray()) {
-            return ResponseEntity.badRequest().build();
+            throw new ValidationException("items must be an array");
         }
         String normalizedType = normalizeType(type);
         List<?> result = normalizedType.equals("projects")
@@ -88,10 +93,11 @@ public class LandingCatalogController {
             entity.setTitle(requiredText(item, "title"));
             entity.setSlug(slug(item, entity.getId()));
             entity.setDescription(text(item, "description", "desc"));
-            entity.setContent(jsonText(item.get("content")));
+            entity.setContent(jsonContent(item.get("content")));
             entity.setImageUrl(text(item, "imageUrl", "image"));
             entity.setImageAlt(text(item, "imageAlt"));
-            entity.setCategory(requiredText(item, "category"));
+            entity.setCategory(category(item, List.of("talkshow", "workshop", "debate_tournament",
+                    "debate_camp", "debate_training", "other")));
             entity.setDisplayOrder(displayOrder(item));
             entity.setVisible(!item.path("hidden").asBoolean(false));
             entity.setUpdatedBy(user);
@@ -113,10 +119,10 @@ public class LandingCatalogController {
             entity.setTitle(requiredText(item, "title"));
             entity.setSlug(slug(item, entity.getId()));
             entity.setDescription(text(item, "description", "desc"));
-            entity.setContent(jsonText(item.get("content")));
+            entity.setContent(jsonContent(item.get("content")));
             entity.setImageUrl(text(item, "imageUrl", "image"));
             entity.setImageAlt(text(item, "imageAlt"));
-            entity.setCategory(requiredText(item, "category"));
+            entity.setCategory(category(item, List.of("championship", "award", "event", "other")));
             entity.setDisplayOrder(displayOrder(item));
             entity.setVisible(!item.path("hidden").asBoolean(false));
             entity.setUpdatedBy(user);
@@ -131,7 +137,7 @@ public class LandingCatalogController {
     private String normalizeType(String type) {
         String normalized = type.toLowerCase();
         if (!normalized.equals("projects") && !normalized.equals("achievements")) {
-            throw new IllegalArgumentException("Unknown landing catalog: " + type);
+            throw new ValidationException("Unknown landing catalog: " + type);
         }
         return normalized;
     }
@@ -143,7 +149,7 @@ public class LandingCatalogController {
 
     private String requiredText(JsonNode item, String key) {
         String value = text(item, key);
-        if (value.isBlank()) throw new IllegalArgumentException(key + " is required");
+        if (value.isBlank()) throw new ValidationException(key + " is required");
         return value;
     }
 
@@ -155,9 +161,17 @@ public class LandingCatalogController {
         return "";
     }
 
-    private String jsonText(JsonNode value) {
+    private String category(JsonNode item, List<String> allowed) {
+        String value = requiredText(item, "category");
+        if (!allowed.contains(value)) throw new ValidationException("Unknown category: " + value);
+        return value;
+    }
+
+    private Object jsonContent(JsonNode value) {
         if (value == null || value.isNull()) return null;
-        return value.isTextual() ? value.asText() : value.toString();
+        // Hibernate treats a String-typed JSON field as already-encoded JSON.
+        // Object preserves text (including empty strings) and structured JSON values.
+        return objectMapper.convertValue(value, Object.class);
     }
 
     private boolean pinned(JsonNode item) {

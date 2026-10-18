@@ -7,10 +7,12 @@ import com.neudebateclub.backend.common.annotation.CurrentUser;
 import com.neudebateclub.backend.common.enums.LandingSection;
 import com.neudebateclub.backend.common.security.RoleGuard;
 import com.neudebateclub.backend.common.enums.AdminModule;
+import com.neudebateclub.backend.common.exception.ValidationException;
 import com.neudebateclub.backend.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -122,6 +124,7 @@ public class LandingContentController {
     }
 
     @PostMapping("/cms/landing/{section}/publish")
+    @Transactional
     public ResponseEntity<Map<String, Object>> publish(
             @PathVariable String section,
             @CurrentUser UserPrincipal user) {
@@ -129,7 +132,7 @@ public class LandingContentController {
         String normalized = validateSection(section);
         LandingContentVersion draft = versionRepo
                 .findFirstBySectionAndStatusOrderByCreatedAtDesc(normalized, DRAFT)
-                .orElseThrow(() -> new IllegalStateException("No draft exists for section " + normalized));
+                .orElseThrow(() -> new ValidationException("No draft exists for section " + normalized));
         LandingContent content = repo.findBySection(normalized).orElseGet(() -> LandingContent.builder()
                 .section(normalized)
                 .updatedBy(userRepo.getReferenceById(user.getId()))
@@ -146,6 +149,7 @@ public class LandingContentController {
     }
 
     @GetMapping("/cms/landing/{section}/history")
+    @Transactional(readOnly = true)
     public ResponseEntity<Map<String, Object>> history(
             @PathVariable String section,
             @CurrentUser UserPrincipal user) {
@@ -166,7 +170,7 @@ public class LandingContentController {
             LandingSection.valueOf(normalized.toUpperCase());
             return normalized;
         } catch (IllegalArgumentException exception) {
-            throw new IllegalArgumentException("Unknown landing section: " + section);
+            throw new ValidationException("Unknown landing section: " + section);
         }
     }
 

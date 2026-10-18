@@ -1,6 +1,7 @@
 package com.neudebateclub.backend.cms;
 
 import com.neudebateclub.backend.user.User;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -16,6 +17,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.ColumnTransformer;
 import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
@@ -44,7 +46,7 @@ public class LandingProject {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
-    private String content;
+    private Object content;
 
     @Column(name = "image_url")
     private String imageUrl;
@@ -52,6 +54,7 @@ public class LandingProject {
     @Column(name = "image_alt")
     private String imageAlt;
 
+    @ColumnTransformer(write = "?::landing_project_enum")
     @Column(nullable = false, columnDefinition = "landing_project_enum")
     private String category;
 
@@ -63,10 +66,12 @@ public class LandingProject {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
+    @JsonIgnore
     private User createdBy;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "updated_by")
+    @JsonIgnore
     private User updatedBy;
 
     @Column(name = "created_at", nullable = false)

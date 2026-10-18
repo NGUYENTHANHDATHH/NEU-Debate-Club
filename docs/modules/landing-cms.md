@@ -16,7 +16,7 @@ This split is verified in controllers, migrations, and frontend calls. Whether i
 - **Schema:** V7 creates `landing_content`; V9 converts `content_json` to JSONB; V13 adds draft/history rows in `landing_content_versions`.
 - **Backend:** [LandingContentController.java](../../backend/src/main/java/com/neudebateclub/backend/cms/LandingContentController.java) reads published JSON and creates/publishes drafts. [LandingSection.java](../../backend/src/main/java/com/neudebateclub/backend/common/enums/LandingSection.java) permits six section names.
 - **Frontend:** `Hero`, `Vision`, `Departments`, and `Comments` use `fetchLandingSection`; `Achievements` uses it only for statistics. The caller owns the expected JSON shape.
-- **Access:** public GETs are allowed by [SecurityConfig.java](../../backend/src/main/java/com/neudebateclub/backend/config/SecurityConfig.java); writes call `RoleGuard.requireCmsEditor`.
+- **Access:** public GETs are allowed by [SecurityConfig.java](../../backend/src/main/java/com/neudebateclub/backend/config/SecurityConfig.java); CMS reads/writes call `RoleGuard.requireModuleManager` for `LANDING_CMS`.
 
 ## Catalog trace
 
@@ -30,7 +30,18 @@ This split is verified in controllers, migrations, and frontend calls. Whether i
 
 ## Test status
 
-No tests cover public landing reads, CMS authorization, draft/publish/history behavior, catalog publishing, schema validation, or frontend rendering/error states.
+[CmsPublishIntegrationTest.java](../../backend/src/test/java/com/neudebateclub/backend/cms/CmsPublishIntegrationTest.java) exercises real HTTP requests against PostgreSQL: draft/publish/public read/history for all six sections, both catalog types with text/empty/structured content, catalog batch rollback, validation errors, authorization, and runtime OpenAPI publish routes. It runs Flyway and Hibernate schema validation with Open Session in View disabled. Frontend rendering/error states still have no automated UI coverage.
+
+The suite is opt-in: set `CMS_TEST_DATABASE_URL` to a **disposable PostgreSQL database**, plus `CMS_TEST_DATABASE_USERNAME` and `CMS_TEST_DATABASE_PASSWORD` (both default to `cms_test`). Run `./mvnw.cmd -Dtest=CmsPublishIntegrationTest,RoleGuardTest test` from `backend`. The test disables local `.env` imports and baseline-on-migrate, supplies test-only auth configuration, and writes fixture users/content. Never point it at application data. Without the URL, the CMS suite is skipped.
+
+## Publish persistence and response behavior
+
+- PostgreSQL enum columns remain unchanged. CMS entity mappings explicitly cast string values on writes; section mappings also cast enum reads to text so repository predicates work with string parameters. This fixes the `landing_project_enum` write mismatch and `landing_section_enum = character varying` read failure seen in backend logs. No migration or data rewrite is required.
+- Catalog `content` is stored as a JSON value and returned as the corresponding JSON value. Text (including empty strings, quotes, and newlines) is encoded as a JSON string; objects remain objects. The frontend's existing `string | Record<string, unknown> | null` representation covers its supported editor payloads.
+- Catalog responses omit the lazy `createdBy`/`updatedBy` user relationships. These are persistence metadata, not fields in the frontend catalog contract; serializing their Hibernate proxies can fail after a successful save. Timestamps remain in the response.
+- Each catalog publish request is transactional. Section publication updates the published row and draft status in one transaction. Invalid section/type, missing required catalog text, invalid category, and publishing without a draft return HTTP 400 using the existing error envelope.
+- Achievement catalog and statistics still use separate requests. The editor retains saved catalog IDs before publishing statistics, so a retry updates those rows if the later statistics request fails. There is no transaction spanning those requests.
+- Routes are unchanged; Springdoc remains the runtime contract source. No generated TypeScript client or checked-in OpenAPI specification was introduced.
 
 ## Current ownership decision
 

@@ -96,7 +96,7 @@ Run from the repository root in PowerShell. These are commands present in manife
 3. **Corrected audit finding:** V9 already extends `department_enum` with `ky_thuat` and `nhan_su`, matching the Java enum.
 4. The database contains many domain tables but the code implements only authentication and landing CMS. Dashboard routes predominantly import [MockPages.tsx](../frontend/src/components/dashboard/MockPages.tsx), so visible UI scope exceeds implemented API scope.
 5. There is no shared or checked-in API contract and no client generation. Frontend catalog and CMS types remain handwritten.
-6. Test coverage consists of one backend context-load test; no API, repository, migration, authentication, CMS, or frontend tests were found.
+6. Backend tests include context startup, module access rules, and opt-in PostgreSQL HTTP CMS publish/read/history/rollback coverage. See [landing-cms.md](modules/landing-cms.md) for the disposable-database test procedure. Authentication behavior and frontend UI coverage remain incomplete.
 
 ## Unknowns requiring evidence outside this checkout
 

@@ -26,8 +26,8 @@ All paths below include the verified Spring context path `/api`.
 | Module | Database | Backend layers | Client/UI layers | Tests |
 |---|---|---|---|---|
 | Authentication | `users` created in V2; `google_id` added in V9 | `User` entity, `UserRepository`, `AuthService`, `JwtService`, filter, `AuthController`, DTOs | `GoogleLoginButton`, `UserProvider`, `api.ts` auth helpers, dashboard client guard | Context-load only; no auth behavior tests. |
-| Landing JSON sections | `landing_content` in V7/V9; `landing_content_versions` in V13 | Two entities/repositories, `LandingContentController`, `LandingSection`, `RoleGuard` | Hero, Vision, Departments, Comments, and achievement statistics; `CmsPage`; handwritten `api.ts` types | No CMS tests. |
-| Landing catalog | `projects` in V14; `achievements` in V15 | Two entities/repositories and `LandingCatalogController` | CMS and public home/list/detail pages through `api.ts` | No catalog tests. |
+| Landing JSON sections | `landing_content` in V7/V9; `landing_content_versions` in V13 | Two entities/repositories, `LandingContentController`, `LandingSection`, `RoleGuard` | Hero, Vision, Departments, Comments, and achievement statistics; `CmsPage`; handwritten `api.ts` types | Opt-in PostgreSQL HTTP draft/publish/read/history and authorization coverage. |
+| Landing catalog | `projects` in V14; `achievements` in V15 | Two entities/repositories and `LandingCatalogController` | CMS and public home/list/detail pages through `api.ts` | Opt-in PostgreSQL HTTP publish/read, JSON content, validation, and batch rollback coverage. |
 
 Detailed traces are in [auth.md](modules/auth.md) and [landing-cms.md](modules/landing-cms.md).
 Dashboard access rules are documented in [access-control.md](modules/access-control.md).

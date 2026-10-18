@@ -12,8 +12,8 @@ Detailed evidence is retained in [architecture.md](architecture.md), [dependency
 |---|---|---|---|---|---|
 | Google authentication | `users` | Implemented | Implemented | Context only | Partial vertical slice |
 | Dashboard module access | Existing `users.role` and `users.department` | `AdminModule`, `RoleGuard`, `/auth/modules` | Module-filtered navigation and route guard | RoleGuard unit test | Implemented |
-| Landing section CMS | `landing_content`, versions | Implemented | CMS client paths aligned; home owns independent landing sections/statistics | None | Partial vertical slice |
-| Landing catalog | `projects`, `achievements` | Implemented | CMS and public project/achievement pages use catalog APIs | None | Partial vertical slice |
+| Landing section CMS | `landing_content`, versions | Implemented | CMS client paths aligned; home owns independent landing sections/statistics | Opt-in PostgreSQL HTTP publish/read/history tests | Partial vertical slice |
+| Landing catalog | `projects`, `achievements` | Implemented | CMS and public project/achievement pages use catalog APIs | Opt-in PostgreSQL HTTP publish/rollback tests | Partial vertical slice |
 | Tasks, events, announcements, members, finance, partners, media, check-in, equipment, assets | Schema tables exist | Not implemented | Mock/static pages or absent | None | Planned only |
 
 ## Prioritized implementation order
@@ -58,7 +58,7 @@ flowchart LR
 | Closed | Root pnpm backend scripts did not correspond to the Maven backend. | Invalid backend workspace scripts were removed; Maven remains the documented backend entry point. |
 | P1 | API types are handwritten on both sides. | One selected contract workflow detects backend/frontend drift in CI. |
 | P1 | Domain dashboard pages present mock content for schema-only modules. | Each page is labelled as mock until its API vertical slice is implemented, or is replaced per product decision. Module visibility is now centrally filtered by department access. |
-| P2 | Automated tests cover only context startup. | Layer-appropriate integration and UI tests protect implemented contracts. |
+| P2 | CMS now has opt-in PostgreSQL integration coverage; auth behavior and frontend UI coverage remain incomplete. | Run CMS tests against a disposable database in CI and add coverage for the remaining contracts. |
 
 ## Assumptions requiring owner confirmation
 

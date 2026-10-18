@@ -4,6 +4,7 @@ import com.neudebateclub.backend.user.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.ColumnTransformer;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
@@ -21,6 +22,7 @@ public class LandingContentVersion {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @ColumnTransformer(read = "section::text", write = "?::landing_section_enum")
     @Column(nullable = false, columnDefinition = "landing_section_enum")
     private String section;
 
