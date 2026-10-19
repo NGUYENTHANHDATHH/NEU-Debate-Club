@@ -47,7 +47,7 @@ Chức năng **UC-17: CMS Landing Page** đã hoàn thành trong `frontend/src/c
 #### 1. UC-16 - Google OAuth, Route Guard và RBAC
 
 - Cho phép đăng nhập bằng Google.
-- Email thành viên hợp lệ: `*.ndc.neu@gmail.com` và có trong database.
+- Tài khoản Google phải tồn tại trong database.
 - Người dùng phổ thông chỉ được dùng Landing Page.
 - Thành viên được vào `/dashboard`.
 - Phân quyền tối thiểu: BCN, Trưởng/Phó ban, thành viên.

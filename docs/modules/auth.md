@@ -24,9 +24,9 @@
 
 ## Verified authorization rules
 
-- A verified Google email whose suffix matches `app.allowed-domain` receives `MEMBER`; all others receive `GUEST` unless an existing higher role is retained.
+- A verified Google email must match an existing `users` record; the role and dashboard modules come from that database record.
 - Landing CMS requires `TRUONG_BAN` or higher through `RoleGuard`.
-- The frontend dashboard guard separately checks that the stored email ends in `.ndc.neu@gmail.com`; it does not call the backend on every route transition.
+- The frontend dashboard guard checks for an authenticated database user; it does not require a specific email suffix.
 - Logout is stateless: the backend responds successfully and the frontend implementation removes local storage values.
 
 ## Risks and unknowns

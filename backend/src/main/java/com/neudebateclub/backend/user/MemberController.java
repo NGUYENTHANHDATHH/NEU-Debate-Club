@@ -18,7 +18,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -40,16 +39,19 @@ public class MemberController {
     private final UserRepository userRepository;
     private final RoleGuard roleGuard;
 
-    @Value("${app.allowed-domain}")
-    private String allowedDomain;
-
     @GetMapping
     public ResponseEntity<ApiResponse<List<MemberResponse>>> list(
             @CurrentUser UserPrincipal currentUser) {
-        roleGuard.requireModuleManager(currentUser, AdminModule.MEMBERSHIP);
+        if (currentUser.getRole() == Role.BCN) {
+            roleGuard.requireBCN(currentUser);
+        } else {
+            roleGuard.requireTruongBanOrAbove(currentUser);
+        }
         return ResponseEntity.ok(ApiResponse.success(userRepository.findAllByOrderByFullNameAsc()
                 .stream()
                 .filter(user -> user.getRole() != Role.GUEST)
+                .filter(user -> currentUser.getRole() == Role.BCN
+                        || user.getDepartment() == currentUser.getDepartment())
                 .map(MemberResponse::from)
                 .toList()));
     }
@@ -93,10 +95,6 @@ public class MemberController {
         }
 
         String email = request.email().trim().toLowerCase(Locale.ROOT);
-        String domain = allowedDomain.toLowerCase(Locale.ROOT);
-        if (!email.endsWith(domain)) {
-            throw new ValidationException("Email phải là email thành viên " + allowedDomain);
-        }
         boolean duplicateEmail = member.getId() == null
                 ? userRepository.existsByEmailIgnoreCase(email)
                 : userRepository.existsByEmailIgnoreCaseAndIdNot(email, member.getId());

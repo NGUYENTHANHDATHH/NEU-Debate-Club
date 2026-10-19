@@ -13,7 +13,6 @@ import {
   Layers,
   Megaphone,
   Plus,
-  RotateCcw,
   Search,
   Send,
   ShieldAlert,
@@ -27,7 +26,17 @@ import { toast } from "sonner";
 import { ActionButton } from "@/components/ui/Dashboard/ActionButton";
 import { PageFrame } from "@/components/ui/Dashboard/PageFrame";
 import { Section } from "@/components/ui/Dashboard/Section";
-import { ClubEvent, fetchEvents, fetchMembers, Member } from "@/lib/api";
+import {
+  BackendTask,
+  ClubEvent,
+  createTask,
+  deleteTask,
+  fetchEvents,
+  fetchMembers,
+  fetchTasks,
+  Member,
+  updateTaskStatus,
+} from "@/lib/api";
 
 // ============================================================================
 // TYPES & ENUMS (Đồng bộ chuẩn xác với cấu trúc bảng `tasks` trong PostgreSQL)
@@ -360,7 +369,27 @@ const INITIAL_SAMPLE_TASKS: DepartmentTask[] = [
   },
 ];
 
-const LOCAL_STORAGE_KEY = "ndc_tasks_bcn_assign_all_v1";
+const backendToTask = (task: BackendTask): DepartmentTask => ({
+  id: task.id,
+  title: task.title,
+  description: task.description ?? "",
+  priority: task.priority.toLowerCase() as TaskPriority,
+  status: task.status.toLowerCase() as TaskStatus,
+  deadline: task.deadline ?? "",
+  assigned_to: task.assignedToId ?? "",
+  assigned_to_title: task.assignedToRole ?? "",
+  assigned_to_name: task.assignedToName ?? "",
+  assigned_by: task.assignedById ?? "",
+  assigned_by_name: task.assignedByName ?? "",
+  department: task.department.toLowerCase() as DepartmentCode,
+  department_name: task.departmentName,
+  is_cross_department: task.crossDepartment,
+  event_id: task.eventId,
+  event_title: task.eventTitle,
+  completed_at: task.completedAt,
+  created_at: task.createdAt,
+  updated_at: task.updatedAt,
+});
 
 // ============================================================================
 // MAIN COMPONENT
@@ -399,23 +428,11 @@ export function AssignAllTasksPage() {
   const [selectedTaskForModal, setSelectedTaskForModal] = useState<DepartmentTask | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 1. Khởi tạo & nạp dữ liệu từ localStorage / API
+  // 1. Nạp dữ liệu thật từ PostgreSQL qua API
   useEffect(() => {
-    try {
-      const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setTasks(parsed);
-        } else {
-          setTasks(INITIAL_SAMPLE_TASKS);
-        }
-      } else {
-        setTasks(INITIAL_SAMPLE_TASKS);
-      }
-    } catch {
-      setTasks(INITIAL_SAMPLE_TASKS);
-    }
+    fetchTasks()
+      .then((data) => setTasks(data.map(backendToTask)))
+      .catch((error: Error) => toast.error(error.message));
 
     // Tải danh sách sự kiện từ API thật (nếu có backend đang chạy)
     fetchEvents()
@@ -453,16 +470,6 @@ export function AssignAllTasksPage() {
       });
   }, []);
 
-  // 2. Tự động lưu vào localStorage khi tasks thay đổi
-  const saveTasks = (newTasks: DepartmentTask[]) => {
-    setTasks(newTasks);
-    try {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newTasks));
-    } catch {
-      // bỏ qua lỗi storage quota
-    }
-  };
-
   // Preset deadline nhanh
   const setQuickDeadline = (daysAhead: number) => {
     const target = new Date();
@@ -482,7 +489,7 @@ export function AssignAllTasksPage() {
   }, [selectedDepartment]);
 
   // Xử lý tạo nhiệm vụ mới từ BCN
-  const handleCreateTask = (e: FormEvent) => {
+  const handleCreateTask = async (e: FormEvent) => {
     e.preventDefault();
 
     if (!taskTitle.trim()) {
@@ -493,70 +500,28 @@ export function AssignAllTasksPage() {
     setIsSubmitting(true);
 
     try {
-      const nowIso = new Date().toISOString();
       const resolvedDeadline = taskDeadline
         ? new Date(taskDeadline).toISOString()
         : new Date(Date.now() + 7 * 86400000).toISOString();
 
-      const selectedEventObj =
-        taskEventId !== "none" ? eventsList.find((ev) => ev.id === taskEventId) : null;
+      const created = await createTask({
+        title: taskTitle.trim(),
+        description: taskDescription.trim(),
+        department: selectedDepartment,
+        priority: taskPriority,
+        status: taskStatus,
+        deadline: resolvedDeadline,
+        eventId: taskEventId === "none" ? null : taskEventId,
+        crossDepartment: isCrossDepartment,
+        assignToAllDepartments,
+      });
+      setTasks((current) => [...created.map(backendToTask), ...current]);
 
-      // Nếu chọn "Phân phối cho tất cả 6 ban cùng lúc"
       if (assignToAllDepartments) {
-        const batchTasks: DepartmentTask[] = DEPARTMENTS.map((dept, index) => ({
-          id: `task-${Date.now()}-${index}-${Math.random().toString(36).substring(2, 7)}`,
-          title: taskTitle.trim(),
-          description: taskDescription.trim() || "Chưa có mô tả chi tiết.",
-          priority: taskPriority,
-          status: taskStatus,
-          deadline: resolvedDeadline,
-          assigned_to: `lead-${dept.code}`,
-          assigned_to_title: dept.recipientRole,
-          assigned_to_name: departmentLeads[dept.code] || dept.defaultLeadName,
-          assigned_by: "bcn-executive",
-          assigned_by_name: "Ban Chủ Nhiệm (BCN)",
-          department: dept.code,
-          department_name: dept.name,
-          is_cross_department: true, // giao toàn ban tự động là liên ban
-          event_id: selectedEventObj?.id ?? null,
-          event_title: selectedEventObj?.title ?? null,
-          completed_at: taskStatus === "done" ? nowIso : null,
-          created_at: nowIso,
-          updated_at: nowIso,
-        }));
-
-        const updated = [...batchTasks, ...tasks];
-        saveTasks(updated);
         toast.success(`Đã phân phối đồng loạt nhiệm vụ tới 6 Trưởng Ban!`);
       } else {
-        // Giao cho một ban cụ thể
-        const newTask: DepartmentTask = {
-          id: `task-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-          title: taskTitle.trim(),
-          description: taskDescription.trim() || "Chưa có mô tả chi tiết.",
-          priority: taskPriority,
-          status: taskStatus,
-          deadline: resolvedDeadline,
-          assigned_to: `lead-${activeDeptMeta.code}`,
-          assigned_to_title: activeDeptMeta.recipientRole,
-          assigned_to_name:
-            departmentLeads[activeDeptMeta.code] || activeDeptMeta.defaultLeadName,
-          assigned_by: "bcn-executive",
-          assigned_by_name: "Ban Chủ Nhiệm (BCN)",
-          department: activeDeptMeta.code,
-          department_name: activeDeptMeta.name,
-          is_cross_department: isCrossDepartment,
-          event_id: selectedEventObj?.id ?? null,
-          event_title: selectedEventObj?.title ?? null,
-          completed_at: taskStatus === "done" ? nowIso : null,
-          created_at: nowIso,
-          updated_at: nowIso,
-        };
-
-        const updated = [newTask, ...tasks];
-        saveTasks(updated);
         toast.success(
-          `Đã giao nhiệm vụ thành công cho ${activeDeptMeta.recipientRole} (${newTask.assigned_to_name})!`,
+          `Đã giao nhiệm vụ thành công cho ${activeDeptMeta.recipientRole}!`,
         );
       }
 
@@ -569,43 +534,38 @@ export function AssignAllTasksPage() {
       setTaskEventId("none");
       setIsCrossDepartment(false);
       setAssignToAllDepartments(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Không thể lưu nhiệm vụ.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   // Cập nhật trạng thái nhanh (Todo -> In Progress -> Done)
-  const handleUpdateStatus = (taskId: string, newStatus: TaskStatus) => {
-    const updated = tasks.map((t) => {
-      if (t.id === taskId) {
-        const nowIso = new Date().toISOString();
-        return {
-          ...t,
-          status: newStatus,
-          completed_at: newStatus === "done" ? nowIso : null,
-          updated_at: nowIso,
-        };
-      }
-      return t;
-    });
-    saveTasks(updated);
-    toast.info("Đã cập nhật trạng thái nhiệm vụ.");
+  const handleUpdateStatus = async (taskId: string, newStatus: TaskStatus) => {
+    try {
+      const updated = await updateTaskStatus(taskId, newStatus);
+      setTasks((current) =>
+        current.map((task) => (task.id === taskId ? backendToTask(updated) : task)),
+      );
+      toast.info("Đã cập nhật trạng thái nhiệm vụ.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Không thể cập nhật nhiệm vụ.");
+    }
   };
 
   // Xóa nhiệm vụ
-  const handleDeleteTask = (taskId: string) => {
-    const updated = tasks.filter((t) => t.id !== taskId);
-    saveTasks(updated);
-    if (selectedTaskForModal?.id === taskId) {
-      setSelectedTaskForModal(null);
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      await deleteTask(taskId);
+      setTasks((current) => current.filter((task) => task.id !== taskId));
+      if (selectedTaskForModal?.id === taskId) {
+        setSelectedTaskForModal(null);
+      }
+      toast.success("Đã xóa nhiệm vụ khỏi cơ sở dữ liệu.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Không thể xóa nhiệm vụ.");
     }
-    toast.success("Đã xóa nhiệm vụ khỏi danh sách.");
-  };
-
-  // Khôi phục dữ liệu mẫu
-  const handleResetSampleData = () => {
-    saveTasks(INITIAL_SAMPLE_TASKS);
-    toast.success("Đã tải lại bộ dữ liệu nhiệm vụ mẫu ban đầu.");
   };
 
   // Thống kê tổng quan
@@ -664,13 +624,6 @@ export function AssignAllTasksPage() {
       description="Dành riêng cho Ban Chủ Nhiệm (BCN) phân công chỉ đạo trực tiếp xuống từng ban chuyên môn. Nhiệm vụ sẽ được gửi trực tiếp đến Trưởng ban phụ trách để điều phối nội bộ, không giao lẻ từng thành viên."
       action={
         <div className="flex flex-wrap items-center gap-2">
-          <ActionButton
-            variant="outline"
-            icon={<RotateCcw className="h-4 w-4" />}
-            onClick={handleResetSampleData}
-          >
-            Nạp dữ liệu mẫu
-          </ActionButton>
           <ActionButton
             variant="primary"
             icon={<Plus className="h-4 w-4" />}

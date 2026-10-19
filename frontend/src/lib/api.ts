@@ -225,6 +225,113 @@ export function deleteEvent(id: string) {
   });
 }
 
+export type BackendTask = {
+  id: string;
+  title: string;
+  description: string | null;
+  priority: "LOW" | "MEDIUM" | "HIGH" | "low" | "medium" | "high";
+  status: "TODO" | "IN_PROGRESS" | "DONE" | "todo" | "in_progress" | "done";
+  deadline: string | null;
+  assignedToId: string | null;
+  assignedToName: string | null;
+  assignedToRole: string | null;
+  assignedById: string | null;
+  assignedByName: string | null;
+  department: string;
+  departmentName: string;
+  crossDepartment: boolean;
+  eventId: string | null;
+  eventTitle: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateTaskPayload = {
+  title: string;
+  description?: string;
+  department: string;
+  priority?: "low" | "medium" | "high" | "LOW" | "MEDIUM" | "HIGH";
+  status?: "todo" | "in_progress" | "done" | "TODO" | "IN_PROGRESS" | "DONE";
+  deadline?: string | null;
+  eventId?: string | null;
+  crossDepartment?: boolean;
+  assignedToId?: string | null;
+  assignToAllDepartments?: boolean;
+};
+
+export type UpdateTaskPayload = {
+  title: string;
+  description?: string;
+  priority?: "low" | "medium" | "high" | "LOW" | "MEDIUM" | "HIGH";
+  status?: "todo" | "in_progress" | "done" | "TODO" | "IN_PROGRESS" | "DONE";
+  deadline?: string | null;
+  eventId?: string | null;
+  crossDepartment?: boolean;
+};
+
+async function taskRequest<T>(path = "", init?: RequestInit): Promise<T> {
+  const response = await authorizedFetch(`${API_BASE_URL}/tasks${path}`, init);
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    const validationMessage = payload?.data
+      ? Object.values(payload.data).join(". ")
+      : null;
+    throw new Error(
+      validationMessage || payload?.message || "Không thể thực hiện yêu cầu nhiệm vụ.",
+    );
+  }
+  return (payload?.data ?? payload) as T;
+}
+
+export function fetchTasks(filters?: { department?: string; status?: string; priority?: string }) {
+  const params = new URLSearchParams();
+  if (filters?.department && filters.department !== "ALL") params.append("department", filters.department.toUpperCase());
+  if (filters?.status && filters.status !== "ALL") params.append("status", filters.status.toUpperCase());
+  if (filters?.priority && filters.priority !== "ALL") params.append("priority", filters.priority.toUpperCase());
+  const query = params.toString() ? `?${params.toString()}` : "";
+  return taskRequest<BackendTask[]>(query);
+}
+
+export function createTask(task: CreateTaskPayload) {
+  return taskRequest<BackendTask[]>("", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      ...task,
+      department: task.department.toUpperCase(),
+      priority: task.priority?.toUpperCase(),
+      status: task.status?.toUpperCase(),
+    }),
+  });
+}
+
+export function updateTask(id: string, task: UpdateTaskPayload) {
+  return taskRequest<BackendTask>(`/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      ...task,
+      priority: task.priority?.toUpperCase(),
+      status: task.status?.toUpperCase(),
+    }),
+  });
+}
+
+export function updateTaskStatus(id: string, status: string) {
+  return taskRequest<BackendTask>(`/${encodeURIComponent(id)}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status: status.toUpperCase() }),
+  });
+}
+
+export function deleteTask(id: string) {
+  return taskRequest<void>(`/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+}
+
 export async function fetchAccessibleModules(token?: string): Promise<AdminModuleKey[]> {
   const response = await fetch(`${API_BASE_URL}/auth/modules`, {
     headers: { Authorization: `Bearer ${token ?? getAuthToken() ?? ""}` },

@@ -10,7 +10,6 @@ import com.neudebateclub.backend.common.security.RoleGuard;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.UUID;
 import java.util.List;
@@ -35,7 +34,6 @@ class MemberControllerTest {
         repository = mock(UserRepository.class);
         roleGuard = mock(RoleGuard.class);
         controller = new MemberController(repository, roleGuard);
-        ReflectionTestUtils.setField(controller, "allowedDomain", ".ndc.neu@gmail.com");
         manager = UserPrincipal.builder().id(UUID.randomUUID()).role(Role.BCN).active(true).build();
     }
 
@@ -48,12 +46,12 @@ class MemberControllerTest {
         });
 
         controller.create(new MemberController.MemberRequest(
-                "Nguyễn An", " AN.NDC.NEU@GMAIL.COM ", "11223344", "0912345678",
+                "Nguyễn An", " AN@GMAIL.COM ", "11223344", "0912345678",
                 Department.NOI_DUNG, Role.MEMBER, true), manager);
 
         ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
         verify(repository).save(captor.capture());
-        assertEquals("an.ndc.neu@gmail.com", captor.getValue().getEmail());
+        assertEquals("an@gmail.com", captor.getValue().getEmail());
         verify(roleGuard).requireModuleManager(manager, AdminModule.MEMBERSHIP);
     }
 

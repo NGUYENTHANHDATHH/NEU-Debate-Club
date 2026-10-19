@@ -44,7 +44,7 @@ public class EventController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<EventResponse>>> list(
             @CurrentUser UserPrincipal currentUser) {
-        roleGuard.requireModuleManager(currentUser, AdminModule.EVENT_MANAGEMENT);
+        roleGuard.requireMemberOrAbove(currentUser);
         return ResponseEntity.ok(ApiResponse.success(eventRepository.findAllByOrderByEventDateDesc()
                 .stream().map(EventResponse::from).toList()));
     }

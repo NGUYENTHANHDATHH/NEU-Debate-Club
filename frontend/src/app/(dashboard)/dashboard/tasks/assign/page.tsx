@@ -1,4 +1,4 @@
-import { AssignTaskPage } from "@/components/dashboard/MockPages";
+import { AssignTaskPage } from "@/components/dashboard/AssignTaskPage";
 
 export default function Page() {
   return <AssignTaskPage />;

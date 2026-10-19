@@ -55,8 +55,6 @@ app:
     client-id: ${GOOGLE_CLIENT_ID}
     client-secret: ${GOOGLE_CLIENT_SECRET:}
 
-  allowed-domain: ${ALLOWED_DOMAIN:.ndc.neu@gmail.com}
-
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
 

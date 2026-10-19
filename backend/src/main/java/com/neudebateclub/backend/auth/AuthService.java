@@ -8,7 +8,6 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 import com.neudebateclub.backend.auth.dto.AuthResponse;
 import com.neudebateclub.backend.auth.jwt.JwtService;
-import com.neudebateclub.backend.common.enums.Role;
 import com.neudebateclub.backend.common.exception.ResourceNotFoundException;
 import com.neudebateclub.backend.common.exception.UnauthorizedException;
 import com.neudebateclub.backend.user.User;
@@ -32,9 +31,6 @@ public class AuthService {
 
     @Value("${app.google.client-secret:}")
     private String googleClientSecret;
-
-    @Value("${app.allowed-domain}")
-    private String allowedDomain;
 
     public AuthResponse processGoogleCallback(String code, String redirectUri) {
         try {
@@ -74,47 +70,34 @@ public class AuthService {
         }
         if (googleIdToken == null) throw new UnauthorizedException("Token verification failed");
 
-        GoogleIdToken.Payload payload = googleIdToken.getPayload();
+        return loginVerifiedGoogleAccount(googleIdToken.getPayload());
+    }
+
+    AuthResponse loginVerifiedGoogleAccount(GoogleIdToken.Payload payload) {
         String googleId  = payload.getSubject();
         String email     = payload.getEmail();
         String fullName  = (String) payload.get("name");
         String avatarUrl = (String) payload.get("picture");
 
-        // 2. Xác định role dựa vào email domain
+        // 2. Chỉ tài khoản đã có trong database mới được đăng nhập
         if (email == null || !Boolean.TRUE.equals(payload.getEmailVerified())) {
             throw new UnauthorizedException("Google account email is not verified");
         }
 
-        Role role = email.toLowerCase().endsWith(allowedDomain.toLowerCase())
-            ? Role.MEMBER : Role.GUEST;
-
-        // 3. Upsert user
-        User user = userRepository.findByGoogleId(googleId)
-            .or(() -> userRepository.findByEmail(email))
-            .map(existing -> {
-                existing.setGoogleId(googleId);
-                existing.setLastLoginAt(Instant.now());
-                existing.setAvatarUrl(avatarUrl);
-                existing.setFullName(fullName);
-                // Không downgrade role đã được BCN set
-                if (existing.getRole() == Role.GUEST && role == Role.MEMBER) {
-                    existing.setRole(Role.MEMBER);
-                }
-                return userRepository.save(existing);
-            })
-            .orElseGet(() -> userRepository.save(User.builder()
-                .googleId(googleId)
-                .email(email)
-                .fullName(fullName)
-                .avatarUrl(avatarUrl)
-                .role(role)
-                .active(true)
-                .lastLoginAt(Instant.now())
-                .build()));
+        // 3. Đồng bộ Google identity với tài khoản đã được quản lý trong database
+        User user = userRepository.findByEmailIgnoreCase(email)
+            .orElseThrow(() -> new UnauthorizedException(
+                "Google account is not registered in the database"));
 
         if (!user.isActive()) {
             throw new UnauthorizedException("Account is inactive");
         }
+
+        user.setGoogleId(googleId);
+        user.setLastLoginAt(Instant.now());
+        user.setAvatarUrl(avatarUrl);
+        user.setFullName(fullName);
+        user = userRepository.save(user);
 
         // 4. Generate JWT
         UserPrincipal principal = UserPrincipal.builder()

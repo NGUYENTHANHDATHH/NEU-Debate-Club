@@ -270,7 +270,7 @@ export function MembersPage() {
 
             <div className="grid gap-4 md:grid-cols-2">
               <Field label="Họ tên" value={form.fullName} onChange={(value) => update("fullName", value)} required />
-              <Field label="Email CLB" type="email" value={form.email} onChange={(value) => update("email", value)} placeholder="ten.ndc.neu@gmail.com" required />
+              <Field label="Email" type="email" value={form.email} onChange={(value) => update("email", value)} placeholder="ten@gmail.com" required />
               <Field label="MSSV" value={form.studentId} onChange={(value) => update("studentId", value)} maxLength={20} required />
               <Field label="Số điện thoại" type="tel" value={form.phone} onChange={(value) => update("phone", value)} maxLength={20} required />
               <label className="space-y-1.5 text-sm font-medium text-slate-700">

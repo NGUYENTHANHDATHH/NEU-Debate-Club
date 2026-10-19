@@ -131,10 +131,26 @@ export const UserProvider: React.FC<IUserProviderProps> = ({ children }) => {
 
       const response = authService.getCurrentSession();
       if (response) {
-        const modules = await fetchAccessibleModules(response.token).catch(
-          () => response.user.modules ?? [],
-        );
-        setUser({ ...response.user, modules });
+        const meResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+          headers: { Authorization: `Bearer ${response.token}` },
+        });
+        if (!meResponse.ok) {
+          authService.clearAuthData();
+          throw new Error("Stored session is no longer authorized");
+        }
+        const body = await meResponse.json();
+        const backendUser = body.data ?? body;
+        const profile: IUserProfile = {
+          id: backendUser.id,
+          name: backendUser.fullName,
+          email: backendUser.email,
+          avatarUrl: backendUser.avatarUrl ?? undefined,
+          role: backendUser.role ?? undefined,
+          department: backendUser.department ?? undefined,
+          modules: await fetchAccessibleModules(response.token).catch(() => []),
+        };
+        authService.saveSession(profile, response.token);
+        setUser(profile);
         setToken(response.token);
         setIsAuthenticated(true);
       } else {
@@ -204,12 +220,10 @@ export const UserProvider: React.FC<IUserProviderProps> = ({ children }) => {
   // Redirect to home "/" if trying to access any route under "/dashboard" and not authorized
   React.useEffect(() => {
     if (!loading && pathname.startsWith("/dashboard")) {
-      const isAuthorized =
-        isAuthenticated &&
-        user?.email?.toLowerCase().endsWith(".ndc.neu@gmail.com");
+      const isAuthorized = isAuthenticated && user;
       if (!isAuthorized) {
         router.push("/");
-        toast.error("Chỉ thành viên NDC mới có quyền truy cập trang quản trị!");
+        toast.error("Chỉ tài khoản đã đăng ký mới có quyền truy cập trang quản trị!");
       }
     }
   }, [isAuthenticated, user, loading, pathname, router]);
