@@ -78,6 +78,19 @@ public class TaskController {
         ));
     }
 
+    @GetMapping("/mine")
+    public ResponseEntity<ApiResponse<List<TaskResponse>>> listMine(
+            @CurrentUser UserPrincipal currentUser) {
+        roleGuard.requireMemberOrAbove(currentUser);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                taskRepository.findByAssignedToIdOrderByCreatedAtDesc(currentUser.getId())
+                        .stream()
+                        .map(TaskResponse::from)
+                        .toList()
+        ));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<TaskResponse>> getById(
             @PathVariable UUID id,

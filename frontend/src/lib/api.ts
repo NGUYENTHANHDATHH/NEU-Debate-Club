@@ -293,6 +293,10 @@ export function fetchTasks(filters?: { department?: string; status?: string; pri
   return taskRequest<BackendTask[]>(query);
 }
 
+export function fetchMyTasks() {
+  return taskRequest<BackendTask[]>("/mine");
+}
+
 export function createTask(task: CreateTaskPayload) {
   return taskRequest<BackendTask[]>("", {
     method: "POST",

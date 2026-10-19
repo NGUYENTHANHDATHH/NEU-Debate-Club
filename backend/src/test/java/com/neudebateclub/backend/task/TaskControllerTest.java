@@ -22,7 +22,6 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -167,5 +166,28 @@ class TaskControllerTest {
         assertNotNull(response.getBody());
         assertEquals(TaskStatus.DONE, response.getBody().getData().status());
         assertNotNull(existing.getCompletedAt());
+    }
+
+    @Test
+    void listMineOnlyLoadsTasksAssignedToCurrentUser() {
+        Task assignedTask = Task.builder()
+                .id(UUID.randomUUID())
+                .title("Chuẩn bị nội dung")
+                .department(Department.TRUYEN_THONG)
+                .status(TaskStatus.TODO)
+                .priority(TaskPriority.HIGH)
+                .assignedTo(bcnUser)
+                .assignedBy(bcnUser)
+                .build();
+        when(taskRepository.findByAssignedToIdOrderByCreatedAtDesc(bcnManager.getId()))
+                .thenReturn(List.of(assignedTask));
+
+        ResponseEntity<ApiResponse<List<TaskController.TaskResponse>>> response =
+                taskController.listMine(bcnManager);
+
+        assertNotNull(response.getBody());
+        assertEquals(1, response.getBody().getData().size());
+        assertEquals(assignedTask.getId(), response.getBody().getData().getFirst().id());
+        verify(taskRepository).findByAssignedToIdOrderByCreatedAtDesc(bcnManager.getId());
     }
 }
