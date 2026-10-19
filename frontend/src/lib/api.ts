@@ -231,6 +231,7 @@ export type BackendTask = {
   description: string | null;
   priority: "LOW" | "MEDIUM" | "HIGH" | "low" | "medium" | "high";
   status: "TODO" | "IN_PROGRESS" | "DONE" | "todo" | "in_progress" | "done";
+  progress: number;
   deadline: string | null;
   assignedToId: string | null;
   assignedToName: string | null;
@@ -327,6 +328,27 @@ export function updateTaskStatus(id: string, status: string) {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ status: status.toUpperCase() }),
+  });
+}
+
+export type TaskComment = {
+  id: string;
+  userId: string;
+  userName: string;
+  content: string;
+  progress: number | null;
+  createdAt: string;
+};
+
+export function fetchTaskComments(id: string) {
+  return taskRequest<TaskComment[]>(`/${encodeURIComponent(id)}/comments`);
+}
+
+export function updateTaskProgress(id: string, progress: number, content: string) {
+  return taskRequest<BackendTask>(`/${encodeURIComponent(id)}/progress`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ progress, content }),
   });
 }
 

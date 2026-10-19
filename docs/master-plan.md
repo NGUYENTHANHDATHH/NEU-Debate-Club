@@ -15,7 +15,8 @@ Detailed evidence is retained in [architecture.md](architecture.md), [dependency
 | Landing section CMS | `landing_content`, versions | Implemented | CMS client paths aligned; home owns independent landing sections/statistics | Opt-in PostgreSQL HTTP publish/read/history tests | Partial vertical slice |
 | Landing catalog | `projects`, `achievements` | Implemented | CMS and public project/achievement pages use catalog APIs | Opt-in PostgreSQL HTTP publish/rollback tests | Partial vertical slice |
 | Member directory | Existing `users` profile columns; V18 sample seed | List/create/update API with membership-module authorization | Live list, shared create/edit form, client pagination | Controller unit tests | Partial vertical slice |
-| Tasks, events, announcements, tenure, finance, partners, media, check-in, equipment, assets | Schema tables exist | Not implemented | Mock/static pages or absent | None | Planned only |
+| Tasks | `tasks`, `task_comments`; V21 progress columns | Task CRUD, personal list, progress updates and comment history | Live todo list and manager previews | Task controller unit tests | Partial vertical slice |
+| Events, announcements, tenure, finance, partners, media, check-in, equipment, assets | Schema tables exist | Not fully implemented | Mock/static pages or absent | Varies | Planned or partial |
 
 ## Prioritized implementation order
 

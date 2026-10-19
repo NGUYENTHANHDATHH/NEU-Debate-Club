@@ -37,6 +37,7 @@ import {
   Member,
   updateTaskStatus,
 } from "@/lib/api";
+import { TaskHistory } from "@/components/dashboard/TaskHistory";
 
 // ============================================================================
 // TYPES & ENUMS (Đồng bộ chuẩn xác với cấu trúc bảng `tasks` trong PostgreSQL)
@@ -75,6 +76,7 @@ export interface DepartmentTask {
   description: string;
   priority: TaskPriority;
   status: TaskStatus;
+  progress?: number;
   deadline: string;
   assigned_to: string;
   assigned_to_title: string;
@@ -375,6 +377,7 @@ const backendToTask = (task: BackendTask): DepartmentTask => ({
   description: task.description ?? "",
   priority: task.priority.toLowerCase() as TaskPriority,
   status: task.status.toLowerCase() as TaskStatus,
+  progress: task.progress,
   deadline: task.deadline ?? "",
   assigned_to: task.assignedToId ?? "",
   assigned_to_title: task.assignedToRole ?? "",
@@ -1292,7 +1295,7 @@ export function AssignAllTasksPage() {
       {/* ==================================================================== */}
       {selectedTaskForModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="relative w-full max-w-2xl rounded-[2rem] border border-slate-200 bg-white p-6 shadow-2xl md:p-8">
+          <div className="relative max-h-[calc(100dvh-2rem)] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-slate-200 bg-white p-6 shadow-2xl md:p-8">
             <button
               type="button"
               onClick={() => setSelectedTaskForModal(null)}
@@ -1316,6 +1319,13 @@ export function AssignAllTasksPage() {
 
             <div className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm leading-relaxed text-slate-700">
               {selectedTaskForModal.description}
+            </div>
+
+            <div className="mt-5 rounded-2xl bg-slate-50 p-4 text-sm font-medium text-slate-700">
+              <div className="mb-2 flex justify-between"><span>Tiến độ hiện tại</span><span>{selectedTaskForModal.progress ?? 0}%</span></div>
+              <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+                <div className="h-full rounded-full bg-rose-500" style={{ width: `${selectedTaskForModal.progress ?? 0}%` }} />
+              </div>
             </div>
 
             {/* Chi tiết từng thuộc tính cơ sở dữ liệu */}
@@ -1391,6 +1401,11 @@ export function AssignAllTasksPage() {
                   Hoàn tất lúc: {new Date(selectedTaskForModal.completed_at).toLocaleString("vi-VN")}
                 </div>
               )}
+            </div>
+
+            <div className="mt-6 border-t border-slate-100 pt-5">
+              <TaskHistory key={selectedTaskForModal.id} taskId={selectedTaskForModal.id} createdAt={selectedTaskForModal.created_at}
+                assignedByName={selectedTaskForModal.assigned_by_name} />
             </div>
 
             <div className="mt-6 flex justify-end gap-3">

@@ -8,6 +8,7 @@ import com.neudebateclub.backend.common.enums.TaskPriority;
 import com.neudebateclub.backend.common.enums.TaskStatus;
 import com.neudebateclub.backend.common.exception.ResourceNotFoundException;
 import com.neudebateclub.backend.common.exception.ForbiddenException;
+import com.neudebateclub.backend.common.exception.ValidationException;
 import com.neudebateclub.backend.common.response.ApiResponse;
 import com.neudebateclub.backend.common.security.RoleGuard;
 import com.neudebateclub.backend.event.Event;
@@ -18,6 +19,8 @@ import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -43,6 +46,7 @@ import java.util.UUID;
 public class TaskController {
 
     private final TaskRepository taskRepository;
+    private final TaskCommentRepository taskCommentRepository;
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
     private final RoleGuard roleGuard;
@@ -101,6 +105,7 @@ public class TaskController {
 
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task", id.toString()));
+
         return ResponseEntity.ok(ApiResponse.success(TaskResponse.from(task)));
     }
 
@@ -141,7 +146,10 @@ public class TaskController {
                         .build();
 
                 if (task.getStatus() == TaskStatus.DONE) {
+                    task.setProgress(100);
                     task.setCompletedAt(Instant.now());
+                } else if (task.getStatus() == TaskStatus.IN_PROGRESS) {
+                    task.setProgress(1);
                 }
                 responses.add(TaskResponse.from(taskRepository.save(task)));
             }
@@ -169,7 +177,10 @@ public class TaskController {
                     .build();
 
             if (task.getStatus() == TaskStatus.DONE) {
+                task.setProgress(100);
                 task.setCompletedAt(Instant.now());
+            } else if (task.getStatus() == TaskStatus.IN_PROGRESS) {
+                task.setProgress(1);
             }
 
             Task saved = taskRepository.save(task);
@@ -219,6 +230,7 @@ public class TaskController {
 
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task", id.toString()));
+        TaskStatus previousStatus = task.getStatus();
 
         task.setTitle(request.title().trim());
         task.setDescription(request.description() == null ? null : request.description().trim());
@@ -227,9 +239,12 @@ public class TaskController {
         }
         if (request.status() != null) {
             task.setStatus(request.status());
-            if (request.status() == TaskStatus.DONE && task.getCompletedAt() == null) {
-                task.setCompletedAt(Instant.now());
+            if (request.status() == TaskStatus.DONE) {
+                task.setProgress(100);
+                if (task.getCompletedAt() == null) task.setCompletedAt(Instant.now());
             } else if (request.status() != TaskStatus.DONE) {
+                if (request.status() == TaskStatus.TODO || task.getProgress() == 100) task.setProgress(0);
+                if (request.status() == TaskStatus.IN_PROGRESS && task.getProgress() == 0) task.setProgress(1);
                 task.setCompletedAt(null);
             }
         }
@@ -244,9 +259,13 @@ public class TaskController {
             task.setEvent(null);
         }
 
+        Task saved = taskRepository.save(task);
+        if (previousStatus != saved.getStatus()) {
+            saveComment(saved, currentUser, "Chuyển trạng thái sang " + saved.getStatus().name());
+        }
         return ResponseEntity.ok(ApiResponse.success(
                 "Đã cập nhật nhiệm vụ",
-                TaskResponse.from(taskRepository.save(task))
+                TaskResponse.from(saved)
         ));
     }
 
@@ -263,17 +282,90 @@ public class TaskController {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task", id.toString()));
 
+        requireTaskViewer(currentUser, task);
+
         task.setStatus(request.status());
         if (request.status() == TaskStatus.DONE) {
-            task.setCompletedAt(Instant.now());
+            task.setProgress(100);
+            if (task.getCompletedAt() == null) task.setCompletedAt(Instant.now());
         } else {
+            if (request.status() == TaskStatus.TODO || task.getProgress() == 100) task.setProgress(0);
+            if (request.status() == TaskStatus.IN_PROGRESS && task.getProgress() == 0) task.setProgress(1);
             task.setCompletedAt(null);
         }
 
+        Task saved = taskRepository.save(task);
+        saveComment(saved, currentUser, "Chuyển trạng thái sang " + request.status().name());
+
         return ResponseEntity.ok(ApiResponse.success(
                 "Đã cập nhật trạng thái nhiệm vụ",
-                TaskResponse.from(taskRepository.save(task))
+                TaskResponse.from(saved)
         ));
+    }
+
+    @GetMapping("/{id}/comments")
+    @Transactional
+    public ResponseEntity<ApiResponse<List<TaskCommentResponse>>> comments(
+            @PathVariable UUID id,
+            @CurrentUser UserPrincipal currentUser) {
+        roleGuard.requireMemberOrAbove(currentUser);
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Task", id.toString()));
+        requireTaskViewer(currentUser, task);
+        return ResponseEntity.ok(ApiResponse.success(
+                taskCommentRepository.findByTaskIdOrderByCreatedAtAscIdAsc(id).stream()
+                        .map(TaskCommentResponse::from).toList()));
+    }
+
+    @PatchMapping("/{id}/progress")
+    @Transactional
+    public ResponseEntity<ApiResponse<TaskResponse>> updateProgress(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateProgressRequest request,
+            @CurrentUser UserPrincipal currentUser) {
+        roleGuard.requireMemberOrAbove(currentUser);
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Task", id.toString()));
+        requireTaskEditor(currentUser, task);
+        if (request.content().isBlank()) {
+            throw new ValidationException("Vui lòng nhập nội dung cập nhật tiến độ");
+        }
+
+        task.setProgress(request.progress());
+        task.setStatus(request.progress() == 0 ? TaskStatus.TODO
+                : request.progress() == 100 ? TaskStatus.DONE : TaskStatus.IN_PROGRESS);
+        if (request.progress() == 100) {
+            if (task.getCompletedAt() == null) task.setCompletedAt(Instant.now());
+        } else {
+            task.setCompletedAt(null);
+        }
+        Task saved = taskRepository.save(task);
+        saveComment(saved, currentUser, request.content().trim());
+        return ResponseEntity.ok(ApiResponse.success("Đã cập nhật tiến độ nhiệm vụ", TaskResponse.from(saved)));
+    }
+
+    private void requireTaskEditor(UserPrincipal currentUser, Task task) {
+        if (currentUser == null || !currentUser.getId().equals(task.getAssignedTo().getId())) {
+            throw new ForbiddenException("Chỉ người được giao nhiệm vụ mới được cập nhật tiến độ");
+        }
+    }
+
+    private void requireTaskViewer(UserPrincipal currentUser, Task task) {
+        if (currentUser == null || !(currentUser.getId().equals(task.getAssignedTo().getId())
+                || currentUser.getRole() == Role.BCN
+                || currentUser.getRole() == Role.TRUONG_BAN
+                        && task.getDepartment() != null && currentUser.isInDepartment(task.getDepartment()))) {
+            throw new ForbiddenException("Không có quyền xem lịch sử nhiệm vụ");
+        }
+    }
+
+    private void saveComment(Task task, UserPrincipal currentUser, String content) {
+        TaskComment comment = new TaskComment();
+        comment.setTask(task);
+        comment.setUser(userRepository.getReferenceById(currentUser.getId()));
+        comment.setContent(content);
+        comment.setProgress(task.getProgress());
+        taskCommentRepository.save(comment);
     }
 
     @DeleteMapping("/{id}")
@@ -371,12 +463,33 @@ public class TaskController {
             @NotNull TaskStatus status
     ) {}
 
+    public record UpdateProgressRequest(
+            @NotNull @Min(0) @Max(100) Integer progress,
+            @NotBlank @Size(max = 5000) String content
+    ) {}
+
+    public record TaskCommentResponse(
+            UUID id,
+            UUID userId,
+            String userName,
+            String content,
+            Integer progress,
+            Instant createdAt
+    ) {
+        public static TaskCommentResponse from(TaskComment comment) {
+            return new TaskCommentResponse(comment.getId(), comment.getUser().getId(),
+                    comment.getUser().getFullName(), comment.getContent(), comment.getProgress(),
+                    comment.getCreatedAt());
+        }
+    }
+
     public record TaskResponse(
             UUID id,
             String title,
             String description,
             TaskPriority priority,
             TaskStatus status,
+            int progress,
             Instant deadline,
             UUID assignedToId,
             String assignedToName,
@@ -405,6 +518,7 @@ public class TaskController {
                     task.getDescription(),
                     task.getPriority(),
                     task.getStatus(),
+                    task.getProgress(),
                     task.getDeadline(),
                     task.getAssignedTo() != null ? task.getAssignedTo().getId() : null,
                     leadName,

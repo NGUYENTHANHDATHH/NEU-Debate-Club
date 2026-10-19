@@ -61,6 +61,10 @@ public class Task {
     @Builder.Default
     private TaskStatus status = TaskStatus.TODO;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private int progress = 0;
+
     @Column(name = "deadline")
     private Instant deadline;
 

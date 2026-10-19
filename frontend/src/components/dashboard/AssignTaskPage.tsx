@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { CalendarDays, Send } from "lucide-react";
 import { toast } from "sonner";
 import { useUserContext } from "@/context/userContext";
+import { TaskHistory } from "@/components/dashboard/TaskHistory";
 import { ActionButton } from "@/components/ui/Dashboard/ActionButton";
 import { PageFrame } from "@/components/ui/Dashboard/PageFrame";
 import { Section } from "@/components/ui/Dashboard/Section";
@@ -38,6 +39,7 @@ export function AssignTaskPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [events, setEvents] = useState<ClubEvent[]>([]);
   const [tasks, setTasks] = useState<BackendTask[]>([]);
+  const [historyTaskId, setHistoryTaskId] = useState<string | null>(null);
   const [eventFilter, setEventFilter] = useState("ALL");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -195,6 +197,21 @@ export function AssignTaskPage() {
                   <span>{task.deadline ? new Date(task.deadline).toLocaleString("vi-VN") : "Không deadline"}</span>
                   <span>{task.eventTitle ?? "Không gắn sự kiện"}</span>
                 </div>
+                <div className="mt-3 flex items-center gap-3 text-xs font-medium text-slate-600">
+                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-full rounded-full bg-rose-500" style={{ width: `${task.progress}%` }} />
+                  </div>
+                  {task.progress}%
+                </div>
+                <button type="button" onClick={() => setHistoryTaskId(historyTaskId === task.id ? null : task.id)}
+                  className="mt-3 text-sm font-semibold text-rose-600 hover:underline">
+                  {historyTaskId === task.id ? "Ẩn lịch sử" : "Xem lịch sử tiến độ"}
+                </button>
+                {historyTaskId === task.id && (
+                  <div className="mt-4 border-t border-slate-100 pt-4">
+                    <TaskHistory key={task.id} taskId={task.id} createdAt={task.createdAt} assignedByName={task.assignedByName} />
+                  </div>
+                )}
               </article>
             ))}
             {!previewTasks.length && <p className="text-sm text-slate-500">Chưa có nhiệm vụ.</p>}

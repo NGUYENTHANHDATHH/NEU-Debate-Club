@@ -5,7 +5,6 @@ The following domain tables are present in Flyway migrations but have no matchin
 | Domain | Migration source | Tables | UI evidence | Implementation status |
 |---|---|---|---|---|
 | Tenure | V2 | `seasons`, `season_members` | Tenure route imports mock page | Schema only; member profiles now have a separate list/create/update slice backed by `users`. |
-| Tasks | V3, V9 | `tasks`, `task_comments` | Task routes import mock pages | Schema only. |
 | Announcements and notifications | V4 | `announcements`, `notifications` | Notification routes import mock pages | Schema only. |
 | Events and checklists | V5 | `events`, `checklist_templates`, `checklist_template_items`, `event_checklist_items` | No API caller found | Schema only. |
 | Finance and partner CRM | V6, V9 | `transactions`, `partners`, `partner_contacts`, `outreach_logs`, `collaborations` | Finance route imports mock page | Schema only. |

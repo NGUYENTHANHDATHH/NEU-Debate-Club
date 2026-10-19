@@ -13,8 +13,9 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { BackendTask, fetchMyTasks, updateTaskStatus } from "@/lib/api";
+import { BackendTask, fetchMyTasks, updateTaskProgress } from "@/lib/api";
 import { useUserContext } from "@/context/userContext";
+import { TaskHistory } from "@/components/dashboard/TaskHistory";
 import { PageFrame } from "@/components/ui/Dashboard/PageFrame";
 import { Section } from "@/components/ui/Dashboard/Section";
 
@@ -74,7 +75,9 @@ export function TodoListPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("OPEN");
   const [eventFilter, setEventFilter] = useState("ALL");
   const [selectedTask, setSelectedTask] = useState<BackendTask | null>(null);
-  const [editStatus, setEditStatus] = useState<keyof typeof statusLabels>("TODO");
+  const [editProgress, setEditProgress] = useState(0);
+  const [comment, setComment] = useState("");
+  const [historyRevision, setHistoryRevision] = useState(0);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -99,15 +102,16 @@ export function TodoListPage() {
   useEffect(() => {
     if (!selectedTask) return;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSelectedTask(null);
+      if (event.key === "Escape" && !saving) setSelectedTask(null);
     };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [selectedTask]);
+  }, [selectedTask, saving]);
 
   function openEditor(task: BackendTask) {
     setSelectedTask(task);
-    setEditStatus(normalizeStatus(task.status));
+    setEditProgress(task.progress);
+    setComment("");
   }
 
   async function saveStatus(event: FormEvent) {
@@ -115,10 +119,12 @@ export function TodoListPage() {
     if (!selectedTask) return;
     setSaving(true);
     try {
-      const updated = await updateTaskStatus(selectedTask.id, editStatus);
+      const updated = await updateTaskProgress(selectedTask.id, editProgress, comment.trim());
       setTasks((current) => current.map((task) => task.id === updated.id ? updated : task));
-      setSelectedTask(null);
-      toast.success("Đã cập nhật trạng thái công việc.");
+      setSelectedTask(updated);
+      setComment("");
+      setHistoryRevision((revision) => revision + 1);
+      toast.success("Đã cập nhật tiến độ công việc.");
     } catch (saveError) {
       toast.error(saveError instanceof Error ? saveError.message : "Không thể cập nhật công việc.");
     } finally {
@@ -229,10 +235,13 @@ export function TodoListPage() {
       {selectedTask && (
         <TaskUpdateDialog
           task={selectedTask}
-          status={editStatus}
+          progress={editProgress}
+          comment={comment}
+          historyRevision={historyRevision}
           saving={saving}
-          onStatusChange={setEditStatus}
-          onClose={() => setSelectedTask(null)}
+          onProgressChange={setEditProgress}
+          onCommentChange={setComment}
+          onClose={() => { if (!saving) setSelectedTask(null); }}
           onSubmit={saveStatus}
         />
       )}
@@ -299,19 +308,28 @@ function TaskCard({ task, now, onEdit }: { task: BackendTask; now: number; onEdi
         <span className="text-slate-500">{task.eventTitle ?? "Không thuộc sự kiện"}</span>
         <span className="text-slate-400">Giao bởi {task.assignedByName ?? "—"}</span>
       </div>
+      <div className="mt-3 flex items-center gap-3 text-xs font-semibold text-slate-500">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+          <div className="h-full rounded-full bg-rose-500" style={{ width: `${task.progress}%` }} />
+        </div>
+        <span>{task.progress}%</span>
+      </div>
     </article>
   );
 }
 
-function TaskUpdateDialog({ task, status, saving, onStatusChange, onClose, onSubmit }: {
+function TaskUpdateDialog({ task, progress, comment, historyRevision, saving, onProgressChange, onCommentChange, onClose, onSubmit }: {
   task: BackendTask;
-  status: keyof typeof statusLabels;
+  progress: number;
+  comment: string;
+  historyRevision: number;
   saving: boolean;
-  onStatusChange: (status: keyof typeof statusLabels) => void;
+  onProgressChange: (progress: number) => void;
+  onCommentChange: (comment: string) => void;
   onClose: () => void;
   onSubmit: (event: FormEvent) => void;
 }) {
-  const progress = { TODO: 0, IN_PROGRESS: 60, DONE: 100 }[status];
+  const status = progress === 0 ? "TODO" : progress === 100 ? "DONE" : "IN_PROGRESS";
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm"
       role="dialog" aria-modal="true" aria-labelledby="task-update-title" onMouseDown={onClose}>
@@ -323,7 +341,7 @@ function TaskUpdateDialog({ task, status, saving, onStatusChange, onClose, onSub
             <h2 id="task-update-title" className="mt-1 text-xl font-semibold text-slate-900">{task.title}</h2>
             <p className="mt-1 text-sm text-slate-500">{task.eventTitle ?? "Không thuộc sự kiện"}</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Đóng"
+          <button type="button" onClick={onClose} disabled={saving} aria-label="Đóng"
             className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-slate-500 hover:bg-slate-100">
             <X className="h-5 w-5" />
           </button>
@@ -334,7 +352,9 @@ function TaskUpdateDialog({ task, status, saving, onStatusChange, onClose, onSub
             <legend className="mb-3 text-sm font-semibold text-slate-800">Trạng thái công việc</legend>
             <div className="grid gap-3 sm:grid-cols-3">
               {(Object.keys(statusLabels) as (keyof typeof statusLabels)[]).map((value) => (
-                <button key={value} type="button" autoFocus={status === value} onClick={() => onStatusChange(value)}
+                <button key={value} type="button" autoFocus={status === value} disabled={saving}
+                  onClick={() => onProgressChange(value === "TODO" ? 0 : value === "DONE" ? 100 : Math.min(99, Math.max(1, progress)))}
+                  aria-pressed={status === value}
                   className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${status === value ? "border-rose-300 bg-rose-50 text-rose-600 ring-2 ring-rose-100" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
                   {statusLabels[value]}
                 </button>
@@ -347,10 +367,21 @@ function TaskUpdateDialog({ task, status, saving, onStatusChange, onClose, onSub
               <span className="font-medium text-slate-600">Tiến độ</span>
               <span className="font-semibold text-slate-900">{progress}%</span>
             </div>
+            <input type="range" min={0} max={100} value={progress} disabled={saving}
+              onChange={(event) => onProgressChange(Number(event.target.value))}
+              aria-label="Tiến độ công việc" className="mb-3 w-full accent-rose-600" />
             <div className="h-2 overflow-hidden rounded-full bg-slate-200">
               <div className="h-full rounded-full bg-rose-500 transition-all" style={{ width: `${progress}%` }} />
             </div>
           </div>
+
+          <label className="block space-y-2 text-sm font-semibold text-slate-800">
+            <span>Cập nhật công việc đang làm đến đâu</span>
+            <textarea required maxLength={5000} value={comment} disabled={saving}
+              onChange={(event) => onCommentChange(event.target.value)} rows={3}
+              placeholder="Ví dụ: Đã hoàn thành bản nháp, đang chờ góp ý..."
+              className="w-full resize-y rounded-2xl border border-slate-200 bg-white p-4 font-normal text-slate-800 outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100" />
+          </label>
 
           {task.description && (
             <div>
@@ -358,12 +389,14 @@ function TaskUpdateDialog({ task, status, saving, onStatusChange, onClose, onSub
               <p className="mt-2 rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">{task.description}</p>
             </div>
           )}
+          <TaskHistory key={`${task.id}-${historyRevision}`} taskId={task.id}
+            createdAt={task.createdAt} assignedByName={task.assignedByName} />
         </div>
 
         <div className="flex justify-end gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4">
           <button type="button" onClick={onClose} disabled={saving}
             className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-200 disabled:opacity-50">Hủy</button>
-          <button type="submit" disabled={saving || status === normalizeStatus(task.status)}
+          <button type="submit" disabled={saving || !comment.trim()}
             className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50">
             <Save className="h-4 w-4" /> {saving ? "Đang lưu..." : "Lưu cập nhật"}
           </button>

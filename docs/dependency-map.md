@@ -16,6 +16,7 @@ All paths below include the verified Spring context path `/api`.
 | Current user | `GET /api/auth/me` | `AuthController` | `UserProvider` after callback token | Verified. |
 | Accessible modules | `GET /api/auth/modules` | `AuthController` + `RoleGuard` | `UserProvider`, sidebar, dashboard route guard | Verified. |
 | Member directory | `GET /api/members`, `POST /api/members`, `PUT /api/members/{id}` | `MemberController` + `RoleGuard` | `MembersPage` through `api.ts` | Verified list/create/update slice; delete and tenure are not implemented. |
+| Task progress | `GET /api/tasks/mine`, `GET /api/tasks/{id}/comments`, `PATCH /api/tasks/{id}/progress` | `TaskController` + `TaskCommentRepository` | Todo list and manager task views through `api.ts` | Verified source path; comment history ordered oldest first. |
 | Logout | `POST /api/auth/logout` | `AuthController` | None; UI clears local storage | Verified endpoint; no server token revocation. |
 | Published landing sections | `GET /api/public/landing` and `GET /api/public/landing/{section}` | `LandingContentController` | Home section components | Verified. |
 | Public catalog rows | `GET /api/public/projects`, `GET /api/public/projects/{slug}`, `GET /api/public/achievements`, `GET /api/public/achievements/{slug}` | `LandingCatalogController` | Home/list/detail pages through `fetchPublicCatalog*` | Verified. |
@@ -28,10 +29,12 @@ All paths below include the verified Spring context path `/api`.
 |---|---|---|---|---|
 | Authentication | `users` created in V2; `google_id` added in V9 | `User` entity, `UserRepository`, `AuthService`, `JwtService`, filter, `AuthController`, DTOs | `GoogleLoginButton`, `UserProvider`, `api.ts` auth helpers, dashboard client guard | Context-load only; no auth behavior tests. |
 | Member directory | `users` profile columns from V2 | `User`, `UserRepository`, `MemberController`, membership module guard | `MembersPage`, handwritten `api.ts` member types/helpers | Controller unit tests for list/create/update, duplicate email, and BCN privilege boundary. |
+| Tasks | `tasks` and `task_comments` from V3; progress columns in V21 | `Task`, `TaskComment`, repositories and `TaskController` | `TodoListPage`, `TaskHistory`, manager previews; handwritten `api.ts` types | Controller unit tests for progress snapshots and access. |
 | Landing JSON sections | `landing_content` in V7/V9; `landing_content_versions` in V13 | Two entities/repositories, `LandingContentController`, `LandingSection`, `RoleGuard` | Hero, Vision, Departments, Comments, and achievement statistics; `CmsPage`; handwritten `api.ts` types | Opt-in PostgreSQL HTTP draft/publish/read/history and authorization coverage. |
 | Landing catalog | `projects` in V14; `achievements` in V15 | Two entities/repositories and `LandingCatalogController` | CMS and public home/list/detail pages through `api.ts` | Opt-in PostgreSQL HTTP publish/read, JSON content, validation, and batch rollback coverage. |
 
 Detailed traces are in [auth.md](modules/auth.md) and [landing-cms.md](modules/landing-cms.md).
+Task progress and comment authorization are documented in [tasks.md](modules/tasks.md).
 Dashboard access rules are documented in [access-control.md](modules/access-control.md).
 
 ## Schema-defined modules without application implementations
@@ -39,7 +42,6 @@ Dashboard access rules are documented in [access-control.md](modules/access-cont
 | Database area | Tables | Java/REST/frontend client | Evidence level |
 |---|---|---|---|
 | Seasons and tenure membership | `seasons`, `season_members` | Absent | Verified absence from application source; member profile list/create uses `users` only. |
-| Tasks | `tasks`, `task_comments` | Absent; dashboard task routes render mock UI | Verified. |
 | Announcements/notifications | `announcements`, `notifications` | Absent; dashboard notification routes render mock UI | Verified. |
 | Events/checklists | `events`, `checklist_templates`, `checklist_template_items`, `event_checklist_items` | Absent | Verified. |
 | Finance/partners | `transactions`, `partners`, `partner_contacts`, `outreach_logs`, `collaborations` | Absent; finance route renders mock UI | Verified. |

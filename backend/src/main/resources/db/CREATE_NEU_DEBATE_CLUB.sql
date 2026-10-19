@@ -25,4 +25,5 @@
 \ir migration/V18__seed_sample_members.sql
 \ir migration/V19__add_event_resource_urls.sql
 \ir migration/V20__seed_sample_events.sql
+\ir migration/V21__add_task_progress.sql
 SELECT 'NEU Debate Club schema, triggers, and landing mock data created.' AS result;

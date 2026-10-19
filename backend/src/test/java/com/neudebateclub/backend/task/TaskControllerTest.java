@@ -5,6 +5,7 @@ import com.neudebateclub.backend.common.enums.Department;
 import com.neudebateclub.backend.common.enums.Role;
 import com.neudebateclub.backend.common.enums.TaskPriority;
 import com.neudebateclub.backend.common.enums.TaskStatus;
+import com.neudebateclub.backend.common.exception.ForbiddenException;
 import com.neudebateclub.backend.common.response.ApiResponse;
 import com.neudebateclub.backend.common.security.RoleGuard;
 import com.neudebateclub.backend.event.EventRepository;
@@ -22,6 +23,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -31,6 +33,7 @@ import static org.mockito.Mockito.when;
 class TaskControllerTest {
 
     private TaskRepository taskRepository;
+    private TaskCommentRepository taskCommentRepository;
     private UserRepository userRepository;
     private EventRepository eventRepository;
     private RoleGuard roleGuard;
@@ -42,10 +45,11 @@ class TaskControllerTest {
     @BeforeEach
     void setUp() {
         taskRepository = mock(TaskRepository.class);
+        taskCommentRepository = mock(TaskCommentRepository.class);
         userRepository = mock(UserRepository.class);
         eventRepository = mock(EventRepository.class);
         roleGuard = mock(RoleGuard.class);
-        taskController = new TaskController(taskRepository, userRepository, eventRepository, roleGuard);
+        taskController = new TaskController(taskRepository, taskCommentRepository, userRepository, eventRepository, roleGuard);
 
         UUID bcnId = UUID.randomUUID();
         bcnManager = UserPrincipal.builder()
@@ -165,7 +169,9 @@ class TaskControllerTest {
         assertEquals(200, response.getStatusCode().value());
         assertNotNull(response.getBody());
         assertEquals(TaskStatus.DONE, response.getBody().getData().status());
+        assertEquals(100, response.getBody().getData().progress());
         assertNotNull(existing.getCompletedAt());
+        verify(taskCommentRepository).save(any(TaskComment.class));
     }
 
     @Test
@@ -189,5 +195,41 @@ class TaskControllerTest {
         assertEquals(1, response.getBody().getData().size());
         assertEquals(assignedTask.getId(), response.getBody().getData().getFirst().id());
         verify(taskRepository).findByAssignedToIdOrderByCreatedAtDesc(bcnManager.getId());
+    }
+
+    @Test
+    void progressUpdateSavesTaskAndCommentSnapshot() {
+        UUID taskId = UUID.randomUUID();
+        Task task = Task.builder().id(taskId).title("Viết nội dung")
+                .department(Department.TRUYEN_THONG).status(TaskStatus.TODO)
+                .assignedTo(bcnUser).assignedBy(bcnUser).build();
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
+        when(taskRepository.save(any(Task.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        taskController.updateProgress(taskId,
+                new TaskController.UpdateProgressRequest(65, "  Đã xong bản nháp  "), bcnManager);
+
+        assertEquals(65, task.getProgress());
+        assertEquals(TaskStatus.IN_PROGRESS, task.getStatus());
+        ArgumentCaptor<TaskComment> captor = ArgumentCaptor.forClass(TaskComment.class);
+        verify(taskCommentRepository).save(captor.capture());
+        assertEquals(65, captor.getValue().getProgress());
+        assertEquals("Đã xong bản nháp", captor.getValue().getContent());
+        assertEquals(bcnUser.getId(), captor.getValue().getUser().getId());
+    }
+
+    @Test
+    void otherMemberCannotUpdateOrReadTaskProgress() {
+        UUID taskId = UUID.randomUUID();
+        Task task = Task.builder().id(taskId).title("Viết nội dung")
+                .department(Department.TRUYEN_THONG).assignedTo(leadTruyenThong)
+                .assignedBy(bcnUser).build();
+        UserPrincipal otherMember = UserPrincipal.builder().id(UUID.randomUUID())
+                .role(Role.MEMBER).department(Department.NOI_DUNG).active(true).build();
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
+
+        assertThrows(ForbiddenException.class, () -> taskController.updateProgress(taskId,
+                new TaskController.UpdateProgressRequest(50, "Đang làm"), otherMember));
+        assertThrows(ForbiddenException.class, () -> taskController.comments(taskId, otherMember));
     }
 }
