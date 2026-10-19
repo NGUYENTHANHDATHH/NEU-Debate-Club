@@ -1,15 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
   CalendarClock,
   CheckCircle2,
   CircleAlert,
   Clock3,
+  PencilLine,
   RefreshCw,
+  Save,
+  X,
 } from "lucide-react";
-import { BackendTask, fetchMyTasks } from "@/lib/api";
+import { toast } from "sonner";
+import { BackendTask, fetchMyTasks, updateTaskStatus } from "@/lib/api";
 import { useUserContext } from "@/context/userContext";
 import { PageFrame } from "@/components/ui/Dashboard/PageFrame";
 import { Section } from "@/components/ui/Dashboard/Section";
@@ -69,6 +73,9 @@ export function TodoListPage() {
   const [tasks, setTasks] = useState<BackendTask[]>([]);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("OPEN");
   const [eventFilter, setEventFilter] = useState("ALL");
+  const [selectedTask, setSelectedTask] = useState<BackendTask | null>(null);
+  const [editStatus, setEditStatus] = useState<keyof typeof statusLabels>("TODO");
+  const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [now] = useState(() => Date.now());
@@ -88,6 +95,36 @@ export function TodoListPage() {
   useEffect(() => {
     void loadTasks();
   }, [loadTasks]);
+
+  useEffect(() => {
+    if (!selectedTask) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSelectedTask(null);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [selectedTask]);
+
+  function openEditor(task: BackendTask) {
+    setSelectedTask(task);
+    setEditStatus(normalizeStatus(task.status));
+  }
+
+  async function saveStatus(event: FormEvent) {
+    event.preventDefault();
+    if (!selectedTask) return;
+    setSaving(true);
+    try {
+      const updated = await updateTaskStatus(selectedTask.id, editStatus);
+      setTasks((current) => current.map((task) => task.id === updated.id ? updated : task));
+      setSelectedTask(null);
+      toast.success("Đã cập nhật trạng thái công việc.");
+    } catch (saveError) {
+      toast.error(saveError instanceof Error ? saveError.message : "Không thể cập nhật công việc.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   const events = useMemo(() => {
     const unique = new Map<string, string>();
@@ -179,7 +216,7 @@ export function TodoListPage() {
           </div>
         ) : visibleTasks.length ? (
           <div className="space-y-3">
-            {visibleTasks.map((task) => <TaskCard key={task.id} task={task} now={now} />)}
+            {visibleTasks.map((task) => <TaskCard key={task.id} task={task} now={now} onEdit={() => openEditor(task)} />)}
           </div>
         ) : (
           <div className="rounded-2xl border border-dashed border-slate-200 px-6 py-12 text-center">
@@ -189,6 +226,16 @@ export function TodoListPage() {
           </div>
         )}
       </Section>
+      {selectedTask && (
+        <TaskUpdateDialog
+          task={selectedTask}
+          status={editStatus}
+          saving={saving}
+          onStatusChange={setEditStatus}
+          onClose={() => setSelectedTask(null)}
+          onSubmit={saveStatus}
+        />
+      )}
     </PageFrame>
   );
 }
@@ -213,7 +260,7 @@ function SummaryCard({ label, value, icon, tone = "default" }: {
   );
 }
 
-function TaskCard({ task, now }: { task: BackendTask; now: number }) {
+function TaskCard({ task, now, onEdit }: { task: BackendTask; now: number; onEdit: () => void }) {
   const taskUrgency = urgency(task, now);
   const status = normalizeStatus(task.status);
   const priority = normalizePriority(task.priority);
@@ -239,7 +286,13 @@ function TaskCard({ task, now }: { task: BackendTask; now: number }) {
           <h3 className={`mt-2 font-semibold text-slate-900 ${status === "DONE" ? "line-through" : ""}`}>{task.title}</h3>
           {task.description && <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-500">{task.description}</p>}
         </div>
-        <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600">{statusLabels[status]}</span>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600">{statusLabels[status]}</span>
+          <button type="button" onClick={onEdit}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600">
+            <PencilLine className="h-3.5 w-3.5" /> Cập nhật
+          </button>
+        </div>
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-slate-100 pt-3 text-sm">
         <span className={`inline-flex items-center gap-1.5 font-medium ${deadlineColor}`}><CalendarClock className="h-4 w-4" />{deadlineLabel(task, now)}</span>
@@ -247,6 +300,76 @@ function TaskCard({ task, now }: { task: BackendTask; now: number }) {
         <span className="text-slate-400">Giao bởi {task.assignedByName ?? "—"}</span>
       </div>
     </article>
+  );
+}
+
+function TaskUpdateDialog({ task, status, saving, onStatusChange, onClose, onSubmit }: {
+  task: BackendTask;
+  status: keyof typeof statusLabels;
+  saving: boolean;
+  onStatusChange: (status: keyof typeof statusLabels) => void;
+  onClose: () => void;
+  onSubmit: (event: FormEvent) => void;
+}) {
+  const progress = { TODO: 0, IN_PROGRESS: 60, DONE: 100 }[status];
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm"
+      role="dialog" aria-modal="true" aria-labelledby="task-update-title" onMouseDown={onClose}>
+      <form onSubmit={onSubmit} onMouseDown={(event) => event.stopPropagation()}
+        className="max-h-[calc(100dvh-2rem)] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-rose-600">Cập nhật task</p>
+            <h2 id="task-update-title" className="mt-1 text-xl font-semibold text-slate-900">{task.title}</h2>
+            <p className="mt-1 text-sm text-slate-500">{task.eventTitle ?? "Không thuộc sự kiện"}</p>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Đóng"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-slate-500 hover:bg-slate-100">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="space-y-6 p-6">
+          <fieldset>
+            <legend className="mb-3 text-sm font-semibold text-slate-800">Trạng thái công việc</legend>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {(Object.keys(statusLabels) as (keyof typeof statusLabels)[]).map((value) => (
+                <button key={value} type="button" autoFocus={status === value} onClick={() => onStatusChange(value)}
+                  className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${status === value ? "border-rose-300 bg-rose-50 text-rose-600 ring-2 ring-rose-100" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                  {statusLabels[value]}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="mb-2 flex items-center justify-between text-sm">
+              <span className="font-medium text-slate-600">Tiến độ</span>
+              <span className="font-semibold text-slate-900">{progress}%</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+              <div className="h-full rounded-full bg-rose-500 transition-all" style={{ width: `${progress}%` }} />
+            </div>
+          </div>
+
+          {task.description && (
+            <div>
+              <p className="text-sm font-semibold text-slate-800">Mô tả</p>
+              <p className="mt-2 rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">{task.description}</p>
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4">
+          <button type="button" onClick={onClose} disabled={saving}
+            className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-200 disabled:opacity-50">Hủy</button>
+          <button type="submit" disabled={saving || status === normalizeStatus(task.status)}
+            className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50">
+            <Save className="h-4 w-4" /> {saving ? "Đang lưu..." : "Lưu cập nhật"}
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }
 

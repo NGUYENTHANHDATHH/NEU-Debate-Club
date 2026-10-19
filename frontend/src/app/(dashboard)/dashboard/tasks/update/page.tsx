@@ -1,5 +1,6 @@
-import { UpdateTaskPage } from "@/components/dashboard/MockPages";
+import { redirect } from "next/navigation";
+import { ROUTES } from "@/constants/routes";
 
 export default function Page() {
-  return <UpdateTaskPage />;
+  redirect(ROUTES.todoList);
 }

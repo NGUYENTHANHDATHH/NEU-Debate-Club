@@ -12,7 +12,7 @@ export const ROUTES = {
 
   // -- Thành viên --
   todoList: `${DASHBOARD}/tasks/todo-list`,
-  updateTask: `${DASHBOARD}/tasks/update`,
+  updateTask: `${DASHBOARD}/tasks/todo-list`,
   readNotification: `${DASHBOARD}/notifications/read`,
   library: `${DASHBOARD}/library`,
 

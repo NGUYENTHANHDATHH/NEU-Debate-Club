@@ -30,7 +30,6 @@ export const DASHBOARD_NAV_GROUPS: { title: string; items: DashboardNavItem[] }[
     title: "Cá nhân",
     items: [
       { name: "Todo-list", path: ROUTES.todoList },
-      { name: "Cập nhật task", path: ROUTES.updateTask },
       { name: "Đọc thông báo", path: ROUTES.readNotification },
     ],
   },
