@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { ActionButton } from "@/components/ui/Dashboard/ActionButton";
 import { PageFrame } from "@/components/ui/Dashboard/PageFrame";
 import { Section } from "@/components/ui/Dashboard/Section";
+import { useUserContext } from "@/context/userContext";
+import { fetchMembers, fetchTasks, type BackendTask, type Member } from "@/lib/api";
 import {
   ArrowRight,
   BarChart3,
@@ -1257,30 +1259,87 @@ export function CreateNotificationPage() {
 }
 
 export function DepartmentOperationsPage() {
+  const { user } = useUserContext();
+  const [members, setMembers] = useState<Member[]>([]);
+  const [tasks, setTasks] = useState<BackendTask[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!user?.department) {
+      return;
+    }
+
+    Promise.all([fetchMembers(), fetchTasks()])
+      .then(([loadedMembers, loadedTasks]) => {
+        setMembers(loadedMembers);
+        const department = user.department?.toUpperCase();
+        setTasks(
+          loadedTasks.filter(
+            (task) => task.department?.toUpperCase() === department,
+          ),
+        );
+      })
+      .catch((caught: Error) => setError(caught.message))
+      .finally(() => setLoadingData(false));
+  }, [user?.department]);
+
+  const loading = Boolean(user?.department) && loadingData;
+  const weekStart = new Date();
+  weekStart.setHours(0, 0, 0, 0);
+  weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 7);
+  const weekTasks = tasks.filter((task) => {
+    if (!task.deadline) return false;
+    const deadline = new Date(task.deadline);
+    return deadline >= weekStart && deadline < weekEnd;
+  });
+  const completedTasks = weekTasks.filter((task) => task.status.toUpperCase() === "DONE");
+  const completedAllTasks = tasks.filter((task) => task.status.toUpperCase() === "DONE");
+  const onTimeTasks = completedAllTasks.filter((task) => {
+    if (task.status.toUpperCase() !== "DONE" || !task.deadline || !task.completedAt) return false;
+    return new Date(task.completedAt) <= new Date(task.deadline);
+  });
+  const deadlineRate = completedAllTasks.length
+    ? Math.round((onTimeTasks.length / completedAllTasks.length) * 100)
+    : 0;
+  const activeMembers = members.filter((member) => member.active).length;
+
+  function memberTasks(memberId: string) {
+    return tasks.filter(
+      (task) => task.assignedToId?.toLowerCase() === memberId.toLowerCase(),
+    );
+  }
+
   return (
     <PageFrame
       eyebrow="Trưởng ban"
       title="Nghiệp vụ ban"
       description="Dashboard nội bộ cho tổng quan thành viên, task tuần và các nghiệp vụ nổi bật."
     >
+      {loading && <p role="status" className="text-sm text-slate-500">Đang tải dữ liệu ban...</p>}
+      {error && <p role="alert" className="text-sm text-rose-600">{error}</p>}
       <StatGrid
         items={[
           {
             label: "Tổng thành viên",
-            value: "18",
-            note: "15 hoạt động, 3 tạm nghỉ",
+            value: String(members.length),
+            note: `${activeMembers} hoạt động, ${members.length - activeMembers} tạm nghỉ`,
             tone: "slate",
           },
           {
             label: "Task tuần này",
-            value: "11",
-            note: "7 hoàn thành, 2 đang làm",
+            value: String(weekTasks.length),
+            note: `${completedTasks.length}/${weekTasks.length} hoàn thành`,
             tone: "rose",
           },
           {
             label: "Tỷ lệ đúng hạn",
-            value: "84%",
-            note: "Tăng 6% so với tuần trước",
+            value: `${deadlineRate}%`,
+            note: completedAllTasks.length
+              ? `${onTimeTasks.length}/${completedAllTasks.length} task hoàn thành đúng hạn`
+              : "Chưa có task hoàn thành để tính",
             tone: "emerald",
           },
           {
@@ -1296,39 +1355,45 @@ export function DepartmentOperationsPage() {
         columns={[
           { label: "Tên" },
           { label: "Chức vụ" },
-          { label: "Task đang có", align: "center" },
+          { label: "Tổng task", align: "center" },
           { label: "Tỷ lệ đúng hạn", align: "right" },
           { label: "Trạng thái", align: "right" },
         ]}
-        rows={[
-          [
-            "An",
-            "Trưởng ban",
-            "4",
-            "91%",
-            <span key="an-status" className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
-              Hoạt động
+        rows={members.map((member) => {
+          const assignedTasks = memberTasks(member.id);
+          const memberCompleted = assignedTasks.filter(
+            (task) => task.status.toUpperCase() === "DONE",
+          );
+          const memberOnTime = memberCompleted.filter(
+            (task) =>
+              task.deadline &&
+              task.completedAt &&
+              new Date(task.completedAt) <= new Date(task.deadline),
+          );
+          const memberDeadlineRate = memberCompleted.length
+            ? Math.round((memberOnTime.length / memberCompleted.length) * 100)
+            : 0;
+          const statusClass = !member.active
+            ? "bg-slate-100 text-slate-600"
+            : memberDeadlineRate < 50 && memberCompleted.length > 0
+              ? "bg-rose-50 text-rose-700"
+              : "bg-emerald-50 text-emerald-700";
+          const statusLabel = !member.active
+            ? "Tạm nghỉ"
+            : memberDeadlineRate < 50 && memberCompleted.length > 0
+              ? "Cần chú ý"
+              : "Hoạt động";
+
+          return [
+            member.fullName,
+            member.role === "TRUONG_BAN" ? "Trưởng ban" : "Thành viên",
+            String(assignedTasks.length),
+            `${memberDeadlineRate}%`,
+            <span key={`${member.id}-status`} className={`rounded-full px-3 py-1 ${statusClass}`}>
+              {statusLabel}
             </span>,
-          ],
-          [
-            "Vy",
-            "Thành viên",
-            "2",
-            "78%",
-            <span key="vy-status" className="rounded-full bg-amber-50 px-3 py-1 text-amber-700">
-              Bình thường
-            </span>,
-          ],
-          [
-            "Minh",
-            "Thành viên",
-            "1",
-            "46%",
-            <span key="minh-status" className="rounded-full bg-rose-50 px-3 py-1 text-rose-700">
-              Cần chú ý
-            </span>,
-          ],
-        ]}
+          ];
+        })}
       />
     </PageFrame>
   );
