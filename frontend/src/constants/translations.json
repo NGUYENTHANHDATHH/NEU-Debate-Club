@@ -19,6 +19,11 @@
       "ios": "Trên Safari: nhấn nút Chia sẻ (ô vuông có mũi tên lên), rồi chọn \"Thêm vào MH chính\".",
       "other": "Mở menu trình duyệt (⋮), rồi chọn \"Thêm vào màn hình chính\" hoặc \"Cài đặt ứng dụng\"."
     },
+    "push": {
+      "enable": "Bật thông báo",
+      "enabled": "Đã bật thông báo trên thiết bị này.",
+      "error": "Không bật được thông báo. Vui lòng thử lại."
+    },
     "history": "NEU Debate Club - NDC, được thành lập ngày 05/11/2013, là một CLB kỹ năng mềm - học thuật trực thuộc Liên chi đoàn khoa Luật Trường Đại học Kinh tế Quốc dân. Là ngôi nhà của những người có niềm đam mê với bộ môn “thể thao trí tuệ” mang tên Tranh biện",
     "vision": {
       "title": {
@@ -132,6 +137,11 @@
       "button": "Add to Home Screen",
       "ios": "In Safari: tap the Share button (square with an up arrow), then choose \"Add to Home Screen\".",
       "other": "Open the browser menu (⋮), then choose \"Add to Home screen\" or \"Install app\"."
+    },
+    "push": {
+      "enable": "Turn on notifications",
+      "enabled": "Notifications are on for this device.",
+      "error": "Could not turn on notifications. Please try again."
     },
     "history": "NEU Debate Club - NDC, established on November 5th, 2013, is a soft skills and academic club under the Youth Union of the Faculty of Law at National Economics University. It is a home for those passionate about the intellectual sport called Debate.",
     "vision": {

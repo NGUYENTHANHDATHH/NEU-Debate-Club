@@ -4,7 +4,8 @@ import clubLogo from "@/../public/logo.png";
 import Image from "next/image";
 import { useLanguage } from "@/provider/LanguageProvider";
 import { fetchLandingSection } from "@/lib/api";
-import { InstallAppButton } from "./InstallAppButton";
+import { InstallAppButton, heroPillClass } from "./InstallAppButton";
+import { EnablePushButton } from "@/components/ui/EnablePushButton";
 
 type HeroContent = { headline: string; subtext: string };
 
@@ -78,7 +79,10 @@ export const Hero = () => {
           >
             {content?.subtext ?? t("history")}
           </p>
-          <InstallAppButton />
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <InstallAppButton />
+            <EnablePushButton className={heroPillClass} />
+          </div>
         </motion.div>
       </div>
 

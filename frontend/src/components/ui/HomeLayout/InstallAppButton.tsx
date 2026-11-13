@@ -7,6 +7,9 @@ import { useLanguage } from "@/provider/LanguageProvider";
 // Chỉ Chrome/Edge/Samsung Internet có sự kiện này; chưa có trong TS DOM lib.
 type InstallPromptEvent = Event & { prompt: () => Promise<void> };
 
+export const heroPillClass =
+  "inline-flex items-center gap-2 px-6 py-3 rounded-full border border-[#8A151B] text-[#8A151B] dark:text-white hover:bg-[#8A151B] hover:text-white dark:hover:text-white font-montserrat font-semibold text-sm transition-colors";
+
 export const InstallAppButton = () => {
   const { t } = useLanguage();
   const [promptEvent, setPromptEvent] = useState<InstallPromptEvent | null>(
@@ -55,7 +58,7 @@ export const InstallAppButton = () => {
     <button
       type="button"
       onClick={handleClick}
-      className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-[#8A151B] text-[#8A151B] dark:text-white hover:bg-[#8A151B] hover:text-white dark:hover:text-white font-montserrat font-semibold text-sm transition-colors"
+      className={heroPillClass}
     >
       <Smartphone className="w-4 h-4" />
       {t("install.button")}

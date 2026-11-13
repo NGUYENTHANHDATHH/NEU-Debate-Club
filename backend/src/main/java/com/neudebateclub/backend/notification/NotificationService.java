@@ -39,6 +39,7 @@ public class NotificationService {
     private final UserRepository userRepository;
     private final RoleGuard roleGuard;
     private final ActivityLogService activityLogService;
+    private final PushService pushService;
 
     /** Thông báo mới nhất của người dùng hiện tại. */
     public List<Notification> listForUser(UserPrincipal currentUser, Integer limit) {
@@ -64,14 +65,14 @@ public class NotificationService {
             body.append("\nHạn chót: ").append(DEADLINE_FORMAT.format(task.getDeadline()));
         }
 
-        notificationRepository.save(Notification.builder()
+        pushService.push(List.of(notificationRepository.save(Notification.builder()
                 .user(assignee)
                 .title("Bạn được giao nhiệm vụ mới")
                 .body(body.toString())
                 .type(NotificationType.TASK_ASSIGNED)
                 .entityId(task.getId())
                 .createdBy(assigner)
-                .build());
+                .build())));
     }
 
     /**
@@ -106,6 +107,7 @@ public class NotificationService {
                         .createdBy(createdBy)
                         .build())
                 .toList());
+        pushService.push(saved);
         activityLogService.record(sender.getId(), "SEND", "NOTIFICATION", saved.getFirst().getId(),
                 ActivityLogService.metadata("recipientCount", recipients.size(), "title", cleanTitle, "type", type,
                         "audience", audience));

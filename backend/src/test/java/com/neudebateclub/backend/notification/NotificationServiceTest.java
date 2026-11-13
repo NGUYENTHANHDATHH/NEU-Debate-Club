@@ -38,6 +38,7 @@ class NotificationServiceTest {
 
     private NotificationRepository notificationRepository;
     private UserRepository userRepository;
+    private PushService pushService;
     private NotificationService service;
 
     private User bcn;
@@ -51,9 +52,11 @@ class NotificationServiceTest {
     void setUp() {
         notificationRepository = mock(NotificationRepository.class);
         userRepository = mock(UserRepository.class);
+        pushService = mock(PushService.class);
         service = new NotificationService(notificationRepository, userRepository, TestRoleGuards.withDefaults(),
-                mock(ActivityLogService.class));
+                mock(ActivityLogService.class), pushService);
         when(notificationRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(notificationRepository.save(any(Notification.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         bcn = user("BCN", Role.BCN, Department.BCN, true);
         leadTt = user("Lead TT", Role.TRUONG_BAN, Department.TRUYEN_THONG, true);
@@ -87,6 +90,7 @@ class NotificationServiceTest {
         ArgumentCaptor<Notification> captor = ArgumentCaptor.forClass(Notification.class);
         verify(notificationRepository).save(captor.capture());
         Notification saved = captor.getValue();
+        verify(pushService).push(List.of(saved));
         assertEquals(memberTt, saved.getUser());
         assertEquals(leadTt, saved.getCreatedBy());
         assertEquals(NotificationType.TASK_ASSIGNED, saved.getType());

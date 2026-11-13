@@ -8,6 +8,7 @@ import { Description as DialogDescription, Title as DialogTitle } from "@radix-u
 import { LogOut, Menu, Search } from "lucide-react";
 import { useUserContext } from "@/context/userContext";
 import NotificationBell from "@/components/layout/NotificationBell";
+import { EnablePushButton } from "@/components/ui/EnablePushButton";
 import { visibleDashboardGroups, visibleQuickActions } from "@/constants/dashboard-modules";
 
 const itemClass =
@@ -63,6 +64,10 @@ export default function DashboardHeader({ navOpen, onOpenNav }: { navOpen: boole
         </button>
 
         <div className="ml-auto flex items-center gap-2">
+          <EnablePushButton
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 text-sm font-medium text-[#BE123C] transition-colors hover:bg-rose-100"
+            labelClassName="hidden md:inline"
+          />
           <NotificationBell />
           <DropdownMenu.Root>
             <DropdownMenu.Trigger

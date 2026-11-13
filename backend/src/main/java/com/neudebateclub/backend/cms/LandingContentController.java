@@ -9,6 +9,7 @@ import com.neudebateclub.backend.common.enums.LandingSection;
 import com.neudebateclub.backend.common.security.RoleGuard;
 import com.neudebateclub.backend.common.enums.AdminModule;
 import com.neudebateclub.backend.common.exception.ValidationException;
+import com.neudebateclub.backend.notification.PushService;
 import com.neudebateclub.backend.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -33,6 +34,7 @@ public class LandingContentController {
     private final RoleGuard roleGuard;
     private final ObjectMapper objectMapper;
     private final ActivityLogService activityLogService;
+    private final PushService pushService;
 
     private static final String DRAFT = "DRAFT";
     private static final String PUBLISHED = "PUBLISHED";
@@ -151,6 +153,25 @@ public class LandingContentController {
                 ActivityLogService.metadata("section", normalized));
         return ResponseEntity.ok(Map.of("success", true, "data", Map.of(
                 "section", normalized, "content", parseJson(content.getContentJson()), "publishedAt", content.getUpdatedAt())));
+    }
+
+    /** Đẩy bản announcement ĐÃ XUẤT BẢN tới mọi thiết bị đã bật thông báo (kể cả khách). Chỉ chạy khi bấm nút. */
+    @PostMapping(value = "/cms/landing/announcement/push", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String, Object>> pushAnnouncement(@CurrentUser UserPrincipal user) {
+        roleGuard.requireModuleManager(user, AdminModule.LANDING_CMS);
+        LandingContent published = repo.findPublishedBySection("announcement")
+                .orElseThrow(() -> new ValidationException("Chưa xuất bản thông báo sự kiện"));
+        JsonNode announcement = parseJson(published.getContentJson());
+        String title = announcement.path("title").asString("").trim();
+        if (title.isEmpty() || announcement.path("hidden").asBoolean(false)) {
+            throw new ValidationException("Thông báo sự kiện đang ẩn hoặc chưa có tiêu đề");
+        }
+        String info = announcement.path("info").asString("").trim();
+        int devices = pushService.broadcast(title, info.isEmpty() ? "Xem chi tiết trên trang chủ NEU Debate Club" : info, "/");
+        activityLogService.record(user.getId(), "PUSH", "LANDING_SECTION", published.getId(),
+                ActivityLogService.metadata("section", "announcement", "deviceCount", devices));
+        return ResponseEntity.ok(Map.of("success", true, "message", "Đã gửi tới " + devices + " thiết bị",
+                "data", Map.of("deviceCount", devices)));
     }
 
     @GetMapping("/cms/landing/{section}/history")

@@ -36,6 +36,9 @@ public class SecurityConfig {
                 .requestMatchers("/auth/google", "/auth/google/**", "/auth/logout").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers(HttpMethod.GET, "/public/**").permitAll()
+                // Khách chưa đăng nhập cũng bật được thông báo sự kiện của landing page.
+                .requestMatchers(HttpMethod.GET, "/push/public-key").permitAll()
+                .requestMatchers(HttpMethod.POST, "/push/subscriptions").permitAll()
                 .requestMatchers(
                     "/v3/api-docs/**",
                     "/swagger-ui/**",

@@ -394,6 +394,26 @@ export function createNotification(notification: CreateNotificationPayload) {
   });
 }
 
+/** Khoá VAPID của máy chủ; null = máy chủ chưa bật thông báo đẩy. */
+export async function fetchPushPublicKey(): Promise<string | null> {
+  const response = await fetch(`${API_BASE_URL}/push/public-key`);
+  if (!response.ok) return null;
+  return (await response.json()).data ?? null;
+}
+
+/**
+ * Lưu thiết bị nhận thông báo đẩy; có token thì gắn với người đang đăng nhập, không thì là khách.
+ * Không qua apiRequest để việc đồng bộ mỗi lần mở app không xoá cache GET.
+ */
+export async function savePushSubscription(subscription: PushSubscription) {
+  const { endpoint, keys } = subscription.toJSON();
+  const response = await authorizedFetch(
+    `${API_BASE_URL}/push/subscriptions`,
+    jsonBody("POST", { endpoint, keys }),
+  );
+  if (!response.ok) throw new Error("Không thể bật thông báo.");
+}
+
 export async function fetchAccessibleModules(token?: string): Promise<AdminModuleKey[]> {
   const response = await fetch(`${API_BASE_URL}/auth/modules`, {
     headers: { Authorization: `Bearer ${token ?? getAuthToken() ?? ""}` },
@@ -473,6 +493,14 @@ export function publishCmsSection(section: string) {
     content: Record<string, unknown>;
     publishedAt: string;
   }>(`/public/landing/cms/landing/${section}/publish`, { method: "POST" });
+}
+
+/** Đẩy bản announcement ĐÃ XUẤT BẢN tới mọi thiết bị đã bật thông báo (kể cả khách). */
+export function pushAnnouncement() {
+  return cmsRequest<{ deviceCount: number }>(
+    "/public/landing/cms/landing/announcement/push",
+    { method: "POST" },
+  );
 }
 
 export function fetchCmsHistory(section: string) {

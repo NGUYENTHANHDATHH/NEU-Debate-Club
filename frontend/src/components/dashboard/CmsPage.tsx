@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element -- catalog images are CMS-configured URLs. */
 
 import {
+  BellRing,
   ChevronLeft,
   ChevronRight,
   EyeOff,
@@ -25,6 +26,7 @@ import {
   fetchCmsSections,
   publishCmsCatalog,
   publishCmsSection,
+  pushAnnouncement,
   saveCmsDraft,
 } from "@/lib/api";
 
@@ -128,7 +130,7 @@ export function CmsPage() {
   const [content, setContent] = useState<ContentItem>({});
   const [activeItem, setActiveItem] = useState<number | null>(null);
   const [page, setPage] = useState(1);
-  const [busy, setBusy] = useState<"loading" | "saving" | "publishing" | null>(
+  const [busy, setBusy] = useState<"loading" | "saving" | "publishing" | "pushing" | null>(
     "loading",
   );
   const [message, setMessage] = useState<{
@@ -370,6 +372,28 @@ export function CmsPage() {
       setMessage({
         type: "success",
         text: "Đã xuất bản. Landing page công khai sẽ đọc bản mới ngay.",
+      });
+    } catch (error) {
+      setMessage({ type: "error", text: (error as Error).message });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function handlePushAnnouncement() {
+    if (
+      !window.confirm(
+        "Gửi thông báo đẩy về sự kiện (bản ĐÃ XUẤT BẢN) tới mọi thiết bị đã bật thông báo?",
+      )
+    )
+      return;
+    setBusy("pushing");
+    setMessage(null);
+    try {
+      const { deviceCount } = await pushAnnouncement();
+      setMessage({
+        type: "success",
+        text: `Đã gửi thông báo đẩy tới ${deviceCount} thiết bị.`,
       });
     } catch (error) {
       setMessage({ type: "error", text: (error as Error).message });
@@ -954,6 +978,16 @@ export function CmsPage() {
               >
                 {busy === "publishing" ? "Đang xuất bản..." : "Xuất bản"}
               </ActionButton>
+              {selected === "announcement" ? (
+                <ActionButton
+                  variant="outline"
+                  icon={<BellRing className="h-4 w-4" />}
+                  onClick={handlePushAnnouncement}
+                  disabled={busy !== null}
+                >
+                  {busy === "pushing" ? "Đang gửi..." : "Gửi thông báo đẩy"}
+                </ActionButton>
+              ) : null}
               {message ? (
                 <span
                   className={`text-sm ${message.type === "error" ? "text-rose-600" : "text-emerald-600"}`}
