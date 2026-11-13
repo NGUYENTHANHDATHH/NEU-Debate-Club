@@ -45,6 +45,20 @@ export async function exchangeGoogleIdToken(
   return payload.data ?? payload;
 }
 
+/** Redeems the single-use code returned by the Google redirect callback. */
+export async function exchangeLoginCode(code: string): Promise<AuthResponse> {
+  const response = await fetch(`${API_BASE_URL}/auth/google/exchange`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code }),
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(payload?.message ?? "Không thể hoàn tất đăng nhập.");
+  }
+  return payload.data ?? payload;
+}
+
 export function getAuthToken(): string | null {
   if (typeof window === "undefined") return null;
   return window.localStorage.getItem("ndc_token");

@@ -7,7 +7,14 @@ import com.neudebateclub.backend.common.annotation.CurrentUser;
 import com.neudebateclub.backend.auth.security.UserPrincipal;
 import com.neudebateclub.backend.common.enums.AdminModule;
 import com.neudebateclub.backend.common.security.RoleGuard;
+import com.neudebateclub.backend.common.exception.UnauthorizedException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.constraints.NotBlank;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
+import java.time.Duration;
+import java.util.Optional;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +39,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final RoleGuard roleGuard;
+    private final GoogleLoginFlow googleLoginFlow;
 
     @Value("${app.google.client-id}")
     private String googleClientId;
@@ -83,10 +91,43 @@ public class AuthController {
         return url.toString();
     }
 
+    private void writeNonceCookie(HttpServletRequest request, HttpServletResponse response,
+                                  String value, Duration maxAge) {
+        ResponseCookie cookie = ResponseCookie.from(GoogleLoginFlow.NONCE_COOKIE, value)
+                .httpOnly(true)
+                .secure(request.isSecure())
+                .sameSite("Lax")
+                .path(request.getContextPath() + "/auth/google")
+                .maxAge(maxAge)
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    private static String readNonceCookie(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null) return null;
+        for (Cookie cookie : cookies) {
+            if (GoogleLoginFlow.NONCE_COOKIE.equals(cookie.getName())) return cookie.getValue();
+        }
+        return null;
+    }
+
+    private static RedirectView errorRedirect(String frontendBase, String returnPath, String message) {
+        return new RedirectView(UriComponentsBuilder.fromUriString(frontendBase + returnPath)
+                .queryParam("googleError", message)
+                .build()
+                .toUriString());
+    }
+
     @GetMapping("/google/authorize")
     public RedirectView authorizeGoogle(
             @RequestParam(value = "returnUrl", required = false, defaultValue = "/") String returnUrl,
-            HttpServletRequest request) {
+            HttpServletRequest request,
+            HttpServletResponse response) {
+
+        String nonce = googleLoginFlow.newNonce();
+        writeNonceCookie(request, response, nonce, GoogleLoginFlow.STATE_TTL);
+        String state = googleLoginFlow.createState(nonce, returnUrl);
 
         String callbackUrl = getCallbackUrl(request);
         String googleAuthUrl = UriComponentsBuilder
@@ -96,7 +137,7 @@ public class AuthController {
                 .queryParam("response_type", "code")
                 .queryParam("scope", "openid email profile")
                 .queryParam("prompt", "select_account")
-                .queryParam("state", returnUrl)
+                .queryParam("state", state)
                 .build()
                 .toUriString();
 
@@ -107,41 +148,52 @@ public class AuthController {
     public RedirectView googleCallback(
             @RequestParam(value = "code", required = false) String code,
             @RequestParam(value = "error", required = false) String error,
-            @RequestParam(value = "state", required = false, defaultValue = "/") String state,
-            HttpServletRequest request) {
+            @RequestParam(value = "state", required = false) String state,
+            HttpServletRequest request,
+            HttpServletResponse response) {
 
         String frontendBase = getFrontendBaseUrl(request);
-        String targetReturnUrl = (state != null && !state.isBlank()) ? state : "/";
+        Optional<String> verifiedReturnPath = googleLoginFlow.verifyState(state, readNonceCookie(request));
+        writeNonceCookie(request, response, "", Duration.ZERO);
+
+        if (verifiedReturnPath.isEmpty()) {
+            return errorRedirect(frontendBase, "/", "Phiên đăng nhập không hợp lệ hoặc đã hết hạn");
+        }
+        String returnPath = verifiedReturnPath.get();
 
         if (error != null || code == null || code.isBlank()) {
-            String redirectUrl = UriComponentsBuilder.fromUriString(frontendBase + targetReturnUrl)
-                    .queryParam("googleError", error != null ? error : "Missing authorization code")
-                    .build()
-                    .toUriString();
-            return new RedirectView(redirectUrl);
+            return errorRedirect(frontendBase, returnPath,
+                    error != null ? error : "Missing authorization code");
         }
 
         try {
             String callbackUrl = getCallbackUrl(request);
             AuthResponse authResponse = authService.processGoogleCallback(code, callbackUrl);
+            // The JWT never appears in the URL; the browser redeems this single-use code.
+            String loginCode = googleLoginFlow.issueLoginCode(authResponse);
 
-            String redirectUrl = UriComponentsBuilder.fromUriString(frontendBase + targetReturnUrl)
-                    .queryParam("token", authResponse.getToken())
+            return new RedirectView(UriComponentsBuilder.fromUriString(frontendBase + returnPath)
+                    .queryParam("authCode", loginCode)
                     .queryParam("loginSuccess", "true")
                     .build()
-                    .toUriString();
-
-            return new RedirectView(redirectUrl);
+                    .toUriString());
         } catch (Exception e) {
             String errorMessage = e.getMessage() == null
                 ? "Google authentication failed"
                 : e.getMessage().replaceAll("[\\r\\n]+", " ").trim();
-            String redirectUrl = UriComponentsBuilder.fromUriString(frontendBase + targetReturnUrl)
-                .queryParam("googleError", errorMessage)
-                    .build()
-                    .toUriString();
-            return new RedirectView(redirectUrl);
+            return errorRedirect(frontendBase, returnPath, errorMessage);
         }
+    }
+
+    @PostMapping("/google/exchange")
+    public ResponseEntity<ApiResponse<AuthResponse>> exchangeLoginCode(
+        @Valid @RequestBody LoginCodeRequest request) {
+        AuthResponse authResponse = googleLoginFlow.redeemLoginCode(request.code())
+            .orElseThrow(() -> new UnauthorizedException("Mã đăng nhập không hợp lệ hoặc đã hết hạn"));
+        return ResponseEntity.ok(ApiResponse.success("Login successful", authResponse));
+    }
+
+    public record LoginCodeRequest(@NotBlank String code) {
     }
 
     @PostMapping("/google")

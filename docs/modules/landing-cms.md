@@ -46,3 +46,14 @@ The suite is opt-in: set `CMS_TEST_DATABASE_URL` to a **disposable PostgreSQL da
 ## Current ownership decision
 
 Catalog rows are now the application source for public projects and achievements. Landing JSON remains for independently authored landing sections and achievement statistics. Existing project/achievement item JSON in `landing_content` should be retired only after deployment data has been checked.
+
+## Re-audit notes (2026-11-13)
+
+The sections above were re-checked against commit `f3033a5` and remain accurate. Additional verified observations:
+
+- **Envelope inconsistency.** Section endpoints return raw `String`/`Map` bodies and public catalog endpoints return the JPA entities `LandingProject`/`LandingAchievement` directly, while other modules use `ApiResponse<T>`. Entity changes therefore change the public JSON contract.
+- **Admin routes under `/public`.** CMS read endpoints are `GET /public/...`, so they pass the security filter anonymously and are refused by `RoleGuard` with 403 rather than 401.
+- **Unused client code.** `fetchCmsHistory` has no caller (the history endpoint is not surfaced in the UI); ESLint reports an unused `updateStat` in `CmsPage.tsx`.
+- **Timestamps.** `projects`/`achievements` use `TIMESTAMP` (no time zone) while the rest of the schema uses `TIMESTAMPTZ`.
+- **Seed data.** All landing/catalog content seeds are versioned migrations (V10–V12, V16–V17) and run in every environment.
+- `CmsPublishIntegrationTest` was **not** run in this audit (requires a disposable PostgreSQL via `CMS_TEST_DATABASE_URL`).

@@ -1,74 +1,106 @@
-# NEU Debate Club master plan
+# NEU Debate Club — master plan
 
-## Purpose and baseline
+**Baseline:** commit `f3033a5` on `main`, audited 2026-11-13. This plan starts from what the repository verifiably does, not from the product documents. Generating these documents does **not** mean the repository is consistent; the open risks below are real and unresolved.
 
-This plan starts from the repository's verified state, not from the broader product documents. The executable system currently covers Google-backed authentication plus landing-page/CMS persistence. PostgreSQL migrations describe a wider future system; the dashboard exposes mostly static mock screens for it.
+Evidence: [architecture.md](architecture.md) · [dependency-map.md](dependency-map.md) · modules: [auth](modules/auth.md) · [access-control](modules/access-control.md) · [members](modules/members.md) · [tasks](modules/tasks.md) · [events](modules/events.md) · [landing-cms](modules/landing-cms.md) · [database-migrations](modules/database-migrations.md) · [schema-only](modules/schema-backed-unimplemented.md)
 
-Detailed evidence is retained in [architecture.md](architecture.md), [dependency-map.md](dependency-map.md), [auth.md](modules/auth.md), [landing-cms.md](modules/landing-cms.md), and [schema-backed-unimplemented.md](modules/schema-backed-unimplemented.md).
+## Actual architecture (one paragraph)
 
-## Current module register
+A Next.js 16 client-rendered frontend calls a Spring Boot 4.1 / Java 21 REST API under `/api` with a Google-OAuth-issued JWT. The API uses Spring Data JPA directly from controllers (no service layer except auth) against PostgreSQL 16, whose schema is owned by Flyway SQL migrations V1–V21 with Hibernate in `validate` mode. 8 of 28 tables are mapped. API contracts are implicit in controller records; frontend types in `api.ts` are handwritten copies. There is no CI and no frontend test runner.
 
-| Module | Database | Backend API | Frontend | Test coverage | Status |
+## Module register
+
+| Module | DB | Backend API | Frontend | Tests (run 2026-11-13) | Status |
 |---|---|---|---|---|---|
-| Google authentication | `users` | Implemented | Implemented | Context only | Partial vertical slice |
-| Dashboard module access | Existing `users.role` and `users.department` | `AdminModule`, `RoleGuard`, `/auth/modules` | Module-filtered navigation and route guard | RoleGuard unit test | Implemented |
-| Landing section CMS | `landing_content`, versions | Implemented | CMS client paths aligned; home owns independent landing sections/statistics | Opt-in PostgreSQL HTTP publish/read/history tests | Partial vertical slice |
-| Landing catalog | `projects`, `achievements` | Implemented | CMS and public project/achievement pages use catalog APIs | Opt-in PostgreSQL HTTP publish/rollback tests | Partial vertical slice |
-| Member directory | Existing `users` profile columns; V18 sample seed | List/create/update API with membership-module authorization | Live list, shared create/edit form, client pagination | Controller unit tests | Partial vertical slice |
-| Tasks | `tasks`, `task_comments`; V21 progress columns | Task CRUD, personal list, progress updates and comment history | Live todo list and manager previews | Task controller unit tests | Partial vertical slice |
-| Events, announcements, tenure, finance, partners, media, check-in, equipment, assets | Schema tables exist | Not fully implemented | Mock/static pages or absent | Varies | Planned or partial |
+| Google auth + JWT | `users` | 6 routes | login flow, context, guard | AuthServiceTest 2 ✔ | Working slice; security gaps A-1, A-2 |
+| Module access | none | `/auth/modules`, `RoleGuard` | sidebar + route guard | RoleGuardTest 3 ✔ | Working; task APIs don't use it |
+| Members | `users` (+V18 seed) | list/create/update | MembersPage, pickers | MemberControllerTest 5 ✔ | Partial (no delete, no tenure) |
+| Tasks | `tasks`, `task_comments` | 9 routes | todo, assign, assign-all, history | TaskControllerTest 6 ✔ | Partial; authorization gaps T-1…T-3 |
+| Events | `events` (+V20 seed) | CRUD | EventsPage, task pickers | EventControllerTest 4 ✔ | Partial (subset of columns) |
+| Landing sections | `landing_content`, versions | public + CMS | home sections, CmsPage | CMS integration — not run | Working slice |
+| Landing catalog | `projects`, `achievements` | public + CMS | home, list/detail, CmsPage | CMS integration — not run | Working slice |
+| Tenure, notifications, finance/partners, media, activity log, checklists, proposals, check-in, equipment, design assets | 20 tables | none | mock pages or none | none | Schema only |
+| Dashboard home, charts, health, roles | n/a | none | mock pages | none | Mock only |
 
-## Prioritized implementation order
+## Risk register
 
-This is a proposed order to close verified gaps. It is not approval to change application behavior.
+Severity: **P0** = data loss, security exposure, or deploy blocker; **P1** = wrong behaviour / contract drift; **P2** = hygiene. All entries are verified in source unless the "Evidence" column says otherwise.
 
-1. **Establish a reproducible baseline.** Confirm the target database's Flyway history and schema state, select one local-development database name/profile convention, and record a non-production migration verification procedure. Do not edit applied migrations.
-2. **Choose and publish the API-contract workflow.** Decide whether controller-derived OpenAPI is exported and reviewed, or a checked-in OpenAPI file becomes authoritative. Generate frontend types from the chosen contract only after this decision.
-3. **Protect the repaired landing vertical slice.** Add API and UI tests covering catalog reads, CMS authorization, draft, publish, and errors. Retire legacy project/achievement JSON only after deployed data is verified.
-4. **Harden identity and authorization.** Confirm the membership domain rule, remove duplicated/ambiguous role decisions through an agreed contract, and add auth integration coverage before expanding privileged APIs.
-5. **Build the operational core as complete vertical slices.** Start with users/membership and tasks, because later workflow, notification, and reporting modules depend on user identity and assignments. Implement schema mapping, DTO/API, client behavior, and tests together.
-6. **Add event operations and notifications.** Implement events/checklists before attendee check-in, finance attribution, media links, and content approvals because those tables reference events.
-7. **Add department operations.** Sequence partner/finance, media/design assets, equipment, and proposals according to confirmed club priorities. Each needs explicit roles, lifecycle rules, and an API contract before its existing mock screen becomes live.
-8. **Add reporting only after source workflows.** Dashboard charts, health views, and activity analytics should consume completed operational data rather than duplicate mock-derived calculations.
+| ID | Sev | Risk | Evidence | Detail |
+|---|---|---|---|---|
+| ~~R-1~~ | P0 | Open-redirect / token leak via OAuth `state`/`returnUrl` and JWT in query string. **Fixed in working tree (2026-11-13, uncommitted):** safe relative return path, signed state bound to an HttpOnly nonce cookie, single-use 60 s login code redeemed by `POST /auth/google/exchange`. Covered by `GoogleLoginFlowTest`; not yet exercised end-to-end against Google. | Verified by unit tests | [auth](modules/auth.md#risks) |
+| ~~R-2~~ | P0 | Task authorization gaps. **Fixed in working tree (2026-11-13, uncommitted)** per owner decision 3 (strict). Covered by 8 new `TaskControllerTest` cases using the real `RoleGuard`. | Verified by unit tests | [tasks](modules/tasks.md#verified-gaps) |
+| ~~R-15~~ | P0 | `JWT_SECRET` values that are not valid Base64 (e.g. containing `-`, as in `.env.docker.example`) crashed token signing: `DecodingException` was not caught. **Fixed in working tree (2026-11-13).** | Verified by unit test | `JwtService.getSigningKey` |
+| R-3 | P0 | Applied migrations V1, V2, V12 were edited after first commit; older databases will fail checksum validation and may keep `users.google_id NOT NULL` or lack catalog enums. `baseline-version: 12` can mask this. | Verified git; DB state unknown | [database-migrations](modules/database-migrations.md) |
+| R-4 | P0 | Sample members, events and a fixed BCN account are seeded by versioned migrations and will land in production. | Verified | [database-migrations](modules/database-migrations.md#other-observations) |
+| R-5 | P1 | Java `TaskStatus.BLOCKED/CANCELLED`, `TaskPriority.URGENT` silently persisted as `todo`/`high`. | Verified | [tasks T-5](modules/tasks.md#verified-gaps) |
+| R-6 | P1 | No API contract artefact; `api.ts` types, `AdminModule` keys and enum casing are hand-synchronised; mixed lowercase/uppercase enums and mixed response envelopes. | Verified | [dependency-map](dependency-map.md#dependency-graph) |
+| ~~R-7~~ | — | Login overwrites `full_name`/`avatar_url` from Google. **Closed: intended (owner decision 5).** | Verified | [auth A-4](modules/auth.md#risks) |
+| R-8 | P1 | Malformed body / bad enum query param → HTTP 500 (no handler). | Inferred from handler set | [architecture](architecture.md#backend-structure-verified) |
+| R-9 | P1 | Three default DB names (`neu_debate_club`, `neudebateclub`, `clubhub`); `ALLOWED_DOMAIN` documented but unused; `GET /health` requires auth. | Verified | [architecture](architecture.md#configuration-verified) |
+| R-10 | P2 | Dashboard protection is client-side only: `UserProvider` redirects anonymous visitors to `/` after the session check (static pages may flash first); `middleware.ts` is a no-op. *Corrected 2026-11-13 — the first audit wrongly said anonymous visitors were not redirected.* | Verified | [access-control](modules/access-control.md#frontend-enforcement-verified) |
+| R-11 | P1 | No CI; frontend lint currently fails (1 error); no frontend tests; `BackendApplicationTests` runs Flyway against whatever DB is configured. | Verified by running | [architecture](architecture.md#build-and-test-commands) |
+| R-12 | P2 | Frontend manifest omits `react`/`react-dom`; two pnpm lockfiles/workspace files; unused `h2` dependency; empty config classes; stray `test.json`/`test.txt`; tracked empty `frontend/src/.env.local`. | Verified | [architecture](architecture.md#configuration-verified) |
+| R-13 | P2 | Product docs diverge from code: suffix rule unenforced, `members` table vs `users`, `IMPLEMENTATION_ROADMAP.md` still lists UC-14/UC-09 as not started. | Verified | [members M-6](modules/members.md) |
+| R-14 | P2 | Dashboard mixes live and mock content (DepartmentOperationsPage) without labelling which is which. | Verified | [dependency-map](dependency-map.md#dashboard-route--implementation) |
 
-## Cross-layer prerequisites
+Closed since the 2026-10-18 audit (verified): CMS route alignment; catalog as single source for projects/achievements; department enum parity; invalid root backend scripts removed.
+
+## Proposed implementation order
+
+A proposal only — not approval to change behaviour. Each step lists what proves it is done.
+
+1. **Establish a safe baseline (R-3, R-4, R-11).**
+   Inspect every real database read-only using the queries in [database-migrations.md](modules/database-migrations.md#safe-verification-procedure-proposed-not-executed). Decide per environment between `flyway repair` and forward-fix migrations. Freeze V1–V21 (no more edits). Decide where sample data belongs: a Flyway location enabled only for local/dev, or a separate script. Add a disposable-DB CI job running `mvnw test` plus `tsc --noEmit` and `lint`.
+   *Done when:* CI is green on a fresh Postgres, and each environment's history is recorded.
+2. **Close security gaps (R-1, R-2).** — *Implemented in the working tree on 2026-11-13, unit-tested, not yet committed or tested end-to-end with real Google login.*
+   Validate `returnUrl` as a relative path. Replace raw `state` with a signed nonce. Move the token off the URL (one-time code or HttpOnly cookie). Apply the decided task-visibility rule (owner decision 3, option A): members read only their own tasks, leads read and write only their department's tasks, and only BCN may assign to all departments.
+   *Done when:* controller/integration tests cover each boundary listed in [tasks.md](modules/tasks.md) T-1…T-3 and [auth.md](modules/auth.md) missing coverage.
+3. **Fix silent data corruption (R-5).**
+   Add a forward migration (V22+) extending `task_status_enum` with `blocked`, `cancelled` and `task_priority_enum` with `urgent` (owner decision 4). Map them in the converters, make converters throw on unknown values, and add them to the frontend task types and UI.
+4. **Contract workflow (R-6, R-8) — decided: springdoc-generated (owner decision 6).**
+   Export `/v3/api-docs` in CI and generate frontend TypeScript types from it. Standardise the `ApiResponse` envelope and enum casing. Add handlers for `HttpMessageNotReadableException` and `MethodArgumentTypeMismatchException`.
+   *Done when:* a backend DTO change breaks the frontend type-check.
+5. **Configuration and frontend hygiene (R-9, R-10, R-12).**
+   Use one DB name. Remove or implement `ALLOWED_DOMAIN`. Permit or remove `/health`. Add an auth redirect for anonymous dashboard access. Declare `react`/`react-dom`. Pick one lockfile. Fix the lint error.
+6. **Extend core vertical slices.**
+   Finish members (deactivate flow, student-id unique constraint) → tenure (`seasons`) → event sub-domains (checklists, then attendees/check-in). Introduce a service layer for any slice that adds business rules.
+7. **Notifications**, which depend on users, tasks and events.
+8. **Department operations** (finance/partners, media/publications, design assets, equipment, proposals), ordered by confirmed club priority. Each needs an `AdminModule` check and an API contract before its mock page goes live.
+9. **Reporting last** (charts, health dashboard, activity log), consuming real data from steps 6–8. Label or remove mock content until then (R-14).
+10. **Reconcile product docs (R-13)** after each step, rather than in bulk.
 
 ```mermaid
 flowchart LR
-  Baseline[Database baseline and migration history] --> Contract[API contract ownership]
-  Contract --> Landing[Landing/CMS alignment]
-  Contract --> Auth[Auth and role tests]
-  Auth --> Members[Membership]
-  Members --> Tasks[Tasks]
-  Tasks --> Events[Events and checklists]
-  Events --> Notifications[Notifications]
-  Events --> CheckIn[Attendees/check-in]
-  Events --> Finance[Finance and partners]
-  Events --> Media[Media/assets/equipment]
-  Tasks --> Reporting[Reporting/dashboard]
-  Events --> Reporting
+  S1[1 Baseline + CI] --> S2[2 Security]
+  S1 --> S3[3 Enum/data fixes]
+  S2 --> S4[4 Contract workflow]
+  S3 --> S4
+  S4 --> S5[5 Config hygiene]
+  S4 --> S6[6 Members/Tenure/Event sub-domains]
+  S6 --> S7[7 Notifications]
+  S6 --> S8[8 Department operations]
+  S7 --> S9[9 Reporting]
+  S8 --> S9
 ```
 
-## Immediate consistency backlog
+## Owner decisions (confirmed 2026-11-13)
 
-| Priority | Verified gap | Completion evidence |
-|---|---|---|
-| Closed | CMS frontend route strings did not match controller mappings. | Frontend helpers now call the concrete controller route prefixes. |
-| Closed | Public projects/achievements had independent JSON-section, catalog-table, and static-page representations. | Catalog endpoints now supply all public project and achievement cards/list/detail pages; static project data was removed. |
-| P0 | Flyway baseline policy can skip V1-V12 for an existing untracked schema. | Target environment migration history/schema is inspected and a safe onboarding procedure is documented. |
-| Closed | Java department values appeared to exceed the PostgreSQL enum values. | V9 already extends the enum; documentation corrected. |
-| Closed | Root pnpm backend scripts did not correspond to the Maven backend. | Invalid backend workspace scripts were removed; Maven remains the documented backend entry point. |
-| P1 | API types are handwritten on both sides. | One selected contract workflow detects backend/frontend drift in CI. |
-| P1 | Domain dashboard pages present mock content for schema-only modules. | Each page is labelled as mock until its API vertical slice is implemented, or is replaced per product decision. Module visibility is now centrally filtered by department access. |
-| P2 | CMS now has opt-in PostgreSQL integration coverage; auth behavior and frontend UI coverage remain incomplete. | Run CMS tests against a disposable database in CI and add coverage for the remaining contracts. |
+| # | Question | Decision | Effect on this plan |
+|---|---|---|---|
+| 1 | Does a non-local database exist? | **No.** Only local development databases. | R-3 and R-4 drop from production risks to "must fix before the first deployment". Local databases that fail checksum validation can be recreated. |
+| 2 | Require the `*.ndc.neu@gmail.com` suffix at login? | **No.** It was used before; it is no longer the rule. "Present and active in `users`" is the rule. | Current code is correct. Remove `ALLOWED_DOMAIN` from env templates and update the use-case document (R-13). |
+| 4 | Keep `BLOCKED`, `CANCELLED`, `URGENT`? | **Yes.** | Add a forward migration extending `task_status_enum` and `task_priority_enum`, fix the converters and frontend types (R-5). |
+| 5 | Should Google overwrite name/avatar on login? | **Yes.** | Intended behaviour; R-7 closed. |
+| 3 | Task visibility | **Option A (strict):** a member reads only tasks assigned to them; a department lead reads only their department's tasks; BCN reads all. Writes: a lead edits/deletes only their own department's tasks; only BCN may assign to all departments. | Defines the fix for R-2 (step 2). `GET /tasks` and `GET /tasks/{id}` must be scoped server-side; DepartmentOperationsPage must stop relying on client-side filtering. |
+| 6 | API contract workflow | **Option A:** the springdoc-generated OpenAPI (from Java controllers) is the source of truth; it is exported in CI and TypeScript types are generated from it for the frontend. | Defines step 4. Handwritten types in `api.ts` are replaced by generated types; backend DTO changes must break the frontend type-check. |
+| 7 | Next domain after stabilisation | Deferred by owner. | Step 6+ order stays provisional. |
+| 8 | Is the hard-coded V12 BCN account intended for production? | **No.** | Must be excluded before the first deployment, together with the other sample seeds (R-4). |
 
-## Assumptions requiring owner confirmation
+## Assumptions still open
 
-1. Is `.ndc.neu@gmail.com` the intended membership suffix for both Google authorization and dashboard access?
-2. Is the target database already populated, and if so, does it contain Flyway history through V12?
-3. Which schema-only domain is the next approved product vertical slice after landing/auth stabilization?
-4. Should runtime springdoc output remain the API documentation mechanism, or should a versioned OpenAPI specification be introduced?
+7. **Next domain after stabilisation** (tenure, event checklists, notifications, or finance).
 
-## Audit constraints and result
+## How to keep this current
 
-This master plan began as a documentation audit. The catalog/CMS alignment changes recorded above modify application code and add forward-only seed migrations; they do not edit applied migrations, install dependencies, or modify production configuration. The remaining contract, test, and schema-only-module risks remain open work.
+After each change: update the module doc's trace and gap table, move closed risks to the "Closed" line with the commit hash, and record any command actually run, with its result, in [architecture.md](architecture.md#build-and-test-commands).

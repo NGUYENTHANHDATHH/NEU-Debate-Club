@@ -1,25 +1,27 @@
 # Schema-backed modules without application layers
 
-The following domain tables are present in Flyway migrations but have no matching Java entity/repository/service/controller/DTO and no frontend API client in this checkout. Dashboard pages for several of these domains render static/mock UI from [MockPages.tsx](../../frontend/src/components/dashboard/MockPages.tsx).
+**Audit date:** 2026-11-13. These tables exist in Flyway migrations but have no Java entity, repository, controller, DTO, or frontend API client. Several dashboard routes render static content for them from [MockPages.tsx](../../frontend/src/components/dashboard/MockPages.tsx).
 
-| Domain | Migration source | Tables | UI evidence | Implementation status |
+**Change since the previous audit:** `events` now has a full vertical slice ([events.md](events.md)); only event *sub-domains* remain here.
+
+| Domain | Migration | Tables | UI evidence | Status |
 |---|---|---|---|---|
-| Tenure | V2 | `seasons`, `season_members` | Tenure route imports mock page | Schema only; member profiles now have a separate list/create/update slice backed by `users`. |
-| Announcements and notifications | V4 | `announcements`, `notifications` | Notification routes import mock pages | Schema only. |
-| Events and checklists | V5 | `events`, `checklist_templates`, `checklist_template_items`, `event_checklist_items` | No API caller found | Schema only. |
-| Finance and partner CRM | V6, V9 | `transactions`, `partners`, `partner_contacts`, `outreach_logs`, `collaborations` | Finance route imports mock page | Schema only. |
-| Media and activity log | V7 | `media_links`, `activity_logs` | Publication and activity routes import mock pages | Schema only. |
-| Event content and proposals | V9 | `event_contents`, `proposals` | Department operations is mock UI | Schema only. |
-| Attendee check-in | V9 | `event_attendees` | No API caller found | Schema only. |
-| Equipment borrowing | V9 | `equipment`, `equipment_borrows` | No API caller found | Schema only. |
-| Design asset library | V9 | `design_assets` | Library route imports mock page | Schema only. |
+| Tenure | V2 (+V8 one-active-season trigger) | `seasons`, `season_members` | `/dashboard/tenure` → `TenurePage` mock | Schema only |
+| Announcements & notifications | V4 | `announcements`, `notifications` | `/dashboard/notifications/create`, `/read` mocks; public `NotificationWidget` | Schema only |
+| Event checklists | V5 | `checklist_templates`, `checklist_template_items`, `event_checklist_items` | none | Schema only |
+| Finance & partner CRM | V6 (+V8 partner-stats trigger), V9 columns | `transactions`, `partners`, `partner_contacts`, `outreach_logs`, `collaborations` | `/dashboard/finance` mock | Schema only |
+| Media & activity log | V7 | `media_links`, `activity_logs` | `/dashboard/publications`, `/dashboard/activity-log` mocks | Schema only; no code writes `activity_logs` |
+| Event content & proposals | V9 | `event_contents`, `proposals` | none | Schema only |
+| Attendee check-in | V9 | `event_attendees` | none | Schema only |
+| Equipment borrowing | V9 | `equipment`, `equipment_borrows` | none | Schema only |
+| Design asset library | V9 | `design_assets` | `/dashboard/library` mock | Schema only |
 
-## Database consistency observations
+Also mock-only, not tied to a specific table: dashboard home, tasks hub, charts, health dashboard, roles (permission editing — there is no API to change permissions other than `PUT /members`).
 
-- V1 creates the initial `department_enum` values.
-- V9 adds `ky_thuat` and `nhan_su` with `ALTER TYPE ... ADD VALUE IF NOT EXISTS`.
-- The Java [Department.java](../../backend/src/main/java/com/neudebateclub/backend/common/enums/Department.java) enum matches the resulting migration-defined enum values.
+## Related unused Java code
+
+Enums `ChecklistStatus`, `ContentStatus`, `OutreachResult`, `PartnerStatus`, `Platform`, `TransactionType`; empty `CacheConfig`, `SwaggerConfig`; unused `PageResponse`.
 
 ## Planning constraint
 
-These tables are not evidence that their UI, API, approval rules, or data lifecycle are finalized. Existing Vietnamese needs/use-case documents describe intended behavior, but they are not executable contracts. Choose one vertical slice at a time, define its API contract, then add entity/repository/service/controller/client/tests together.
+Tables are not evidence that UI, API, approval rules, or data lifecycle are settled. The Vietnamese needs/use-case documents describe intent but are not contracts. Build one vertical slice at a time: API contract → entity/repository → service/controller with module guard → client types → UI → tests.

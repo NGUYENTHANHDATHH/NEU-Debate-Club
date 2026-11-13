@@ -5,6 +5,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.io.DecodingException;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,9 +14,11 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service @Slf4j
@@ -32,7 +35,8 @@ public class JwtService {
 
         try {
             keyBytes = Decoders.BASE64.decode(jwtSecret);
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException | DecodingException ex) {
+            // Not Base64 (e.g. contains '-'): use the raw secret text.
             keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
         }
 
@@ -63,6 +67,31 @@ public class JwtService {
             .compact();
     }
 
+    private static final String OAUTH_STATE_TYPE = "oauth_state";
+
+    /** Signed OAuth {@code state}: carries a browser nonce and return path, no subject. */
+    public String generateOAuthState(String nonce, String returnPath, Duration ttl) {
+        return Jwts.builder()
+            .claim("typ", OAUTH_STATE_TYPE)
+            .claim("nonce", nonce)
+            .claim("ret", returnPath)
+            .issuedAt(new Date())
+            .expiration(new Date(System.currentTimeMillis() + ttl.toMillis()))
+            .signWith(getSigningKey())
+            .compact();
+    }
+
+    public Optional<Claims> parseOAuthState(String state) {
+        try {
+            Claims claims = extractAllClaims(state);
+            return OAUTH_STATE_TYPE.equals(claims.get("typ", String.class))
+                ? Optional.of(claims) : Optional.empty();
+        } catch (JwtException | IllegalArgumentException e) {
+            log.warn("Invalid OAuth state: {}", e.getMessage());
+            return Optional.empty();
+        }
+    }
+
     public Claims extractAllClaims(String token) {
         return Jwts.parser()
             .verifyWith(getSigningKey())
@@ -77,8 +106,10 @@ public class JwtService {
 
     public boolean isTokenValid(String token) {
         try {
-            extractAllClaims(token);
-            return true;
+            Claims claims = extractAllClaims(token);
+            // OAuth state values share the signing key but are never access tokens.
+            return claims.getSubject() != null
+                && !OAUTH_STATE_TYPE.equals(claims.get("typ", String.class));
         } catch (JwtException | IllegalArgumentException e) {
             log.warn("Invalid JWT token: {}", e.getMessage());
             return false;

@@ -2,6 +2,7 @@ package com.neudebateclub.backend.task;
 
 import com.neudebateclub.backend.auth.security.UserPrincipal;
 import com.neudebateclub.backend.common.annotation.CurrentUser;
+import com.neudebateclub.backend.common.enums.AdminModule;
 import com.neudebateclub.backend.common.enums.Department;
 import com.neudebateclub.backend.common.enums.Role;
 import com.neudebateclub.backend.common.enums.TaskPriority;
@@ -66,15 +67,27 @@ public class TaskController {
             @RequestParam(required = false) TaskStatus status,
             @RequestParam(required = false) TaskPriority priority,
             @CurrentUser UserPrincipal currentUser) {
-        if (currentUser != null) {
-            roleGuard.requireMemberOrAbove(currentUser);
-        }
+        roleGuard.requireMemberOrAbove(currentUser);
 
         List<Task> tasks;
-        if (department == null && status == null && priority == null) {
-            tasks = taskRepository.findAllByOrderByCreatedAtDesc();
+        if (currentUser.getRole() == Role.BCN) {
+            tasks = department == null && status == null && priority == null
+                    ? taskRepository.findAllByOrderByCreatedAtDesc()
+                    : taskRepository.findWithFilters(department, status, priority);
+        } else if (currentUser.getRole() == Role.TRUONG_BAN) {
+            // Trưởng ban chỉ xem nhiệm vụ của ban mình
+            if (currentUser.getDepartment() == null
+                    || (department != null && !currentUser.isInDepartment(department))) {
+                throw new ForbiddenException("Trưởng ban chỉ được xem nhiệm vụ của ban mình");
+            }
+            tasks = taskRepository.findWithFilters(currentUser.getDepartment(), status, priority);
         } else {
-            tasks = taskRepository.findWithFilters(department, status, priority);
+            // Thành viên chỉ xem nhiệm vụ được giao cho mình
+            tasks = taskRepository.findByAssignedToIdOrderByCreatedAtDesc(currentUser.getId()).stream()
+                    .filter(task -> department == null || task.getDepartment() == department)
+                    .filter(task -> status == null || task.getStatus() == status)
+                    .filter(task -> priority == null || task.getPriority() == priority)
+                    .toList();
         }
 
         return ResponseEntity.ok(ApiResponse.success(
@@ -99,12 +112,11 @@ public class TaskController {
     public ResponseEntity<ApiResponse<TaskResponse>> getById(
             @PathVariable UUID id,
             @CurrentUser UserPrincipal currentUser) {
-        if (currentUser != null) {
-            roleGuard.requireMemberOrAbove(currentUser);
-        }
+        roleGuard.requireMemberOrAbove(currentUser);
 
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task", id.toString()));
+        requireTaskViewer(currentUser, task);
 
         return ResponseEntity.ok(ApiResponse.success(TaskResponse.from(task)));
     }
@@ -114,11 +126,13 @@ public class TaskController {
     public ResponseEntity<ApiResponse<List<TaskResponse>>> create(
             @Valid @RequestBody CreateTaskRequest request,
             @CurrentUser UserPrincipal currentUser) {
-        if (currentUser != null) {
-            roleGuard.requireTruongBanOrAbove(currentUser);
-        }
+        // Giao cho cả 6 ban chỉ dành cho BCN; giao cho một ban cần quyền giao task
+        roleGuard.requireModuleManager(currentUser,
+                Boolean.TRUE.equals(request.assignToAllDepartments())
+                        ? AdminModule.CROSS_DEPARTMENT_TASKS
+                        : AdminModule.TASK_ASSIGNMENT);
 
-        User assignedByUser = resolveAssignerUser(currentUser);
+        User assignedByUser = userRepository.getReferenceById(currentUser.getId());
         User assignedToUser = Boolean.TRUE.equals(request.assignToAllDepartments())
                 ? assignedByUser
                 : resolveAssignee(request, currentUser, assignedByUser);
@@ -194,7 +208,7 @@ public class TaskController {
     }
 
     private User resolveAssignee(CreateTaskRequest request, UserPrincipal currentUser, User fallbackUser) {
-        if (currentUser == null || currentUser.getRole() != Role.TRUONG_BAN) {
+        if (currentUser.getRole() == Role.BCN) {
             return request.assignedToId() == null
                     ? resolveDepartmentLead(request.department(), fallbackUser)
                     : findMemberInDepartment(request.assignedToId(), request.department());
@@ -224,12 +238,9 @@ public class TaskController {
             @PathVariable UUID id,
             @Valid @RequestBody UpdateTaskRequest request,
             @CurrentUser UserPrincipal currentUser) {
-        if (currentUser != null) {
-            roleGuard.requireTruongBanOrAbove(currentUser);
-        }
-
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task", id.toString()));
+        requireTaskManager(currentUser, task);
         TaskStatus previousStatus = task.getStatus();
 
         task.setTitle(request.title().trim());
@@ -275,9 +286,7 @@ public class TaskController {
             @PathVariable UUID id,
             @Valid @RequestBody UpdateStatusRequest request,
             @CurrentUser UserPrincipal currentUser) {
-        if (currentUser != null) {
-            roleGuard.requireMemberOrAbove(currentUser);
-        }
+        roleGuard.requireMemberOrAbove(currentUser);
 
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task", id.toString()));
@@ -350,6 +359,15 @@ public class TaskController {
         }
     }
 
+    /** BCN quản lý mọi nhiệm vụ; Trưởng ban chỉ quản lý nhiệm vụ thuộc ban mình. */
+    private void requireTaskManager(UserPrincipal currentUser, Task task) {
+        roleGuard.requireModuleManager(currentUser, AdminModule.TASK_ASSIGNMENT);
+        if (currentUser.getRole() != Role.BCN
+                && (task.getDepartment() == null || !currentUser.isInDepartment(task.getDepartment()))) {
+            throw new ForbiddenException("Trưởng ban chỉ được quản lý nhiệm vụ của ban mình");
+        }
+    }
+
     private void requireTaskViewer(UserPrincipal currentUser, Task task) {
         if (currentUser == null || !(currentUser.getId().equals(task.getAssignedTo().getId())
                 || currentUser.getRole() == Role.BCN
@@ -373,12 +391,9 @@ public class TaskController {
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable UUID id,
             @CurrentUser UserPrincipal currentUser) {
-        if (currentUser != null) {
-            roleGuard.requireTruongBanOrAbove(currentUser);
-        }
-
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task", id.toString()));
+        requireTaskManager(currentUser, task);
         taskRepository.delete(task);
         return ResponseEntity.ok(ApiResponse.success("Đã xóa nhiệm vụ", null));
     }
@@ -391,18 +406,6 @@ public class TaskController {
         return userRepository.findFirstByDepartmentAndRoleAndActiveTrue(department, Role.TRUONG_BAN)
                 .or(() -> userRepository.findFirstByDepartmentAndActiveTrue(department))
                 .orElse(fallbackUser);
-    }
-
-    /**
-     * Xác định người giao việc (BCN).
-     */
-    private User resolveAssignerUser(UserPrincipal currentUser) {
-        if (currentUser != null && currentUser.getId() != null) {
-            return userRepository.getReferenceById(currentUser.getId());
-        }
-        return userRepository.findFirstByRoleAndActiveTrue(Role.BCN)
-                .orElseGet(() -> userRepository.findAll().stream().findFirst()
-                        .orElseThrow(() -> new IllegalStateException("Hệ thống chưa có người dùng nào để gán creator.")));
     }
 
     public static String formatDepartmentName(Department dept) {

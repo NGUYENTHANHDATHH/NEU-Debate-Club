@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   API_BASE_URL,
   exchangeGoogleIdToken,
+  exchangeLoginCode,
   fetchAccessibleModules,
 } from "@/lib/api";
 import type { AdminModuleKey } from "@/constants/dashboard-modules";
@@ -82,24 +83,32 @@ export const UserProvider: React.FC<IUserProviderProps> = ({ children }) => {
       setLoading(true);
       if (typeof window !== "undefined" && !hasProcessedAuthRef.current) {
         const urlParams = new URLSearchParams(window.location.search);
-        const tokenParam = urlParams.get("token");
+        const authCode = urlParams.get("authCode");
         const loginSuccess = urlParams.get("loginSuccess");
         const googleError = urlParams.get("googleError");
 
-        if (tokenParam || googleError || loginSuccess) {
+        if (authCode || googleError || loginSuccess) {
           hasProcessedAuthRef.current = true;
+          // Remove the single-use code from the address bar before redeeming it.
+          const cleanParams = new URLSearchParams(urlParams);
+          ["authCode", "token", "loginSuccess", "googleError"].forEach((key) =>
+            cleanParams.delete(key),
+          );
+          const cleanSearch = cleanParams.toString();
+          window.history.replaceState(
+            null,
+            "",
+            window.location.pathname + (cleanSearch ? `?${cleanSearch}` : "") + window.location.hash,
+          );
+
           if (googleError) {
             toast.error(`Đăng nhập Google thất bại: ${googleError}`, {
               id: "google-login-toast",
             });
-          } else if (tokenParam && loginSuccess === "true") {
-            localStorage.setItem("ndc_token", tokenParam);
-            const res = await fetch(`${API_BASE_URL}/auth/me`, {
-              headers: { Authorization: `Bearer ${tokenParam}` },
-            });
-            if (res.ok) {
-              const body = await res.json();
-              const u = body.data ?? body;
+          } else if (authCode && loginSuccess === "true") {
+            try {
+              const auth = await exchangeLoginCode(authCode);
+              const u = auth.user;
               const profile: IUserProfile = {
                 id: u.id,
                 name: u.fullName,
@@ -107,25 +116,24 @@ export const UserProvider: React.FC<IUserProviderProps> = ({ children }) => {
                 avatarUrl: u.avatarUrl ?? undefined,
                 role: u.role ?? undefined,
                 department: u.department ?? undefined,
-                modules: await fetchAccessibleModules(tokenParam).catch(() => []),
+                modules: await fetchAccessibleModules(auth.token).catch(() => []),
               };
-              authService.saveSession(profile, tokenParam);
+              authService.saveSession(profile, auth.token);
               setUser(profile);
-              setToken(tokenParam);
+              setToken(auth.token);
               setIsAuthenticated(true);
               toast.success("Đăng nhập Google thành công.", {
                 id: "google-login-toast",
               });
+            } catch (exchangeError) {
+              toast.error(
+                exchangeError instanceof Error
+                  ? exchangeError.message
+                  : "Không thể hoàn tất đăng nhập.",
+                { id: "google-login-toast" },
+              );
             }
           }
-
-          urlParams.delete("token");
-          urlParams.delete("loginSuccess");
-          urlParams.delete("googleError");
-          const newSearch = urlParams.toString();
-          const cleanUrl =
-            window.location.pathname + (newSearch ? `?${newSearch}` : "") + window.location.hash;
-          window.history.replaceState(null, "", cleanUrl);
         }
       }
 

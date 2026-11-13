@@ -1,82 +1,170 @@
 # Cross-layer dependency map
 
-**Legend:** **Verified** means direct source evidence. **Inferred** follows from route and call composition but was not run. **Absent** means no source implementation was found.
+**Audit date:** 2026-11-13 (commit `f3033a5`). **Legend:** **Verified** = direct source evidence. **Inferred** = follows from code composition, not exercised. **Absent** = no implementation found.
 
-## Executable endpoint map
+All paths include the Spring context path `/api`. "Auth" column: `public` = permitted by `SecurityConfig`; otherwise a valid JWT is required, plus the controller-level check shown.
 
-All paths below include the verified Spring context path `/api`.
+## Endpoint inventory (verified: 38 application routes plus actuator/springdoc)
 
-| Module | Backend endpoint | Controller backing it | Frontend caller | Status |
-|---|---|---|---|---|
-| Health | `GET /api/health` | `HealthController` | None found | Verified endpoint; not used by frontend. |
-| Actuator health | `GET /api/actuator/health` | Spring Actuator | Compose health check | Verified. |
-| Google redirect start | `GET /api/auth/google/authorize?returnUrl=...` | `AuthController` | `GoogleLoginButton` | Verified. |
-| Google callback | `GET /api/auth/google/callback` | `AuthController` + `AuthService` | Google redirect target | Inferred external OAuth hop. |
-| Google ID-token exchange | `POST /api/auth/google` | `AuthController` + `AuthService` | `exchangeGoogleIdToken`; no component call found | Verified endpoint; client helper is otherwise unused. |
-| Current user | `GET /api/auth/me` | `AuthController` | `UserProvider` after callback token | Verified. |
-| Accessible modules | `GET /api/auth/modules` | `AuthController` + `RoleGuard` | `UserProvider`, sidebar, dashboard route guard | Verified. |
-| Member directory | `GET /api/members`, `POST /api/members`, `PUT /api/members/{id}` | `MemberController` + `RoleGuard` | `MembersPage` through `api.ts` | Verified list/create/update slice; delete and tenure are not implemented. |
-| Task progress | `GET /api/tasks/mine`, `GET /api/tasks/{id}/comments`, `PATCH /api/tasks/{id}/progress` | `TaskController` + `TaskCommentRepository` | Todo list and manager task views through `api.ts` | Verified source path; comment history ordered oldest first. |
-| Logout | `POST /api/auth/logout` | `AuthController` | None; UI clears local storage | Verified endpoint; no server token revocation. |
-| Published landing sections | `GET /api/public/landing` and `GET /api/public/landing/{section}` | `LandingContentController` | Home section components | Verified. |
-| Public catalog rows | `GET /api/public/projects`, `GET /api/public/projects/{slug}`, `GET /api/public/achievements`, `GET /api/public/achievements/{slug}` | `LandingCatalogController` | Home/list/detail pages through `fetchPublicCatalog*` | Verified. |
-| CMS section reads/writes | `GET /api/public/landing/cms/landing`, `GET /api/public/landing/cms/landing/{section}`, `PUT .../{section}/draft`, `POST .../{section}/publish`, `GET .../{section}/history` | `LandingContentController` | `api.ts` CMS helpers | Verified. |
-| CMS catalog reads/publish | `GET /api/public/cms/landing/catalog/{type}`, `PUT .../{type}/publish` | `LandingCatalogController` | `api.ts` CMS helpers | Verified. |
+### Auth — [AuthController](../backend/src/main/java/com/neudebateclub/backend/auth/AuthController.java)
 
-## Implemented module traces
+| Method & path | Auth | Frontend caller |
+|---|---|---|
+| `GET /auth/google/authorize?returnUrl=` | public | [GoogleLoginButton](../frontend/src/features/auth/GoogleLoginButton.tsx) (browser navigation) |
+| `GET /auth/google/callback` | public; requires valid signed `state` + matching `ndc_oauth_nonce` cookie | Google redirect target; redirects to frontend with single-use `authCode` + `loginSuccess`, or `googleError` |
+| `POST /auth/google/exchange` | public (single-use code, 60 s) | `exchangeLoginCode` ← `userContext.tsx` (added 2026-11-13) |
+| `POST /auth/google` | public | `exchangeGoogleIdToken` → `completeGoogleLogin` in [userContext.tsx](../frontend/src/context/userContext.tsx) |
+| `GET /auth/me` | JWT | `userContext.tsx` (direct `fetch`, not via `api.ts`) |
+| `GET /auth/modules` | JWT | `fetchAccessibleModules` |
+| `POST /auth/logout` | public | None — the UI only clears `localStorage` |
 
-| Module | Database | Backend layers | Client/UI layers | Tests |
-|---|---|---|---|---|
-| Authentication | `users` created in V2; `google_id` added in V9 | `User` entity, `UserRepository`, `AuthService`, `JwtService`, filter, `AuthController`, DTOs | `GoogleLoginButton`, `UserProvider`, `api.ts` auth helpers, dashboard client guard | Context-load only; no auth behavior tests. |
-| Member directory | `users` profile columns from V2 | `User`, `UserRepository`, `MemberController`, membership module guard | `MembersPage`, handwritten `api.ts` member types/helpers | Controller unit tests for list/create/update, duplicate email, and BCN privilege boundary. |
-| Tasks | `tasks` and `task_comments` from V3; progress columns in V21 | `Task`, `TaskComment`, repositories and `TaskController` | `TodoListPage`, `TaskHistory`, manager previews; handwritten `api.ts` types | Controller unit tests for progress snapshots and access. |
-| Landing JSON sections | `landing_content` in V7/V9; `landing_content_versions` in V13 | Two entities/repositories, `LandingContentController`, `LandingSection`, `RoleGuard` | Hero, Vision, Departments, Comments, and achievement statistics; `CmsPage`; handwritten `api.ts` types | Opt-in PostgreSQL HTTP draft/publish/read/history and authorization coverage. |
-| Landing catalog | `projects` in V14; `achievements` in V15 | Two entities/repositories and `LandingCatalogController` | CMS and public home/list/detail pages through `api.ts` | Opt-in PostgreSQL HTTP publish/read, JSON content, validation, and batch rollback coverage. |
+### Members — [MemberController](../backend/src/main/java/com/neudebateclub/backend/user/MemberController.java)
 
-Detailed traces are in [auth.md](modules/auth.md) and [landing-cms.md](modules/landing-cms.md).
-Task progress and comment authorization are documented in [tasks.md](modules/tasks.md).
-Dashboard access rules are documented in [access-control.md](modules/access-control.md).
+| Method & path | Controller check | Frontend caller |
+|---|---|---|
+| `GET /members` | `TRUONG_BAN`+ ; non-BCN sees own department only; GUEST rows hidden | `fetchMembers` ← MembersPage, AssignTaskPage, AssignAllTasksPage, DepartmentOperationsPage (MockPages) |
+| `POST /members` | module `MEMBERSHIP` | `createMember` ← MembersPage |
+| `PUT /members/{id}` | module `MEMBERSHIP`; only BCN may edit/grant BCN | `updateMember` ← MembersPage |
+| *(delete)* | Absent | — |
 
-## Schema-defined modules without application implementations
+### Tasks — [TaskController](../backend/src/main/java/com/neudebateclub/backend/task/TaskController.java)
 
-| Database area | Tables | Java/REST/frontend client | Evidence level |
-|---|---|---|---|
-| Seasons and tenure membership | `seasons`, `season_members` | Absent | Verified absence from application source; member profile list/create uses `users` only. |
-| Announcements/notifications | `announcements`, `notifications` | Absent; dashboard notification routes render mock UI | Verified. |
-| Events/checklists | `events`, `checklist_templates`, `checklist_template_items`, `event_checklist_items` | Absent | Verified. |
-| Finance/partners | `transactions`, `partners`, `partner_contacts`, `outreach_logs`, `collaborations` | Absent; finance route renders mock UI | Verified. |
-| Media/activity | `media_links`, `activity_logs` | Absent; publication/activity routes render mock UI | Verified. |
-| Event content/proposals | `event_contents`, `proposals` | Absent | Verified. |
-| Attendees/check-in | `event_attendees` | Absent | Verified. |
-| Equipment | `equipment`, `equipment_borrows` | Absent | Verified. |
-| Design assets | `design_assets` | Absent | Verified. |
+| Method & path | Controller check | Frontend caller |
+|---|---|---|
+| `GET /tasks?department&status&priority` | BCN all; lead own department (else 403); member own assigned tasks | `fetchTasks` ← AssignTaskPage (with `department`), AssignAllTasksPage, DepartmentOperationsPage |
+| `GET /tasks/mine` | `MEMBER`+ ; assignee = caller | `fetchMyTasks` ← TodoListPage |
+| `GET /tasks/{id}` | assignee, BCN, or lead of the task's department | None |
+| `POST /tasks` | module `TASK_ASSIGNMENT` (lead: own department); all-departments needs `CROSS_DEPARTMENT_TASKS` | `createTask` ← AssignTaskPage, AssignAllTasksPage |
+| `PUT /tasks/{id}` | module `TASK_ASSIGNMENT` + own department (BCN any) | `updateTask` — **no caller** |
+| `PATCH /tasks/{id}/status` | `MEMBER`+ ; assignee, BCN, or same-department TRUONG_BAN | `updateTaskStatus` ← AssignAllTasksPage |
+| `GET /tasks/{id}/comments` | same viewer rule as above | `fetchTaskComments` ← [TaskHistory](../frontend/src/components/dashboard/TaskHistory.tsx) |
+| `PATCH /tasks/{id}/progress` | assignee only | `updateTaskProgress` ← TodoListPage |
+| `DELETE /tasks/{id}` | module `TASK_ASSIGNMENT` + own department (BCN any) | `deleteTask` ← AssignAllTasksPage |
 
-See [schema-backed-unimplemented.md](modules/schema-backed-unimplemented.md) for migration provenance and planning implications.
+### Events — [EventController](../backend/src/main/java/com/neudebateclub/backend/event/EventController.java)
 
-## Data and contract dependencies
+| Method & path | Controller check | Frontend caller |
+|---|---|---|
+| `GET /events` | `MEMBER`+ | `fetchEvents` ← EventsPage, AssignTaskPage, AssignAllTasksPage |
+| `POST /events` | module `EVENT_MANAGEMENT` | `createEvent` ← EventsPage |
+| `PUT /events/{id}` | module `EVENT_MANAGEMENT` | `updateEvent` ← EventsPage |
+| `DELETE /events/{id}` | module `EVENT_MANAGEMENT` | `deleteEvent` ← EventsPage |
+
+### Landing sections — [LandingContentController](../backend/src/main/java/com/neudebateclub/backend/cms/LandingContentController.java)
+
+| Method & path | Check | Frontend caller |
+|---|---|---|
+| `GET /public/landing` | public | None |
+| `GET /public/landing/{section}` | public | `fetchLandingSection` ← Hero, Vision, Departments, Comments, Achievements (stats) |
+| `GET /public/landing/cms/landing` | public at filter, module `LANDING_CMS` in controller | `fetchCmsSections` ← CmsPage |
+| `GET /public/landing/cms/landing/{section}` | same | `fetchCmsSection` ← CmsPage |
+| `PUT /public/landing/cms/landing/{section}/draft` | JWT + `LANDING_CMS` | `saveCmsDraft` ← CmsPage |
+| `POST /public/landing/cms/landing/{section}/publish` | JWT + `LANDING_CMS` | `publishCmsSection` ← CmsPage |
+| `GET /public/landing/cms/landing/{section}/history` | `LANDING_CMS` | `fetchCmsHistory` — **no caller** |
+
+### Catalog — [LandingCatalogController](../backend/src/main/java/com/neudebateclub/backend/cms/LandingCatalogController.java)
+
+| Method & path | Check | Frontend caller |
+|---|---|---|
+| `GET /public/projects`, `GET /public/projects/{slug}` | public | `fetchPublicCatalog`, `fetchPublicCatalogItem` ← home Projects, `/projects`, `/projects/[slug]` |
+| `GET /public/achievements`, `GET /public/achievements/{slug}` | public | same helpers ← home Achievements, `/achievements`, `/achievements/[slug]` |
+| `GET /public/cms/landing/catalog/{type}` | `LANDING_CMS` | `fetchCmsCatalog` ← CmsPage |
+| `GET /public/cms/landing/catalog/{type}/slug-available` | `LANDING_CMS` | `checkCmsCatalogSlug` ← CmsPage |
+| `PUT /public/cms/landing/catalog/{type}/publish` | JWT + `LANDING_CMS` | `publishCmsCatalog` ← CmsPage |
+
+### Operations
+
+| Method & path | Check | Caller |
+|---|---|---|
+| `GET /health` | **JWT required** (not in `permitAll`) | None |
+| `GET /actuator/health` | public | Compose health check |
+| `GET /actuator/{info,metrics,mappings}` | JWT (exposed, not permitted) | None |
+| `GET /v3/api-docs`, `/swagger-ui.html` | public | None (runtime OpenAPI) |
+
+Note: CMS admin routes live under the `/public` prefix and rely on controller checks; their `GET`s pass the security filter anonymously and return 403 from `RoleGuard`, not 401.
+
+## Module traces
+
+| Module | DB (migration) | Entity / repo | Controller & DTOs | Frontend client → UI | Tests |
+|---|---|---|---|---|---|
+| Auth | `users` V2, `google_id` V9 | `User`, `UserRepository` | `AuthController`, `AuthService`; `AuthResponse`, `GoogleLoginRequest` (classes) | `api.ts` auth helpers, `userContext.tsx`, `GoogleLoginButton`, `DashboardAccessGuard`, `Sidebar` | `AuthServiceTest` (2), `RoleGuardTest` (3) |
+| Members | `users` V2 (+V18 seed) | `User`, `UserRepository` | `MemberController`; nested records `MemberRequest`, `MemberResponse` | `Member`, `CreateMemberInput` in `api.ts` → [MembersPage](../frontend/src/components/dashboard/MembersPage.tsx) | `MemberControllerTest` (5) |
+| Tasks | `tasks`, `task_comments` V3; `event_id` V9; `progress` V21 | `Task`, `TaskComment`, two repos | `TaskController`; nested `CreateTaskRequest`, `UpdateTaskRequest`, `UpdateStatusRequest`, `UpdateProgressRequest`, `TaskResponse`, `TaskCommentResponse` | `BackendTask`, `CreateTaskPayload`, `UpdateTaskPayload`, `TaskComment` → TodoListPage, AssignTaskPage, AssignAllTasksPage, TaskHistory, DepartmentOperationsPage | `TaskControllerTest` (6) |
+| Events | `events` V5; `resource_urls` V19 (+V20 seed) | `Event`, `EventRepository` | `EventController`; nested `EventRequest`, `EventResponse` | `ClubEvent`, `SaveEventInput` → [EventsPage](../frontend/src/components/dashboard/EventsPage.tsx); event pickers in task pages | `EventControllerTest` (4) |
+| Landing sections | `landing_content` V7/V9, versions V13 (+V10–V12 seed) | 2 entities/repos | `LandingContentController`; untyped `JsonNode`/`Map` | `CmsSection`, `CmsHistoryItem`; section shapes declared per component | `CmsPublishIntegrationTest` (opt-in) |
+| Catalog | `projects` V14, `achievements` V15 (+V16–V17 seed) | 2 entities/repos | `LandingCatalogController`; entities serialized directly | `CmsCatalogItem` → CmsPage, public pages | `CmsPublishIntegrationTest` (opt-in) |
+| Module access | none | — | `AdminModule`, `RoleGuard`, `/auth/modules` | [dashboard-modules.ts](../frontend/src/constants/dashboard-modules.ts) | `RoleGuardTest` |
+
+Per-module detail: [auth.md](modules/auth.md), [members.md](modules/members.md), [tasks.md](modules/tasks.md), [events.md](modules/events.md), [landing-cms.md](modules/landing-cms.md), [access-control.md](modules/access-control.md), [database-migrations.md](modules/database-migrations.md).
+
+## Dependency graph
 
 ```mermaid
 flowchart TD
-  Migrations[Flyway V1-V18] --> PostgreSQL[(PostgreSQL schema)]
-  PostgreSQL --> JPA[Four JPA entity families]
-  JPA --> Controllers[Auth and landing controllers]
-  Controllers --> RuntimeOpenAPI[Springdoc runtime documentation]
-  Controllers --> APIClient[frontend/lib/api.ts]
-  APIClient --> CMS[CmsPage]
-  APIClient --> PublicHome[Home landing components]
-  CatalogAPI[Public catalog endpoints] --> PublicLists[Project and achievement list/detail pages]
-  MockPages --> Dashboard[Most dashboard routes]
+  M[Flyway V1-V21] --> U[(users)]
+  M --> T[(tasks / task_comments)]
+  M --> E[(events)]
+  M --> L[(landing_content / versions / projects / achievements)]
+  U --> Auth[Auth + JWT filter]
+  Auth --> Guard[RoleGuard + AdminModule]
+  Guard --> Members[MemberController]
+  Guard --> Tasks[TaskController]
+  Guard --> Events[EventController]
+  Guard --> CMS[CMS controllers]
+  E -->|tasks.event_id ON DELETE SET NULL| T
+  U -->|assigned_to / assigned_by ON DELETE RESTRICT| T
+  Members --> FEm[MembersPage + assignee pickers]
+  Tasks --> FEt[Todo / Assign / AssignAll / DeptOps]
+  Events --> FEe[EventsPage + task event picker]
+  CMS --> FEc[CmsPage + public landing]
+  AdminModuleTS[dashboard-modules.ts copy of AdminModule] -.must match.-> Guard
 ```
 
-The arrows from migration to PostgreSQL and from controller to runtime OpenAPI are verified configuration relationships. Project and achievement UI paths now use the public catalog endpoints. Dashboard mock pages still bypass the API entirely.
+**Critical cross-layer couplings (verified):**
 
-## Contract authority decision record
+1. **`users` is the hub.** Auth, members, tasks (assignee/assigner, `ON DELETE RESTRICT`), events (`created_by`), CMS (`updated_by`/`created_by`) all reference it. Any change to role/department semantics touches every module.
+2. **`AdminModule` is declared twice** — Java enum and the `ADMIN_MODULE_KEYS` tuple in `dashboard-modules.ts`. The 14 keys currently match exactly; nothing enforces that.
+3. **Enum string casing** — the frontend upper-cases department/status/priority before sending and accepts both casings back because the backend mixes lowercase (`/auth/me`) and uppercase (all other DTOs).
+4. **Tasks depend on events** (`eventId`); an unknown `eventId` is silently dropped to `null` rather than rejected.
+5. **Task "department lead" resolution** uses `LIMIT 1` native queries on `users`; with multiple `TRUONG_BAN` in one department the chosen lead is non-deterministic, and with none it falls back to any active member, then to the assigner.
 
-No formal decision record exists in the repository. The audit records the current practical order of authority:
+## Schema-only areas (no entity, API, or client)
 
-1. **Database schema:** Flyway migration files, with the bootstrap wrapper invoking them.
-2. **Backend runtime API:** Spring controller mappings and DTO/entity serialization.
-3. **Runtime API documentation:** springdoc-generated output when the server is available.
-4. **Frontend types:** handwritten and therefore downstream, non-authoritative representations.
+| Area | Tables | Migration | UI |
+|---|---|---|---|
+| Tenure | `seasons`, `season_members` | V2, V8 trigger | `/dashboard/tenure` → MockPages |
+| Notifications | `announcements`, `notifications` | V4 | `/dashboard/notifications/{create,read}` → MockPages |
+| Event checklists | `checklist_templates`, `checklist_template_items`, `event_checklist_items` | V5 | none |
+| Finance & partners | `transactions`, `partners`, `partner_contacts`, `outreach_logs`, `collaborations` | V6, V8 trigger, V9 | `/dashboard/finance` → MockPages |
+| Media & activity | `media_links`, `activity_logs` | V7 | `/dashboard/publications`, `/dashboard/activity-log` → MockPages |
+| Content pipeline | `event_contents`, `proposals` | V9 | none |
+| Check-in | `event_attendees` | V9 | none |
+| Equipment | `equipment`, `equipment_borrows` | V9 | none |
+| Design assets | `design_assets` | V9 | `/dashboard/library` → MockPages |
 
-This is a verified description of current mechanics, not a recommendation that JSONB payloads or entities should remain public contracts.
+Unused Java enums tied to these tables: `ChecklistStatus`, `ContentStatus`, `OutreachResult`, `PartnerStatus`, `Platform`, `TransactionType`. See [schema-backed-unimplemented.md](modules/schema-backed-unimplemented.md).
+
+## Dashboard route → implementation
+
+| Route | Component | Data |
+|---|---|---|
+| `/dashboard` | `DashboardHomePage` (MockPages) | static |
+| `/dashboard/tasks` | `TasksHubPage` (MockPages) | static |
+| `/dashboard/tasks/todo-list` | TodoListPage | live |
+| `/dashboard/tasks/update` | server `redirect` → todo-list | — (not in access map; guard would also redirect) |
+| `/dashboard/tasks/assign` | AssignTaskPage | live |
+| `/dashboard/tasks/assign-all` | AssignAllTasksPage | live (also contains an unused `INITIAL_SAMPLE_TASKS` constant) |
+| `/dashboard/department-operations` | `DepartmentOperationsPage` (MockPages) | **mixed**: live members/tasks + static sections |
+| `/dashboard/members` | MembersPage | live |
+| `/dashboard/events` | EventsPage | live |
+| `/dashboard/cms` | CmsPage | live |
+| `/dashboard/roles` (module `MEMBERSHIP`) | `RolesPage` (MockPages) | static |
+| `/dashboard/charts`, `/health-dashboard`, `/activity-log`, `/finance`, `/library`, `/publications`, `/tenure`, `/notifications/*` | MockPages | static |
+| `/departments/[slug]` (public) | page component | no API call found |
+
+## Contract authority (current practice, not a decision)
+
+1. **Database schema:** Flyway SQL files.
+2. **Runtime API:** Spring controller mappings + nested record DTOs (and, for catalog, JPA entities).
+3. **API documentation:** springdoc at runtime only; no checked-in OpenAPI file.
+4. **Frontend types:** handwritten in [api.ts](../frontend/src/lib/api.ts); downstream and unchecked.
