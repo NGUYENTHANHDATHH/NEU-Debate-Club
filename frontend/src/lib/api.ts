@@ -1,3 +1,5 @@
+import { cachedGet, refreshApiCache } from "@/lib/requestCache";
+
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080/api";
 
@@ -130,6 +132,7 @@ export type Member = {
   department: string | null;
   role: string;
   active: boolean;
+  lastLoginAt?: string | null;
 };
 
 export type CreateMemberInput = {
@@ -142,18 +145,8 @@ export type CreateMemberInput = {
   active: boolean;
 };
 
-async function memberRequest<T>(path = "", init?: RequestInit): Promise<T> {
-  const response = await authorizedFetch(`${API_BASE_URL}/members${path}`, init);
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) {
-    const validationMessage = payload?.data
-      ? Object.values(payload.data).join(". ")
-      : null;
-    throw new Error(
-      validationMessage || payload?.message || "Không thể cập nhật thành viên.",
-    );
-  }
-  return (payload?.data ?? payload) as T;
+function memberRequest<T>(path = "", init?: RequestInit): Promise<T> {
+  return apiRequest<T>(`/members${path}`, init, "Không thể cập nhật thành viên.");
 }
 
 export function fetchMembers() {
@@ -199,18 +192,8 @@ export type SaveEventInput = {
   resourceUrls: string[];
 };
 
-async function eventRequest<T>(path = "", init?: RequestInit): Promise<T> {
-  const response = await authorizedFetch(`${API_BASE_URL}/events${path}`, init);
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) {
-    const validationMessage = payload?.data
-      ? Object.values(payload.data).join(". ")
-      : null;
-    throw new Error(
-      validationMessage || payload?.message || "Không thể cập nhật sự kiện.",
-    );
-  }
-  return (payload?.data ?? payload) as T;
+function eventRequest<T>(path = "", init?: RequestInit): Promise<T> {
+  return apiRequest<T>(`/events${path}`, init, "Không thể cập nhật sự kiện.");
 }
 
 export function fetchEvents() {
@@ -285,18 +268,8 @@ export type UpdateTaskPayload = {
   crossDepartment?: boolean;
 };
 
-async function taskRequest<T>(path = "", init?: RequestInit): Promise<T> {
-  const response = await authorizedFetch(`${API_BASE_URL}/tasks${path}`, init);
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) {
-    const validationMessage = payload?.data
-      ? Object.values(payload.data).join(". ")
-      : null;
-    throw new Error(
-      validationMessage || payload?.message || "Không thể thực hiện yêu cầu nhiệm vụ.",
-    );
-  }
-  return (payload?.data ?? payload) as T;
+function taskRequest<T>(path = "", init?: RequestInit): Promise<T> {
+  return apiRequest<T>(`/tasks${path}`, init, "Không thể thực hiện yêu cầu nhiệm vụ.");
 }
 
 export function fetchTasks(filters?: { department?: string; status?: string; priority?: string }) {
@@ -404,18 +377,8 @@ export type CreateNotificationPayload = {
   memberIds?: string[];
 };
 
-async function notificationRequest<T>(path = "", init?: RequestInit): Promise<T> {
-  const response = await authorizedFetch(`${API_BASE_URL}/notifications${path}`, init);
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) {
-    const validationMessage = payload?.data
-      ? Object.values(payload.data).join(". ")
-      : null;
-    throw new Error(
-      validationMessage || payload?.message || "Không thể xử lý thông báo.",
-    );
-  }
-  return (payload?.data ?? payload) as T;
+function notificationRequest<T>(path = "", init?: RequestInit): Promise<T> {
+  return apiRequest<T>(`/notifications${path}`, init, "Không thể xử lý thông báo.");
 }
 
 /** Thông báo của người dùng hiện tại, mới nhất trước (backend: mặc định 50, tối đa 100). */
@@ -450,13 +413,8 @@ export async function fetchPublicCatalogItem(
   return response.json();
 }
 
-async function cmsRequest<T>(input: string, init?: RequestInit): Promise<T> {
-  const response = await authorizedFetch(`${API_BASE_URL}${input}`, init);
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw new Error(payload?.message ?? "Không thể cập nhật nội dung CMS.");
-  }
-  return (payload?.data ?? payload) as T;
+function cmsRequest<T>(input: string, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(input, init, "Không thể cập nhật nội dung CMS.");
 }
 
 export function fetchCmsSections() {
@@ -523,19 +481,24 @@ export function fetchCmsHistory(section: string) {
 import type { AdminModuleKey } from "@/constants/dashboard-modules";
 
 // ============================================================================
-// Shared request helper for the dashboard domains below
+// Shared request helper for every authorized dashboard request
 // ============================================================================
 
-async function apiRequest<T>(path: string, init: RequestInit | undefined, fallbackMessage: string): Promise<T> {
-  const response = await authorizedFetch(`${API_BASE_URL}${path}`, init);
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) {
-    const validationMessage = payload?.data && typeof payload.data === "object"
-      ? Object.values(payload.data).join(". ")
-      : null;
-    throw new Error(validationMessage || payload?.message || fallbackMessage);
-  }
-  return (payload?.data ?? payload) as T;
+function apiRequest<T>(path: string, init: RequestInit | undefined, fallbackMessage: string): Promise<T> {
+  const send = async () => {
+    const response = await authorizedFetch(`${API_BASE_URL}${path}`, init);
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) {
+      const validationMessage = payload?.data && typeof payload.data === "object"
+        ? Object.values(payload.data).join(". ")
+        : null;
+      throw new Error(validationMessage || payload?.message || fallbackMessage);
+    }
+    return (payload?.data ?? payload) as T;
+  };
+  // Thao tác ghi xóa cache để lần đọc sau thấy dữ liệu mới; GET dùng chung cache, tách theo token từng người.
+  if (init?.method && init.method !== "GET") return send().finally(refreshApiCache);
+  return cachedGet(`${getAuthToken()}|${path}`, send);
 }
 
 function jsonBody(method: string, body: unknown): RequestInit {
@@ -676,6 +639,19 @@ export function addSeasonMember(seasonId: string, input: AddSeasonMemberInput) {
 
 export function removeSeasonMember(seasonId: string, memberId: string) {
   return apiRequest<void>(`/seasons/${seasonId}/members/${memberId}`, { method: "DELETE" }, "Không thể xóa thành viên khỏi nhiệm kỳ.");
+}
+
+// ---- Module permissions (read: module MEMBERSHIP, write: BCN) ------------------
+
+/** Module → các ban có Trưởng/Phó ban được dùng. BCN luôn có mọi module nên không nằm trong ma trận. */
+export type ModulePermissionMatrix = Record<AdminModuleKey, string[]>;
+
+export function fetchModulePermissions() {
+  return apiRequest<ModulePermissionMatrix>("/module-permissions", undefined, "Không thể tải phân quyền.");
+}
+
+export function saveModulePermissions(matrix: ModulePermissionMatrix) {
+  return apiRequest<ModulePermissionMatrix>("/module-permissions", jsonBody("PUT", matrix), "Không thể lưu phân quyền.");
 }
 
 // ---- Activity log (module ACTIVITY_LOG, BCN only) -----------------------------

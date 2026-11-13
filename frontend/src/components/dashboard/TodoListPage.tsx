@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { BackendTask, fetchMyTasks, updateTaskProgress } from "@/lib/api";
+import { refreshApiCache } from "@/lib/requestCache";
 import { useUserContext } from "@/context/userContext";
 import { TaskHistory } from "@/components/dashboard/TaskHistory";
 import { PageFrame } from "@/components/ui/Dashboard/PageFrame";
@@ -196,7 +197,7 @@ export function TodoListPage() {
       title={`Việc cần làm${user?.name ? ` của ${user.name}` : ""}`}
       description="Task quá hạn và gần deadline được tự động đưa lên đầu để bạn biết việc nào cần xử lý trước."
       action={
-        <button type="button" onClick={() => void loadTasks()} disabled={loading}
+        <button type="button" onClick={() => { refreshApiCache(); void loadTasks(); }} disabled={loading}
           className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:opacity-50">
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           Làm mới

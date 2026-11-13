@@ -25,7 +25,7 @@ A Next.js 16 client-rendered frontend calls a Spring Boot 4.1 / Java 21 REST API
 | Tenure | `seasons`, `season_members` | 6 routes (`/seasons`) | TenurePage | SeasonControllerTest 7 ✔ | Implemented 2026-11-13, uncommitted |
 | Activity log | `activity_logs` | `GET /activity-logs` (BCN) + writes from every write endpoint | ActivityLogPage | ActivityLogControllerTest 3 ✔ | Implemented 2026-11-13, uncommitted |
 | Partners/outreach, checklists, proposals, check-in, equipment, design assets, announcements, media, activity log, checklists, proposals, check-in, equipment, design assets | 20 tables | none | mock pages or none | none | Schema only |
-| Dashboard home, tasks hub, charts, health, roles, department ops | n/a | existing APIs | real-data pages; `MockPages.tsx` deleted 2026-11-13 | `taskMetrics`/`financeMetrics` node tests | Live (uncommitted). Undefined metrics (health score, contribution score, budget, approvals, permission toggles) removed by owner decision |
+| Dashboard home, tasks hub, charts, health, roles, department ops | n/a | existing APIs | real-data pages; `MockPages.tsx` deleted 2026-11-13 | `taskMetrics`/`financeMetrics` node tests | Live (uncommitted). Undefined metrics (health score, contribution score, budget, approvals) removed by owner decision; roles matrix is editable by BCN since 2026-11-13 (`module_permissions`, V23) |
 
 ## Risk register
 
@@ -65,7 +65,7 @@ A proposal only — not approval to change behaviour. Each step lists what prove
    Validate `returnUrl` as a relative path. Replace raw `state` with a signed nonce. Move the token off the URL (one-time code or HttpOnly cookie). Apply the decided task-visibility rule (owner decision 3, option A): members read only their own tasks, leads read and write only their department's tasks, and only BCN may assign to all departments.
    *Done when:* controller/integration tests cover each boundary listed in [tasks.md](modules/tasks.md) T-1…T-3 and [auth.md](modules/auth.md) missing coverage.
 3. **Fix silent data corruption (R-5).**
-   Add a forward migration (**V23** — V22 is now taken by notifications) extending `task_status_enum` with `blocked`, `cancelled` and `task_priority_enum` with `urgent` (owner decision 4). Map them in the converters, make converters throw on unknown values, and add them to the frontend task types and UI.
+   Add a forward migration (**V24** — V22 is taken by notifications, V23 by `module_permissions`) extending `task_status_enum` with `blocked`, `cancelled` and `task_priority_enum` with `urgent` (owner decision 4). Map them in the converters, make converters throw on unknown values, and add them to the frontend task types and UI.
 4. **Contract workflow (R-6, R-8) — decided: springdoc-generated (owner decision 6).**
    Export `/v3/api-docs` in CI and generate frontend TypeScript types from it. Standardise the `ApiResponse` envelope and enum casing. Add handlers for `HttpMessageNotReadableException` and `MethodArgumentTypeMismatchException`.
    *Done when:* a backend DTO change breaks the frontend type-check.

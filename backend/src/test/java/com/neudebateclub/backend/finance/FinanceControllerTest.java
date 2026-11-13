@@ -9,6 +9,7 @@ import com.neudebateclub.backend.common.exception.ForbiddenException;
 import com.neudebateclub.backend.common.exception.ResourceNotFoundException;
 import com.neudebateclub.backend.common.exception.ValidationException;
 import com.neudebateclub.backend.common.security.RoleGuard;
+import com.neudebateclub.backend.common.security.TestRoleGuards;
 import com.neudebateclub.backend.event.Event;
 import com.neudebateclub.backend.event.EventRepository;
 import com.neudebateclub.backend.user.User;
@@ -19,6 +20,7 @@ import org.mockito.ArgumentCaptor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -45,7 +47,7 @@ class FinanceControllerTest {
         transactionRepository = mock(TransactionRepository.class);
         eventRepository = mock(EventRepository.class);
         userRepository = mock(UserRepository.class);
-        controller = new FinanceController(transactionRepository, eventRepository, userRepository, new RoleGuard(),
+        controller = new FinanceController(transactionRepository, eventRepository, userRepository, TestRoleGuards.withDefaults(),
                 mock(ActivityLogService.class));
         financeLead = UserPrincipal.builder().id(UUID.randomUUID()).role(Role.TRUONG_BAN)
                 .department(Department.DOI_NGOAI).active(true).build();
@@ -115,6 +117,63 @@ class FinanceControllerTest {
         assertThrows(ForbiddenException.class, () -> controller.list(mediaLead));
         assertThrows(ForbiddenException.class,
                 () -> controller.create(request(TransactionType.INCOME, null, null), mediaLead));
+    }
+
+    private UserPrincipal eventLead() {
+        UserPrincipal lead = UserPrincipal.builder().id(UUID.randomUUID()).role(Role.TRUONG_BAN)
+                .department(Department.SU_KIEN).active(true).build();
+        when(userRepository.getReferenceById(lead.getId())).thenReturn(User.builder().id(lead.getId()).build());
+        return lead;
+    }
+
+    @Test
+    void eventLeadListsOnlyEventLinkedTransactions() {
+        UserPrincipal lead = eventLead();
+        when(transactionRepository.findAllByEventIsNotNullOrderByTransactionDateDescCreatedAtDesc()).thenReturn(List.of());
+
+        controller.list(lead);
+
+        verify(transactionRepository).findAllByEventIsNotNullOrderByTransactionDateDescCreatedAtDesc();
+        verify(transactionRepository, never()).findAllByOrderByTransactionDateDescCreatedAtDesc();
+    }
+
+    @Test
+    void financeLeadStillListsEverything() {
+        when(transactionRepository.findAllByOrderByTransactionDateDescCreatedAtDesc()).thenReturn(List.of());
+
+        controller.list(financeLead);
+
+        verify(transactionRepository).findAllByOrderByTransactionDateDescCreatedAtDesc();
+    }
+
+    @Test
+    void eventLeadCreatesEventTransactionButNotGeneralOne() {
+        UserPrincipal lead = eventLead();
+        UUID eventId = UUID.randomUUID();
+        when(eventRepository.findById(eventId))
+                .thenReturn(Optional.of(Event.builder().id(eventId).title("Debate Night").build()));
+
+        assertEquals(201, controller.create(request(TransactionType.EXPENSE, null, eventId), lead)
+                .getStatusCode().value());
+        assertThrows(ForbiddenException.class,
+                () -> controller.create(request(TransactionType.EXPENSE, null, null), lead));
+    }
+
+    @Test
+    void eventLeadDeletesOnlyEventLinkedTransactions() {
+        UserPrincipal lead = eventLead();
+        UUID linkedId = UUID.randomUUID();
+        UUID generalId = UUID.randomUUID();
+        Transaction linked = Transaction.builder().id(linkedId).type(TransactionType.EXPENSE)
+                .event(Event.builder().id(UUID.randomUUID()).build()).build();
+        Transaction general = Transaction.builder().id(generalId).type(TransactionType.EXPENSE).build();
+        when(transactionRepository.findById(linkedId)).thenReturn(Optional.of(linked));
+        when(transactionRepository.findById(generalId)).thenReturn(Optional.of(general));
+
+        controller.delete(linkedId, lead);
+        verify(transactionRepository).delete(linked);
+        assertThrows(ForbiddenException.class, () -> controller.delete(generalId, lead));
+        verify(transactionRepository, never()).delete(general);
     }
 
     @Test

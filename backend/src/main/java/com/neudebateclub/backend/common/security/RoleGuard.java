@@ -5,10 +5,20 @@ import com.neudebateclub.backend.common.enums.Department;
 import com.neudebateclub.backend.common.enums.AdminModule;
 import com.neudebateclub.backend.common.exception.ForbiddenException;
 import com.neudebateclub.backend.auth.security.UserPrincipal;
+import com.neudebateclub.backend.permission.ModulePermission;
+import com.neudebateclub.backend.permission.ModulePermissionRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.EnumSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 @Component
+@RequiredArgsConstructor
 public class RoleGuard {
+
+    private final ModulePermissionRepository modulePermissionRepository;
 
     public void requireRole(UserPrincipal user, Role minimumRole) {
         if (!user.hasRole(minimumRole)) {
@@ -22,12 +32,18 @@ public class RoleGuard {
     public void requireMemberOrAbove(UserPrincipal user)      { requireRole(user, Role.MEMBER); }
     public void requireCmsEditor(UserPrincipal user)          { requireTruongBanOrAbove(user); }
 
+    /** BCN: mọi module. Trưởng/Phó ban: các module ban mình được tick ở trang Phân quyền. Thành viên: không có. */
+    public Set<AdminModule> modulesOf(UserPrincipal user) {
+        if (user == null || !user.isActive()) return EnumSet.noneOf(AdminModule.class);
+        if (user.getRole() == Role.BCN) return EnumSet.allOf(AdminModule.class);
+        if (user.getRole() != Role.TRUONG_BAN || user.getDepartment() == null) return EnumSet.noneOf(AdminModule.class);
+        return modulePermissionRepository.findByDepartment(user.getDepartment()).stream()
+                .map(ModulePermission::getModule)
+                .collect(Collectors.toCollection(() -> EnumSet.noneOf(AdminModule.class)));
+    }
+
     public boolean canManageModule(UserPrincipal user, AdminModule module) {
-        return user != null
-                && user.isActive()
-                && (user.getRole() == Role.BCN
-                    || (user.getRole() == Role.TRUONG_BAN
-                        && module.isManagedBy(user.getDepartment())));
+        return modulesOf(user).contains(module);
     }
 
     public void requireModuleManager(UserPrincipal user, AdminModule module) {

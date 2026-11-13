@@ -8,6 +8,7 @@ import com.neudebateclub.backend.common.enums.Role;
 import com.neudebateclub.backend.common.exception.ForbiddenException;
 import com.neudebateclub.backend.common.exception.ValidationException;
 import com.neudebateclub.backend.common.security.RoleGuard;
+import com.neudebateclub.backend.common.security.TestRoleGuards;
 import com.neudebateclub.backend.event.EventRepository;
 import com.neudebateclub.backend.user.User;
 import com.neudebateclub.backend.user.UserRepository;
@@ -41,7 +42,7 @@ class PublicationControllerTest {
         mediaLinkRepository = mock(MediaLinkRepository.class);
         eventRepository = mock(EventRepository.class);
         userRepository = mock(UserRepository.class);
-        controller = new PublicationController(mediaLinkRepository, eventRepository, userRepository, new RoleGuard(),
+        controller = new PublicationController(mediaLinkRepository, eventRepository, userRepository, TestRoleGuards.withDefaults(),
                 mock(ActivityLogService.class));
         mediaLead = UserPrincipal.builder().id(UUID.randomUUID()).role(Role.TRUONG_BAN)
                 .department(Department.TRUYEN_THONG).active(true).build();

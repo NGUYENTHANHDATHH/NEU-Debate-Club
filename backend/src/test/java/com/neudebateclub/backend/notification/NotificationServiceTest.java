@@ -7,6 +7,7 @@ import com.neudebateclub.backend.common.enums.Role;
 import com.neudebateclub.backend.common.exception.ForbiddenException;
 import com.neudebateclub.backend.common.exception.ValidationException;
 import com.neudebateclub.backend.common.security.RoleGuard;
+import com.neudebateclub.backend.common.security.TestRoleGuards;
 import com.neudebateclub.backend.task.Task;
 import com.neudebateclub.backend.user.User;
 import com.neudebateclub.backend.user.UserRepository;
@@ -50,7 +51,7 @@ class NotificationServiceTest {
     void setUp() {
         notificationRepository = mock(NotificationRepository.class);
         userRepository = mock(UserRepository.class);
-        service = new NotificationService(notificationRepository, userRepository, new RoleGuard(),
+        service = new NotificationService(notificationRepository, userRepository, TestRoleGuards.withDefaults(),
                 mock(ActivityLogService.class));
         when(notificationRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
 

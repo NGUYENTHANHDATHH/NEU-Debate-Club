@@ -7,14 +7,15 @@ import { LanguageProvider } from "@/provider/LanguageProvider";
 import { Toaster } from "sonner";
 import Script from "next/script";
 
+// "vietnamese" là bắt buộc: thiếu nó các chữ có dấu (ă, đ, ơ, ư, ệ…) rơi về font hệ thống.
 const inter = Inter({
   variable: "--font-inter",
-  subsets: ["latin"],
+  subsets: ["latin", "vietnamese"],
 });
 
 const montserrat = Montserrat({
   variable: "--font-montserrat",
-  subsets: ["latin"],
+  subsets: ["latin", "vietnamese"],
 });
 
 export const metadata: Metadata = {

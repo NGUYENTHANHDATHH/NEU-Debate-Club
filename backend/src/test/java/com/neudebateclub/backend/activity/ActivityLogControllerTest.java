@@ -5,6 +5,7 @@ import com.neudebateclub.backend.common.enums.Department;
 import com.neudebateclub.backend.common.enums.Role;
 import com.neudebateclub.backend.common.exception.ForbiddenException;
 import com.neudebateclub.backend.common.security.RoleGuard;
+import com.neudebateclub.backend.common.security.TestRoleGuards;
 import com.neudebateclub.backend.user.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,7 +33,7 @@ class ActivityLogControllerTest {
     @BeforeEach
     void setUp() {
         repository = mock(ActivityLogRepository.class);
-        controller = new ActivityLogController(repository, new RoleGuard());
+        controller = new ActivityLogController(repository, TestRoleGuards.withDefaults());
     }
 
     @Test
@@ -58,7 +59,7 @@ class ActivityLogControllerTest {
         assertEquals(ActivityLogController.MAX_LIMIT, capturedPageSize());
 
         repository = mock(ActivityLogRepository.class);
-        controller = new ActivityLogController(repository, new RoleGuard());
+        controller = new ActivityLogController(repository, TestRoleGuards.withDefaults());
         controller.list(0, principal(Role.BCN, Department.BCN));
         assertEquals(1, capturedPageSize());
     }

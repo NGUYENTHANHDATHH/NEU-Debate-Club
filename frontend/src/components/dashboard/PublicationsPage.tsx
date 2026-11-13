@@ -66,7 +66,6 @@ const METRICS = [
 export function PublicationsPage() {
   const { user } = useUserContext();
   const isBcn = (user?.role ?? "").toUpperCase() === "BCN";
-  const isLead = (user?.role ?? "").toUpperCase() === "TRUONG_BAN";
   const ownDepartment = (user?.department ?? "").toUpperCase();
   const canWrite = isBcn || (user?.modules ?? []).includes("PUBLICATIONS");
 
@@ -128,7 +127,7 @@ export function PublicationsPage() {
   }, [items, platform, department, query]);
 
   function canDelete(item: Publication) {
-    return isBcn || (canWrite && isLead && item.department.toUpperCase() === ownDepartment);
+    return isBcn || (canWrite && item.department.toUpperCase() === ownDepartment);
   }
 
   function update<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {

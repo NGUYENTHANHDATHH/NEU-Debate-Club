@@ -10,4 +10,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
 
     @EntityGraph(attributePaths = {"event", "createdBy"})
     List<Transaction> findAllByOrderByTransactionDateDescCreatedAtDesc();
+
+    @EntityGraph(attributePaths = {"event", "createdBy"})
+    List<Transaction> findAllByEventIsNotNullOrderByTransactionDateDescCreatedAtDesc();
 }

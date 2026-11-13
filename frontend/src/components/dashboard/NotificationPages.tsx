@@ -19,6 +19,7 @@ import {
   type NotificationAudience,
   type NotificationType,
 } from "@/lib/api";
+import { refreshApiCache } from "@/lib/requestCache";
 import {
   DEPARTMENT_NAMES,
   MANUAL_NOTIFICATION_TYPES,
@@ -98,7 +99,7 @@ export function ReadNotificationPage() {
         <ActionButton
           variant="outline"
           icon={<RefreshCw className="h-4 w-4" />}
-          onClick={() => void load()}
+          onClick={() => { refreshApiCache(); void load(); }}
           disabled={loading}
         >
           Tải lại

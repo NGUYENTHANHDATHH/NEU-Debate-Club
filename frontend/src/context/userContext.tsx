@@ -139,9 +139,17 @@ export const UserProvider: React.FC<IUserProviderProps> = ({ children }) => {
 
       const response = authService.getCurrentSession();
       if (response) {
-        const meResponse = await fetch(`${API_BASE_URL}/auth/me`, {
-          headers: { Authorization: `Bearer ${response.token}` },
-        });
+        // Hiện ngay phiên đã lưu rồi xác thực lại ở nền: menu và trang không phải chờ /auth/me + /auth/modules.
+        setUser(response.user);
+        setToken(response.token);
+        setIsAuthenticated(true);
+        setLoading(false);
+        const [meResponse, modules] = await Promise.all([
+          fetch(`${API_BASE_URL}/auth/me`, {
+            headers: { Authorization: `Bearer ${response.token}` },
+          }),
+          fetchAccessibleModules(response.token).catch(() => response.user.modules ?? []),
+        ]);
         if (!meResponse.ok) {
           authService.clearAuthData();
           throw new Error("Stored session is no longer authorized");
@@ -155,7 +163,7 @@ export const UserProvider: React.FC<IUserProviderProps> = ({ children }) => {
           avatarUrl: backendUser.avatarUrl ?? undefined,
           role: backendUser.role ?? undefined,
           department: backendUser.department ?? undefined,
-          modules: await fetchAccessibleModules(response.token).catch(() => []),
+          modules,
         };
         authService.saveSession(profile, response.token);
         setUser(profile);

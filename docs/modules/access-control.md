@@ -5,26 +5,21 @@
 ## Rules (verified)
 
 - `BCN` can manage every `AdminModule`.
-- A `TRUONG_BAN` can manage a module only when their `department` is in that module's department set.
-- `MEMBER` (and `GUEST`) manage no modules; they get personal routes only.
-- Inactive users manage nothing.
-- The backend is the authority for API authorization; the frontend uses the same keys only to filter navigation and redirect.
+- Since 2026-11-13 the department → module mapping is **data, not code**: table `module_permissions` (V23), edited by BCN only on `/dashboard/roles` (`PUT /module-permissions`, activity-logged). It starts empty: until BCN ticks something, only BCN has modules.
+- A ticked department grants the module only to that department's active **`TRUONG_BAN`** users. `MEMBER`, `GUEST` and inactive users get nothing (personal routes only). Single source: `RoleGuard.modulesOf`.
+- The backend is the authority for API authorization; the frontend uses the same keys only to filter navigation and redirect. The sidebar refreshes its module list on login/reload; the API applies changes immediately.
 
 ## Registry (verified, keys match on both sides)
 
-[AdminModule.java](../../backend/src/main/java/com/neudebateclub/backend/common/enums/AdminModule.java) ↔ `ADMIN_MODULE_KEYS` in [dashboard-modules.ts](../../frontend/src/constants/dashboard-modules.ts) — 14 identical keys, maintained by hand.
+[AdminModule.java](../../backend/src/main/java/com/neudebateclub/backend/common/enums/AdminModule.java) ↔ `ADMIN_MODULE_KEYS` in [dashboard-modules.ts](../../frontend/src/constants/dashboard-modules.ts) — 14 identical keys, maintained by hand. Which department holds which key lives only in `module_permissions`.
 
-| Module | Managed by (besides BCN) | Dashboard route(s) |
-|---|---|---|
-| `TASK_ASSIGNMENT`, `NOTIFICATION_MANAGEMENT`, `DEPARTMENT_OPERATIONS`, `ANALYTICS` | every specialised department lead | assign, notifications/create, department-operations, charts |
-| `PUBLICATIONS` | TRUYEN_THONG, NOI_DUNG | publications |
-| `ASSET_LIBRARY` | KY_THUAT | library |
-| `LANDING_CMS` | TRUYEN_THONG | cms |
-| `FINANCE` | DOI_NGOAI | finance |
-| `EVENT_MANAGEMENT` | SU_KIEN | events |
-| `MEMBERSHIP` | NHAN_SU | members, **roles** |
-| `TENURE` | NHAN_SU | tenure |
-| `CROSS_DEPARTMENT_TASKS`, `ACTIVITY_LOG`, `HEALTH_DASHBOARD` | BCN only | assign-all, activity-log, health-dashboard |
+| Module | Dashboard route(s) |
+|---|---|
+| `TASK_ASSIGNMENT`, `NOTIFICATION_MANAGEMENT`, `DEPARTMENT_OPERATIONS`, `ANALYTICS` | assign, notifications/create, department-operations, charts |
+| `PUBLICATIONS`, `ASSET_LIBRARY`, `LANDING_CMS` | publications, library, cms |
+| `FINANCE`, `EVENT_MANAGEMENT` | finance, events |
+| `MEMBERSHIP`, `TENURE` | members, **roles** (read-only matrix for non-BCN), tenure |
+| `CROSS_DEPARTMENT_TASKS`, `ACTIVITY_LOG`, `HEALTH_DASHBOARD` | assign-all, activity-log, health-dashboard |
 
 ## Server-side enforcement (verified)
 
@@ -33,6 +28,7 @@
 | CMS sections & catalog writes/admin reads | `requireModuleManager(LANDING_CMS)` | Yes |
 | `POST/PUT /members` | `requireModuleManager(MEMBERSHIP)` | Yes |
 | `GET /members` | `TRUONG_BAN`+ with department filter | Intentionally broader (used by assignment pages) |
+| `GET /module-permissions` / `PUT` | `MEMBERSHIP` / `BCN` only (BCN department rejected) | Yes |
 | `POST/PUT/DELETE /events` | `requireModuleManager(EVENT_MANAGEMENT)` | Yes |
 | `GET /events` | `MEMBER`+ | n/a |
 | `POST /tasks` | `TASK_ASSIGNMENT` (lead limited to own department); `assignToAllDepartments` requires `CROSS_DEPARTMENT_TASKS` (BCN) | Yes (since 2026-11-13) |
@@ -52,4 +48,4 @@
 
 ## Database note
 
-No migration is needed for this model: V1 defines `bcn` and `truong_ban`; V9 adds `ky_thuat` and `nhan_su` departments.
+V23 `module_permissions(module, department)` stores Java enum names as VARCHAR (unique pair, no seed). Roles/departments themselves are still the V1/V9 PostgreSQL enums.

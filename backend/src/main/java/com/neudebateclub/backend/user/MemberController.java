@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PathVariable;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -148,12 +149,13 @@ public class MemberController {
             String phone,
             Department department,
             Role role,
-            boolean active) {
+            boolean active,
+            Instant lastLoginAt) {
 
         static MemberResponse from(User user) {
             return new MemberResponse(user.getId(), user.getFullName(), user.getEmail(),
                     user.getStudentId(), user.getPhone(), user.getDepartment(), user.getRole(),
-                    user.isActive());
+                    user.isActive(), user.getLastLoginAt());
         }
     }
 }

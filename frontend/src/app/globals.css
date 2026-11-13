@@ -1,5 +1,4 @@
-/* import fonts */
-@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap");
+/* Fonts: Inter và Montserrat tự host qua next/font trong app/layout.tsx (không @import Google Fonts vì chặn render). */
 /* import Tailwind CSS */
 @import "tailwindcss";
 @import "tw-animate-css";

@@ -5,6 +5,7 @@ import com.neudebateclub.backend.auth.security.UserPrincipal;
 import com.neudebateclub.backend.common.annotation.CurrentUser;
 import com.neudebateclub.backend.common.enums.AdminModule;
 import com.neudebateclub.backend.common.enums.TransactionType;
+import com.neudebateclub.backend.common.exception.ForbiddenException;
 import com.neudebateclub.backend.common.exception.ResourceNotFoundException;
 import com.neudebateclub.backend.common.exception.ValidationException;
 import com.neudebateclub.backend.common.response.ApiResponse;
@@ -36,6 +37,10 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Sổ thu chi. Người quản lý FINANCE thấy và sửa mọi giao dịch; người quản lý EVENT_MANAGEMENT
+ * (Ban Sự kiện) chỉ thấy, thêm, xóa giao dịch có gắn sự kiện (quyết định của owner 2026-11-13).
+ */
 @RestController
 @RequestMapping("/finance/transactions")
 @RequiredArgsConstructor
@@ -51,10 +56,14 @@ public class FinanceController {
     @Transactional
     public ResponseEntity<ApiResponse<List<TransactionResponse>>> list(
             @CurrentUser UserPrincipal currentUser) {
-        roleGuard.requireModuleManager(currentUser, AdminModule.FINANCE);
-        return ResponseEntity.ok(ApiResponse.success(
-                transactionRepository.findAllByOrderByTransactionDateDescCreatedAtDesc()
-                        .stream().map(TransactionResponse::from).toList()));
+        boolean financeManager = roleGuard.canManageModule(currentUser, AdminModule.FINANCE);
+        if (!financeManager) {
+            roleGuard.requireModuleManager(currentUser, AdminModule.EVENT_MANAGEMENT);
+        }
+        List<Transaction> rows = financeManager
+                ? transactionRepository.findAllByOrderByTransactionDateDescCreatedAtDesc()
+                : transactionRepository.findAllByEventIsNotNullOrderByTransactionDateDescCreatedAtDesc();
+        return ResponseEntity.ok(ApiResponse.success(rows.stream().map(TransactionResponse::from).toList()));
     }
 
     @PostMapping
@@ -62,7 +71,7 @@ public class FinanceController {
     public ResponseEntity<ApiResponse<TransactionResponse>> create(
             @Valid @RequestBody TransactionRequest request,
             @CurrentUser UserPrincipal currentUser) {
-        roleGuard.requireModuleManager(currentUser, AdminModule.FINANCE);
+        requireCanWrite(currentUser, request.eventId() != null);
         // DB transaction_type_enum only has income/expense.
         if (request.type() == TransactionType.TRANSFER) {
             throw new ValidationException("Loại giao dịch chỉ được là thu hoặc chi");
@@ -92,12 +101,21 @@ public class FinanceController {
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable UUID id,
             @CurrentUser UserPrincipal currentUser) {
-        roleGuard.requireModuleManager(currentUser, AdminModule.FINANCE);
         Transaction transaction = transactionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Transaction", id.toString()));
+        requireCanWrite(currentUser, transaction.getEvent() != null);
         transactionRepository.delete(transaction);
         record(currentUser, "DELETE", transaction);
         return ResponseEntity.ok(ApiResponse.success("Đã xóa giao dịch", null));
+    }
+
+    private void requireCanWrite(UserPrincipal currentUser, boolean linkedToEvent) {
+        if (roleGuard.canManageModule(currentUser, AdminModule.FINANCE)) return;
+        if (roleGuard.canManageModule(currentUser, AdminModule.EVENT_MANAGEMENT)) {
+            if (linkedToEvent) return;
+            throw new ForbiddenException("Ban Sự kiện chỉ được ghi thu chi gắn với một sự kiện");
+        }
+        throw new ForbiddenException("Access restricted to module: " + AdminModule.FINANCE);
     }
 
     private void record(UserPrincipal currentUser, String action, Transaction transaction) {

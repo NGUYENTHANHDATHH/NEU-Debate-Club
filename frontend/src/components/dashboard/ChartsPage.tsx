@@ -18,6 +18,7 @@ import { PageFrame } from "@/components/ui/Dashboard/PageFrame";
 import { Section } from "@/components/ui/Dashboard/Section";
 import { useUserContext } from "@/context/userContext";
 import { fetchTasks, type BackendTask } from "@/lib/api";
+import { refreshApiCache } from "@/lib/requestCache";
 import { DEPARTMENT_NAMES } from "@/lib/notifications";
 
 const STATUS_STYLE: Record<TaskStatus, { label: string; bar: string; stroke: string }> = {
@@ -79,7 +80,7 @@ export function ChartsPage() {
         <ActionButton
           variant="outline"
           icon={<RefreshCw className="h-4 w-4" />}
-          onClick={() => void load()}
+          onClick={() => { refreshApiCache(); void load(); }}
           disabled={loading}
         >
           Tải lại

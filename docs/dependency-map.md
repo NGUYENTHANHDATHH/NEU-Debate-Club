@@ -115,7 +115,7 @@ Every write endpoint (tasks, members, events, notifications, CMS publish, financ
 | Landing sections | `landing_content` V7/V9, versions V13 (+V10–V12 seed) | 2 entities/repos | `LandingContentController`; untyped `JsonNode`/`Map` | `CmsSection`, `CmsHistoryItem`; section shapes declared per component | `CmsPublishIntegrationTest` (opt-in) |
 | Catalog | `projects` V14, `achievements` V15 (+V16–V17 seed) | 2 entities/repos | `LandingCatalogController`; entities serialized directly | `CmsCatalogItem` → CmsPage, public pages | `CmsPublishIntegrationTest` (opt-in) |
 | Notifications | `notifications` V4 + `created_by` V22 | `Notification`, `NotificationRepository`, `NotificationService` | `NotificationController`; nested `CreateNotificationRequest`, `NotificationResponse`, `CreateNotificationResponse` | `AppNotification`, `CreateNotificationPayload` → NotificationBell, NotificationPages | `NotificationServiceTest` (9) |
-| Module access | none | — | `AdminModule`, `RoleGuard`, `/auth/modules` | [dashboard-modules.ts](../frontend/src/constants/dashboard-modules.ts) | `RoleGuardTest` |
+| Module access | `module_permissions` (V23) | `/module-permissions` | `AdminModule`, `RoleGuard`, `/auth/modules` | [dashboard-modules.ts](../frontend/src/constants/dashboard-modules.ts) | `RoleGuardTest` |
 
 Per-module detail: [auth.md](modules/auth.md), [members.md](modules/members.md), [tasks.md](modules/tasks.md), [events.md](modules/events.md), [landing-cms.md](modules/landing-cms.md), [access-control.md](modules/access-control.md), [database-migrations.md](modules/database-migrations.md).
 

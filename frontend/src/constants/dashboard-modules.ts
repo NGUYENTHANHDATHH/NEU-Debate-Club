@@ -40,29 +40,8 @@ export const ADMIN_MODULE_KEYS = [
 
 export type AdminModuleKey = (typeof ADMIN_MODULE_KEYS)[number];
 
-/** Các ban có Trưởng ban (mọi ban trừ BCN). */
+/** Các ban có thể được tick chức năng ở trang Phân quyền (mọi ban trừ BCN). Ma trận lưu ở backend. */
 export const LEAD_DEPARTMENTS = ["TRUYEN_THONG", "DOI_NGOAI", "NOI_DUNG", "SU_KIEN", "KY_THUAT", "NHAN_SU"] as const;
-
-/**
- * Mirrors backend common/enums/AdminModule.java: ban nào có Trưởng ban được quản lý module.
- * BCN luôn quản lý mọi module; thành viên thường không có module nào. Sửa cả hai nơi cùng lúc.
- */
-export const MODULE_DEPARTMENTS: Record<AdminModuleKey, readonly string[]> = {
-  TASK_ASSIGNMENT: LEAD_DEPARTMENTS,
-  NOTIFICATION_MANAGEMENT: LEAD_DEPARTMENTS,
-  DEPARTMENT_OPERATIONS: LEAD_DEPARTMENTS,
-  ANALYTICS: LEAD_DEPARTMENTS,
-  PUBLICATIONS: ["TRUYEN_THONG", "NOI_DUNG"],
-  ASSET_LIBRARY: ["KY_THUAT"],
-  LANDING_CMS: ["TRUYEN_THONG"],
-  FINANCE: ["DOI_NGOAI"],
-  EVENT_MANAGEMENT: ["SU_KIEN"],
-  MEMBERSHIP: ["NHAN_SU"],
-  TENURE: ["NHAN_SU"],
-  CROSS_DEPARTMENT_TASKS: [],
-  ACTIVITY_LOG: [],
-  HEALTH_DASHBOARD: [],
-};
 
 type DashboardNavItem = {
   name: string;

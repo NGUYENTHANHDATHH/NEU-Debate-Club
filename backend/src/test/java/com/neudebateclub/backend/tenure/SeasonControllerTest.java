@@ -8,6 +8,7 @@ import com.neudebateclub.backend.common.exception.ForbiddenException;
 import com.neudebateclub.backend.common.exception.ResourceNotFoundException;
 import com.neudebateclub.backend.common.exception.ValidationException;
 import com.neudebateclub.backend.common.security.RoleGuard;
+import com.neudebateclub.backend.common.security.TestRoleGuards;
 import com.neudebateclub.backend.user.User;
 import com.neudebateclub.backend.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,7 +42,7 @@ class SeasonControllerTest {
         seasonRepository = mock(SeasonRepository.class);
         seasonMemberRepository = mock(SeasonMemberRepository.class);
         userRepository = mock(UserRepository.class);
-        controller = new SeasonController(seasonRepository, seasonMemberRepository, userRepository, new RoleGuard(),
+        controller = new SeasonController(seasonRepository, seasonMemberRepository, userRepository, TestRoleGuards.withDefaults(),
                 mock(ActivityLogService.class));
         nhanSuLead = UserPrincipal.builder().id(UUID.randomUUID()).role(Role.TRUONG_BAN)
                 .department(Department.NHAN_SU).active(true).build();

@@ -9,6 +9,7 @@ import com.neudebateclub.backend.common.enums.TaskStatus;
 import com.neudebateclub.backend.common.exception.ForbiddenException;
 import com.neudebateclub.backend.common.response.ApiResponse;
 import com.neudebateclub.backend.common.security.RoleGuard;
+import com.neudebateclub.backend.common.security.TestRoleGuards;
 import com.neudebateclub.backend.event.EventRepository;
 import com.neudebateclub.backend.notification.NotificationService;
 import com.neudebateclub.backend.user.User;
@@ -55,7 +56,7 @@ class TaskControllerTest {
         taskCommentRepository = mock(TaskCommentRepository.class);
         userRepository = mock(UserRepository.class);
         eventRepository = mock(EventRepository.class);
-        roleGuard = new RoleGuard();
+        roleGuard = TestRoleGuards.withDefaults();
         notificationService = mock(NotificationService.class);
         activityLogService = mock(ActivityLogService.class);
         taskController = new TaskController(taskRepository, taskCommentRepository, userRepository, eventRepository, roleGuard,

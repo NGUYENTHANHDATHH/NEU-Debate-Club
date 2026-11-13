@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { Check, RefreshCw, Users } from "lucide-react";
+import { Check, RefreshCw, Save, Users } from "lucide-react";
 import { ActionButton } from "@/components/ui/Dashboard/ActionButton";
 import { PageFrame } from "@/components/ui/Dashboard/PageFrame";
 import { Section } from "@/components/ui/Dashboard/Section";
@@ -12,15 +12,20 @@ import {
   AdminModuleKey,
   DASHBOARD_NAV_GROUPS,
   LEAD_DEPARTMENTS,
-  MODULE_DEPARTMENTS,
 } from "@/constants/dashboard-modules";
 import { ROUTES } from "@/constants/routes";
-import { Member, fetchMembers } from "@/lib/api";
+import {
+  Member,
+  ModulePermissionMatrix,
+  fetchMembers,
+  fetchModulePermissions,
+  saveModulePermissions,
+} from "@/lib/api";
 import { DEPARTMENT_NAMES } from "@/lib/notifications";
 
 const ROLES = [
-  { key: "BCN", label: "BCN", description: "Quản trị mọi module của câu lạc bộ." },
-  { key: "TRUONG_BAN", label: "Trưởng/Phó ban", description: "Quản trị các module thuộc ban mình (xem ma trận)." },
+  { key: "BCN", label: "BCN", description: "Luôn có mọi chức năng; là người duy nhất được sửa ma trận quyền." },
+  { key: "TRUONG_BAN", label: "Trưởng/Phó ban", description: "Các chức năng ban mình được tick trong ma trận." },
   { key: "MEMBER", label: "Thành viên", description: "Chỉ dùng trang cá nhân: Todo-list, đọc thông báo." },
 ] as const;
 
@@ -30,20 +35,28 @@ for (const item of DASHBOARD_NAV_GROUPS.flatMap((group) => group.items)) {
   if (item.module && !MODULE_LABELS.has(item.module)) MODULE_LABELS.set(item.module, item.name);
 }
 
+const departmentLabel = (department: string) => DEPARTMENT_NAMES[department]?.replace(/^Ban /, "") ?? department;
+
 export function RolesPage() {
   const { user } = useUserContext();
   const router = useRouter();
   const [members, setMembers] = useState<Member[]>([]);
+  const [matrix, setMatrix] = useState<ModulePermissionMatrix | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
+  const [saveError, setSaveError] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      setMembers(await fetchMembers());
+      const [loadedMembers, loadedMatrix] = await Promise.all([fetchMembers(), fetchModulePermissions()]);
+      setMembers(loadedMembers);
+      setMatrix(loadedMatrix);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Không thể tải thành viên.");
+      setError(loadError instanceof Error ? loadError.message : "Không thể tải phân quyền.");
     } finally {
       setLoading(false);
     }
@@ -56,10 +69,39 @@ export function RolesPage() {
   const isBcn = user?.role?.toUpperCase() === "BCN";
   const countFor = (role: string) => members.filter((member) => member.role?.toUpperCase() === role).length;
 
+  function toggle(moduleKey: AdminModuleKey, department: string) {
+    setSaveMessage("");
+    setMatrix((current) => {
+      if (!current) return current;
+      const departments = current[moduleKey] ?? [];
+      return {
+        ...current,
+        [moduleKey]: departments.includes(department)
+          ? departments.filter((item) => item !== department)
+          : [...departments, department],
+      };
+    });
+  }
+
+  async function save() {
+    if (!matrix) return;
+    setSaving(true);
+    setSaveError("");
+    setSaveMessage("");
+    try {
+      setMatrix(await saveModulePermissions(matrix));
+      setSaveMessage("Đã lưu. Trưởng ban sẽ thấy thay đổi khi tải lại trang.");
+    } catch (saveFailure) {
+      setSaveError(saveFailure instanceof Error ? saveFailure.message : "Không thể lưu phân quyền.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <PageFrame
       title="Phân quyền"
-      description="Quyền truy cập được xác định bởi vai trò và ban của mỗi thành viên. Trang này chỉ để xem; đổi vai trò hoặc ban ở trang Quản lý thành viên."
+      description="Tick chức năng cho từng ban: Trưởng/Phó ban của ban được tick sẽ dùng được chức năng đó; thành viên thường không. Chỉ BCN được sửa; đổi vai trò hoặc ban ở trang Quản lý thành viên."
       action={
         <ActionButton icon={<Users className="h-4 w-4" />} onClick={() => router.push(ROUTES.members)}>
           Đổi vai trò thành viên
@@ -97,8 +139,25 @@ export function RolesPage() {
 
         <Section
           title="Ma trận quyền"
-          subtitle="Module × vai trò/ban. Thành viên thường không quản trị module nào."
+          subtitle={isBcn ? "Tick ô để cấp chức năng cho Trưởng/Phó ban, rồi bấm Lưu." : "Chỉ BCN được sửa ma trận này."}
+          action={
+            isBcn && (
+              <ActionButton icon={<Save className="h-4 w-4" />} onClick={() => void save()} disabled={!matrix || saving}>
+                {saving ? "Đang lưu..." : "Lưu phân quyền"}
+              </ActionButton>
+            )
+          }
         >
+          {saveError && (
+            <p role="alert" className="mb-3 rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+              {saveError}
+            </p>
+          )}
+          {saveMessage && (
+            <p role="status" className="mb-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
+              {saveMessage}
+            </p>
+          )}
           <div className="overflow-x-auto rounded-[1.5rem] border border-slate-200/60">
             <table className="min-w-full divide-y divide-slate-200/60 text-sm">
               <thead className="bg-slate-50/80 text-xs font-semibold text-[#94A3B8]">
@@ -107,41 +166,49 @@ export function RolesPage() {
                   <th scope="col" className="px-3 py-3 text-center">BCN</th>
                   {LEAD_DEPARTMENTS.map((department) => (
                     <th key={department} scope="col" className="px-3 py-3 text-center">
-                      TB {DEPARTMENT_NAMES[department]?.replace(/^Ban /, "") ?? department}
+                      {departmentLabel(department)}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200/60 bg-white">
-                {ADMIN_MODULE_KEYS.map((moduleKey) => (
-                  <tr key={moduleKey}>
-                    <th scope="row" className="px-4 py-3 text-left font-medium text-[#18181B]">
-                      {MODULE_LABELS.get(moduleKey) ?? moduleKey}
-                    </th>
-                    <PermissionCell allowed />
-                    {LEAD_DEPARTMENTS.map((department) => (
-                      <PermissionCell key={department} allowed={MODULE_DEPARTMENTS[moduleKey].includes(department)} />
-                    ))}
-                  </tr>
-                ))}
+                {ADMIN_MODULE_KEYS.map((moduleKey) => {
+                  const moduleLabel = MODULE_LABELS.get(moduleKey) ?? moduleKey;
+                  return (
+                    <tr key={moduleKey}>
+                      <th scope="row" className="px-4 py-3 text-left font-medium text-[#18181B]">
+                        {moduleLabel}
+                      </th>
+                      <td className="px-3 py-3 text-center">
+                        <Check className="mx-auto h-4 w-4 text-emerald-600" aria-label="BCN luôn có quyền" />
+                      </td>
+                      {LEAD_DEPARTMENTS.map((department) => (
+                        <td key={department} className="px-3 py-3 text-center">
+                          {matrix ? (
+                            <input
+                              type="checkbox"
+                              checked={matrix[moduleKey]?.includes(department) ?? false}
+                              onChange={() => toggle(moduleKey, department)}
+                              disabled={!isBcn || saving}
+                              aria-label={`${departmentLabel(department)}: ${moduleLabel}`}
+                              className="h-4 w-4 rounded border-slate-300 text-[#E11D48] focus:ring-[#E11D48] disabled:cursor-not-allowed"
+                            />
+                          ) : (
+                            <span className="text-slate-300" aria-hidden="true">—</span>
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
-          <p className="mt-3 text-xs text-[#71717A]">TB = Trưởng/Phó ban của ban đó.</p>
+          <p className="mt-3 text-xs text-[#71717A]">
+            Ô được tick = Trưởng/Phó ban của ban đó dùng được chức năng; thành viên thường không. BCN luôn có tất cả.
+          </p>
         </Section>
       </div>
     </PageFrame>
-  );
-}
-
-function PermissionCell({ allowed }: { allowed: boolean }) {
-  return (
-    <td className="px-3 py-3 text-center">
-      {allowed ? (
-        <Check className="mx-auto h-4 w-4 text-emerald-600" aria-label="Có quyền" />
-      ) : (
-        <span className="text-slate-300" aria-label="Không có quyền">—</span>
-      )}
-    </td>
   );
 }

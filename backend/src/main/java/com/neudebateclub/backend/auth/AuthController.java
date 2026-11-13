@@ -5,7 +5,6 @@ import com.neudebateclub.backend.auth.dto.GoogleLoginRequest;
 import com.neudebateclub.backend.common.response.ApiResponse;
 import com.neudebateclub.backend.common.annotation.CurrentUser;
 import com.neudebateclub.backend.auth.security.UserPrincipal;
-import com.neudebateclub.backend.common.enums.AdminModule;
 import com.neudebateclub.backend.common.security.RoleGuard;
 import com.neudebateclub.backend.common.exception.UnauthorizedException;
 import jakarta.servlet.http.Cookie;
@@ -29,7 +28,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.web.servlet.view.RedirectView;
@@ -212,8 +210,7 @@ public class AuthController {
     @GetMapping("/modules")
     public ResponseEntity<ApiResponse<List<String>>> getAccessibleModules(
         @CurrentUser UserPrincipal currentUser) {
-        List<String> modules = Arrays.stream(AdminModule.values())
-            .filter(module -> roleGuard.canManageModule(currentUser, module))
+        List<String> modules = roleGuard.modulesOf(currentUser).stream()
             .map(Enum::name)
             .toList();
         return ResponseEntity.ok(ApiResponse.success(modules));

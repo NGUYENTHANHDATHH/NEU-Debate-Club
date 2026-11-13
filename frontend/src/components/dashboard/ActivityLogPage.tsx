@@ -7,6 +7,7 @@ import { ActionButton } from "@/components/ui/Dashboard/ActionButton";
 import { PageFrame } from "@/components/ui/Dashboard/PageFrame";
 import { Section } from "@/components/ui/Dashboard/Section";
 import { ActivityLogEntry, fetchActivityLogs } from "@/lib/api";
+import { refreshApiCache } from "@/lib/requestCache";
 
 const ACTION_LABELS: Record<string, string> = {
   CREATE: "Tạo",
@@ -125,7 +126,7 @@ export function ActivityLogPage() {
               }`
         }
         action={
-          <ActionButton variant="outline" onClick={() => void load(limit)} disabled={loading}>
+          <ActionButton variant="outline" onClick={() => { refreshApiCache(); void load(limit); }} disabled={loading}>
             Tải lại
           </ActionButton>
         }
