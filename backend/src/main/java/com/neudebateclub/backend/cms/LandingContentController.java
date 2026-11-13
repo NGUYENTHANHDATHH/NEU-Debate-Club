@@ -2,6 +2,7 @@ package com.neudebateclub.backend.cms;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import com.neudebateclub.backend.activity.ActivityLogService;
 import com.neudebateclub.backend.auth.security.UserPrincipal;
 import com.neudebateclub.backend.common.annotation.CurrentUser;
 import com.neudebateclub.backend.common.enums.LandingSection;
@@ -31,6 +32,7 @@ public class LandingContentController {
     private final UserRepository userRepo;
     private final RoleGuard roleGuard;
     private final ObjectMapper objectMapper;
+    private final ActivityLogService activityLogService;
 
     private static final String DRAFT = "DRAFT";
     private static final String PUBLISHED = "PUBLISHED";
@@ -141,9 +143,12 @@ public class LandingContentController {
         content.setPublished(true);
         content.setUpdatedBy(userRepo.getReferenceById(user.getId()));
         content.setUpdatedAt(Instant.now());
-        repo.save(content);
+        LandingContent saved = repo.save(content);
         draft.setStatus(PUBLISHED);
         versionRepo.save(draft);
+        // Draft saves are not logged: the CMS page always publishes right after saving a draft.
+        activityLogService.record(user.getId(), "PUBLISH", "LANDING_SECTION", saved.getId(),
+                ActivityLogService.metadata("section", normalized));
         return ResponseEntity.ok(Map.of("success", true, "data", Map.of(
                 "section", normalized, "content", parseJson(content.getContentJson()), "publishedAt", content.getUpdatedAt())));
     }

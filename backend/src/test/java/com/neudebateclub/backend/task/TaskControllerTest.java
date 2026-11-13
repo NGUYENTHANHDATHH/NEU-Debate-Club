@@ -1,5 +1,6 @@
 package com.neudebateclub.backend.task;
 
+import com.neudebateclub.backend.activity.ActivityLogService;
 import com.neudebateclub.backend.auth.security.UserPrincipal;
 import com.neudebateclub.backend.common.enums.Department;
 import com.neudebateclub.backend.common.enums.Role;
@@ -26,6 +27,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -40,6 +43,7 @@ class TaskControllerTest {
     private EventRepository eventRepository;
     private RoleGuard roleGuard;
     private NotificationService notificationService;
+    private ActivityLogService activityLogService;
     private TaskController taskController;
     private UserPrincipal bcnManager;
     private User bcnUser;
@@ -53,8 +57,9 @@ class TaskControllerTest {
         eventRepository = mock(EventRepository.class);
         roleGuard = new RoleGuard();
         notificationService = mock(NotificationService.class);
+        activityLogService = mock(ActivityLogService.class);
         taskController = new TaskController(taskRepository, taskCommentRepository, userRepository, eventRepository, roleGuard,
-                notificationService);
+                notificationService, activityLogService);
 
         UUID bcnId = UUID.randomUUID();
         bcnManager = UserPrincipal.builder()
@@ -122,6 +127,9 @@ class TaskControllerTest {
         assertEquals(leadTruyenThong.getId(), savedTask.getAssignedTo().getId());
         assertEquals(bcnUser.getId(), savedTask.getAssignedBy().getId());
         verify(notificationService).notifyTaskAssigned(savedTask);
+        verify(activityLogService).record(eq(bcnUser.getId()), eq("CREATE"), eq("TASK"), eq(savedTask.getId()),
+                argThat(metadata -> "Thiết kế poster sự kiện".equals(metadata.get("title"))
+                        && "TRUYEN_THONG".equals(metadata.get("department"))));
     }
 
     @Test

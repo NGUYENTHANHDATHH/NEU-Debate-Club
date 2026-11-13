@@ -1,5 +1,6 @@
 package com.neudebateclub.backend.event;
 
+import com.neudebateclub.backend.activity.ActivityLogService;
 import com.neudebateclub.backend.auth.security.UserPrincipal;
 import com.neudebateclub.backend.common.annotation.CurrentUser;
 import com.neudebateclub.backend.common.enums.AdminModule;
@@ -40,6 +41,7 @@ public class EventController {
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
     private final RoleGuard roleGuard;
+    private final ActivityLogService activityLogService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<EventResponse>>> list(
@@ -57,8 +59,9 @@ public class EventController {
         roleGuard.requireModuleManager(currentUser, AdminModule.EVENT_MANAGEMENT);
         Event event = apply(new Event(), request);
         event.setCreatedBy(userRepository.getReferenceById(currentUser.getId()));
-        return ResponseEntity.status(201).body(ApiResponse.success(
-                "Đã tạo sự kiện", EventResponse.from(eventRepository.save(event))));
+        Event saved = eventRepository.save(event);
+        record(currentUser, "CREATE", saved);
+        return ResponseEntity.status(201).body(ApiResponse.success("Đã tạo sự kiện", EventResponse.from(saved)));
     }
 
     @PutMapping("/{id}")
@@ -70,8 +73,9 @@ public class EventController {
         roleGuard.requireModuleManager(currentUser, AdminModule.EVENT_MANAGEMENT);
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Event", id.toString()));
-        return ResponseEntity.ok(ApiResponse.success(
-                "Đã cập nhật sự kiện", EventResponse.from(eventRepository.save(apply(event, request)))));
+        Event saved = eventRepository.save(apply(event, request));
+        record(currentUser, "UPDATE", saved);
+        return ResponseEntity.ok(ApiResponse.success("Đã cập nhật sự kiện", EventResponse.from(saved)));
     }
 
     @DeleteMapping("/{id}")
@@ -83,7 +87,13 @@ public class EventController {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Event", id.toString()));
         eventRepository.delete(event);
+        record(currentUser, "DELETE", event);
         return ResponseEntity.ok(ApiResponse.success("Đã xóa sự kiện", null));
+    }
+
+    private void record(UserPrincipal currentUser, String action, Event event) {
+        activityLogService.record(currentUser.getId(), action, "EVENT", event.getId(),
+                ActivityLogService.metadata("title", event.getTitle(), "status", event.getStatus()));
     }
 
     private Event apply(Event event, EventRequest request) {

@@ -1,5 +1,6 @@
 package com.neudebateclub.backend.user;
 
+import com.neudebateclub.backend.activity.ActivityLogService;
 import com.neudebateclub.backend.auth.security.UserPrincipal;
 import com.neudebateclub.backend.common.enums.AdminModule;
 import com.neudebateclub.backend.common.enums.Department;
@@ -33,7 +34,7 @@ class MemberControllerTest {
     void setUp() {
         repository = mock(UserRepository.class);
         roleGuard = mock(RoleGuard.class);
-        controller = new MemberController(repository, roleGuard);
+        controller = new MemberController(repository, roleGuard, mock(ActivityLogService.class));
         manager = UserPrincipal.builder().id(UUID.randomUUID()).role(Role.BCN).active(true).build();
     }
 

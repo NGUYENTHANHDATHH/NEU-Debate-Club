@@ -71,3 +71,21 @@ The missing frontend source, assets, manifest, and lockfile were recovered from
 commit `4aeb762`. V12 was recovered from the previously working backend image to
 preserve the checksum already recorded by Flyway. Do not edit applied migrations
 or run Flyway repair to hide a checksum mismatch; restore the matching SQL file.
+
+## Dev sample data
+
+> Local/dev only. Never run this against a shared or production database.
+
+`backend/dev-seed/dashboard-sample-data.sql` fills the dashboard with sample tasks,
+transactions, publication links, seasons, activity logs, and notifications. It is
+not a Flyway migration, so it only runs when you apply it by hand after the stack
+is up (it needs the users from the V18 seed or real accounts in every department):
+
+```powershell
+docker exec -i ndc_db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < backend/dev-seed/dashboard-sample-data.sql
+```
+
+Run it from the repository root in Git Bash, or use
+`Get-Content -Raw -Encoding UTF8 backend/dev-seed/dashboard-sample-data.sql | docker exec -i ndc_db sh -c '...'`
+in PowerShell, which has no `<` redirection. Every row has a fixed id, so running
+it again inserts nothing new.

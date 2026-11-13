@@ -1,5 +1,6 @@
 package com.neudebateclub.backend.cms;
 
+import com.neudebateclub.backend.activity.ActivityLogService;
 import com.neudebateclub.backend.auth.security.UserPrincipal;
 import com.neudebateclub.backend.common.annotation.CurrentUser;
 import com.neudebateclub.backend.common.security.RoleGuard;
@@ -29,6 +30,7 @@ public class LandingCatalogController {
     private final UserRepository userRepository;
     private final RoleGuard roleGuard;
     private final ObjectMapper objectMapper;
+    private final ActivityLogService activityLogService;
 
     @GetMapping("/projects")
     public ResponseEntity<List<LandingProject>> projects() {
@@ -102,6 +104,12 @@ public class LandingCatalogController {
         List<?> result = normalizedType.equals("projects")
                 ? publishProjects(items, user)
                 : publishAchievements(items, user);
+        if (!result.isEmpty()) {
+            UUID firstId = result.getFirst() instanceof LandingProject project
+                    ? project.getId() : ((LandingAchievement) result.getFirst()).getId();
+            activityLogService.record(user.getId(), "PUBLISH", "LANDING_CATALOG", firstId,
+                    ActivityLogService.metadata("catalog", normalizedType, "itemCount", result.size()));
+        }
         return ResponseEntity.ok(result);
     }
 

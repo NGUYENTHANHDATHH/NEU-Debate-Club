@@ -104,7 +104,6 @@ export interface DepartmentMeta {
   name: string;
   short: string;
   recipientRole: string;
-  defaultLeadName: string;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
   colors: {
@@ -122,7 +121,6 @@ export const DEPARTMENTS: DepartmentMeta[] = [
     name: "Ban Truyền thông",
     short: "Truyền thông",
     recipientRole: "Trưởng Ban Truyền thông",
-    defaultLeadName: "Trần Hải Đăng",
     description: "Sản xuất ấn phẩm, truyền thông đa nền tảng, bài đăng & video",
     icon: Megaphone,
     colors: {
@@ -138,7 +136,6 @@ export const DEPARTMENTS: DepartmentMeta[] = [
     name: "Ban Nội dung",
     short: "Nội dung",
     recipientRole: "Trưởng Ban Nội dung",
-    defaultLeadName: "Lê Thu Hà",
     description: "Biên soạn motions đề thi, tài liệu học thuật, format luật tranh biện",
     icon: BookOpen,
     colors: {
@@ -154,7 +151,6 @@ export const DEPARTMENTS: DepartmentMeta[] = [
     name: "Ban Sự kiện",
     short: "Sự kiện",
     recipientRole: "Trưởng Ban Sự kiện",
-    defaultLeadName: "Hoàng Khánh Linh",
     description: "Vận hành giải đấu, địa điểm thi đấu, hậu cần & cơ sở vật chất",
     icon: CalendarDays,
     colors: {
@@ -170,7 +166,6 @@ export const DEPARTMENTS: DepartmentMeta[] = [
     name: "Ban Đối ngoại",
     short: "Đối ngoại",
     recipientRole: "Trưởng Ban Đối ngoại",
-    defaultLeadName: "Phạm Đức Huy",
     description: "Mời tài trợ, liên kết CLB bạn, bảo trợ truyền thông & giám khảo",
     icon: Handshake,
     colors: {
@@ -186,7 +181,6 @@ export const DEPARTMENTS: DepartmentMeta[] = [
     name: "Ban Kỹ thuật",
     short: "Kỹ thuật",
     recipientRole: "Trưởng Ban Kỹ thuật",
-    defaultLeadName: "Vũ Quang Minh",
     description: "Vận hành hệ thống Tabbycat, bảng điểm điện tử, âm thanh & media",
     icon: Cpu,
     colors: {
@@ -202,7 +196,6 @@ export const DEPARTMENTS: DepartmentMeta[] = [
     name: "Ban Nhân sự",
     short: "Nhân sự",
     recipientRole: "Trưởng Ban Nhân sự",
-    defaultLeadName: "Đỗ Ngọc Anh",
     description: "Điều phối phân ca trực, điểm danh, khen thưởng & gắn kết nội bộ",
     icon: Users,
     colors: {
@@ -232,142 +225,6 @@ const FALLBACK_EVENTS: { id: string; title: string }[] = [
   {
     id: "e0000000-0000-0000-0000-000000000004",
     title: "Debate Camp Hè 2025 - Ươm mầm Tư duy Phản biện",
-  },
-];
-
-// Dữ liệu mẫu khởi tạo phản ánh chân thực các cột trong bảng `tasks`
-const INITIAL_SAMPLE_TASKS: DepartmentTask[] = [
-  {
-    id: "t0000000-0000-0000-0000-000000000001",
-    title: "Thiết kế bộ nhận diện & trailer công bố Giải Tranh biện Mở rộng NEU Debate Open 2025",
-    description:
-      "Lên key visual chủ đạo, avatar frame, template bài đăng vòng loại và dựng teaser video 45s để kích hoạt chiến dịch truyền thông trước 3 tuần.",
-    priority: "high",
-    status: "in_progress",
-    deadline: new Date(Date.now() + 3 * 86400000).toISOString(),
-    assigned_to: "u0000000-0000-0000-0000-000000000018",
-    assigned_to_title: "Trưởng Ban Truyền thông",
-    assigned_to_name: "Trần Hải Đăng",
-    assigned_by: "00000000-0000-0000-0000-000000000001",
-    assigned_by_name: "Ban Chủ Nhiệm (BCN)",
-    department: "truyen_thong",
-    department_name: "Ban Truyền thông",
-    is_cross_department: true,
-    event_id: "e0000000-0000-0000-0000-000000000001",
-    event_title: "Giải Tranh biện Mở rộng NEU Debate Open 2025",
-    completed_at: null,
-    created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-    updated_at: new Date(Date.now() - 86400000).toISOString(),
-  },
-  {
-    id: "t0000000-0000-0000-0000-000000000002",
-    title: "Biên soạn danh sách 12 motions đề thi & bảng rubric chấm điểm theo chuẩn BP",
-    description:
-      "Chuẩn bị các đề thi chia đều theo chủ đề (Kinh tế, Xã hội, Công nghệ, Giáo dục), kèm thông tin bối cảnh (info slides) và thang điểm chuẩn cho hội đồng trọng tài.",
-    priority: "high",
-    status: "todo",
-    deadline: new Date(Date.now() + 5 * 86400000).toISOString(),
-    assigned_to: "u0000000-0000-0000-0000-000000000021",
-    assigned_to_title: "Trưởng Ban Nội dung",
-    assigned_to_name: "Lê Thu Hà",
-    assigned_by: "00000000-0000-0000-0000-000000000001",
-    assigned_by_name: "Ban Chủ Nhiệm (BCN)",
-    department: "noi_dung",
-    department_name: "Ban Nội dung",
-    is_cross_department: false,
-    event_id: "e0000000-0000-0000-0000-000000000001",
-    event_title: "Giải Tranh biện Mở rộng NEU Debate Open 2025",
-    completed_at: null,
-    created_at: new Date(Date.now() - 86400000).toISOString(),
-    updated_at: new Date(Date.now() - 86400000).toISOString(),
-  },
-  {
-    id: "t0000000-0000-0000-0000-000000000003",
-    title: "Khảo sát và đặt hội trường A2 & 8 phòng thi nhánh cho Freshers Debate Cup",
-    description:
-      "Làm việc với Phòng Quản trị Thiết bị ĐH NEU xin phê duyệt mượn Hội trường A2 và 8 phòng học tòa D2, kiểm tra hệ thống điều hòa, âm thanh và bảng tên các phòng.",
-    priority: "medium",
-    status: "in_progress",
-    deadline: new Date(Date.now() + 7 * 86400000).toISOString(),
-    assigned_to: "u0000000-0000-0000-0000-000000000022",
-    assigned_to_title: "Trưởng Ban Sự kiện",
-    assigned_to_name: "Hoàng Khánh Linh",
-    assigned_by: "00000000-0000-0000-0000-000000000001",
-    assigned_by_name: "Ban Chủ Nhiệm (BCN)",
-    department: "su_kien",
-    department_name: "Ban Sự kiện",
-    is_cross_department: true,
-    event_id: "e0000000-0000-0000-0000-000000000002",
-    event_title: "Freshers Debate Cup 2025 - Tranh biện Tân sinh viên K67",
-    completed_at: null,
-    created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
-    updated_at: new Date(Date.now() - 86400000).toISOString(),
-  },
-  {
-    id: "t0000000-0000-0000-0000-000000000004",
-    title: "Gửi hồ sơ mời tài trợ Kim Cương và tiếp cận 10 đối tác EdTech giáo dục",
-    description:
-      "Gửi hồ sơ tài trợ chính thức, theo dõi phản hồi email và chốt lịch họp đàm phán hợp đồng tài trợ học bổng và tiền mặt trước ngày 25.",
-    priority: "high",
-    status: "todo",
-    deadline: new Date(Date.now() + 4 * 86400000).toISOString(),
-    assigned_to: "u0000000-0000-0000-0000-000000000020",
-    assigned_to_title: "Trưởng Ban Đối ngoại",
-    assigned_to_name: "Phạm Đức Huy",
-    assigned_by: "00000000-0000-0000-0000-000000000001",
-    assigned_by_name: "Ban Chủ Nhiệm (BCN)",
-    department: "doi_ngoai",
-    department_name: "Ban Đối ngoại",
-    is_cross_department: false,
-    event_id: "e0000000-0000-0000-0000-000000000001",
-    event_title: "Giải Tranh biện Mở rộng NEU Debate Open 2025",
-    completed_at: null,
-    created_at: new Date(Date.now() - 86400000).toISOString(),
-    updated_at: new Date(Date.now() - 86400000).toISOString(),
-  },
-  {
-    id: "t0000000-0000-0000-0000-000000000005",
-    title: "Cấu hình phần mềm Tabbycat và kết nối bảng điểm điện tử cho giải đấu",
-    description:
-      "Tạo instance giải đấu trên Tabbycat, cấu hình 80 đội thi và 40 giám khảo, phân quyền nhập kết quả và kiểm tra backup dữ liệu server phòng sự cố.",
-    priority: "medium",
-    status: "todo",
-    deadline: new Date(Date.now() + 10 * 86400000).toISOString(),
-    assigned_to: "u0000000-0000-0000-0000-000000000023",
-    assigned_to_title: "Trưởng Ban Kỹ thuật",
-    assigned_to_name: "Vũ Quang Minh",
-    assigned_by: "00000000-0000-0000-0000-000000000001",
-    assigned_by_name: "Ban Chủ Nhiệm (BCN)",
-    department: "ky_thuat",
-    department_name: "Ban Kỹ thuật",
-    is_cross_department: false,
-    event_id: "e0000000-0000-0000-0000-000000000001",
-    event_title: "Giải Tranh biện Mở rộng NEU Debate Open 2025",
-    completed_at: null,
-    created_at: new Date(Date.now() - 86400000).toISOString(),
-    updated_at: new Date(Date.now() - 86400000).toISOString(),
-  },
-  {
-    id: "t0000000-0000-0000-0000-000000000006",
-    title: "Lập danh sách phân ca trực và điểm danh thành viên hỗ trợ Workshop Kỹ năng",
-    description:
-      "Xếp lịch 20 bạn thành viên phụ trách check-in khách mời, bàn phát tài liệu và hậu cần nước uống. Báo cáo tổng kết số lượt tham gia sau sự kiện.",
-    priority: "low",
-    status: "done",
-    deadline: new Date(Date.now() - 86400000).toISOString(),
-    assigned_to: "u0000000-0000-0000-0000-000000000024",
-    assigned_to_title: "Trưởng Ban Nhân sự",
-    assigned_to_name: "Đỗ Ngọc Anh",
-    assigned_by: "00000000-0000-0000-0000-000000000001",
-    assigned_by_name: "Ban Chủ Nhiệm (BCN)",
-    department: "nhan_su",
-    department_name: "Ban Nhân sự",
-    is_cross_department: false,
-    event_id: "e0000000-0000-0000-0000-000000000003",
-    event_title: "Workshop Kỹ năng Xây dựng Luận điểm & Phản biện Sắc bén",
-    completed_at: new Date(Date.now() - 43200000).toISOString(),
-    created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
-    updated_at: new Date(Date.now() - 43200000).toISOString(),
   },
 ];
 
@@ -799,7 +656,7 @@ export function AssignAllTasksPage() {
                     <span className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-0.5 font-medium text-slate-700 shadow-sm border border-slate-200/60">
                       {assignToAllDepartments
                         ? "Trưởng Ban của cả 6 ban"
-                        : `${activeDeptMeta.recipientRole} · ${departmentLeads[activeDeptMeta.code] || activeDeptMeta.defaultLeadName}`}
+                        : `${activeDeptMeta.recipientRole} · ${departmentLeads[activeDeptMeta.code] || "Chưa có trưởng ban"}`}
                     </span>
                   </div>
                   <span className="text-[11px] text-slate-500 hidden sm:inline">

@@ -20,8 +20,12 @@ A Next.js 16 client-rendered frontend calls a Spring Boot 4.1 / Java 21 REST API
 | Landing sections | `landing_content`, versions | public + CMS | home sections, CmsPage | CMS integration — not run | Working slice |
 | Landing catalog | `projects`, `achievements` | public + CMS | home, list/detail, CmsPage | CMS integration — not run | Working slice |
 | Notifications | `notifications` V4 (+`created_by` V22) | 2 routes + task-create hook | bell, read page, create page | NotificationServiceTest 9 ✔ | Implemented 2026-11-13 (uncommitted); see [notifications.md](modules/notifications.md) |
-| Tenure, finance/partners, media, activity log, checklists, proposals, check-in, equipment, design assets | 20 tables | none | mock pages or none | none | Schema only |
-| Dashboard home, charts, health, roles | n/a | none | mock pages | none | Mock only |
+| Finance | `transactions` | 3 routes (`/finance/transactions`) | FinancePage | FinanceControllerTest 6 ✔ | Implemented 2026-11-13 (list/add/delete), uncommitted |
+| Publications + library | `media_links`, `events.resource_urls` | 3 routes (`/publications`) | PublicationsPage, LibraryPage (merged links, read-only) | PublicationControllerTest 5 ✔ | Implemented 2026-11-13, uncommitted |
+| Tenure | `seasons`, `season_members` | 6 routes (`/seasons`) | TenurePage | SeasonControllerTest 7 ✔ | Implemented 2026-11-13, uncommitted |
+| Activity log | `activity_logs` | `GET /activity-logs` (BCN) + writes from every write endpoint | ActivityLogPage | ActivityLogControllerTest 3 ✔ | Implemented 2026-11-13, uncommitted |
+| Partners/outreach, checklists, proposals, check-in, equipment, design assets, announcements, media, activity log, checklists, proposals, check-in, equipment, design assets | 20 tables | none | mock pages or none | none | Schema only |
+| Dashboard home, tasks hub, charts, health, roles, department ops | n/a | existing APIs | real-data pages; `MockPages.tsx` deleted 2026-11-13 | `taskMetrics`/`financeMetrics` node tests | Live (uncommitted). Undefined metrics (health score, contribution score, budget, approvals, permission toggles) removed by owner decision |
 
 ## Risk register
 
@@ -31,6 +35,9 @@ Severity: **P0** = data loss, security exposure, or deploy blocker; **P1** = wro
 |---|---|---|---|---|
 | ~~R-1~~ | P0 | Open-redirect / token leak via OAuth `state`/`returnUrl` and JWT in query string. **Fixed 2026-11-13 (commit 3bcc82c):** safe relative return path, signed state bound to an HttpOnly nonce cookie, single-use 60 s login code redeemed by `POST /auth/google/exchange`. Covered by `GoogleLoginFlowTest`; not yet exercised end-to-end against Google. | Verified by unit tests | [auth](modules/auth.md#risks) |
 | ~~R-2~~ | P0 | Task authorization gaps. **Fixed 2026-11-13 (commit 3bcc82c)** per owner decision 3 (strict). Covered by 8 new `TaskControllerTest` cases using the real `RoleGuard`. | Verified by unit tests | [tasks](modules/tasks.md#verified-gaps) |
+| ~~R-16~~ | P1 | Native queries bound Java enums directly (`CAST(:department AS text)`), so every `GET /tasks` filter and the department-lead lookup matched nothing: leads saw 0 tasks and BCN tasks for a department fell back to the BCN user. **Fixed 2026-11-13** with SpEL `:#{#department?.name()}` in `TaskRepository`/`UserRepository`; verified against the Docker DB. | Verified at runtime | `TaskRepository.findWithFilters`, `UserRepository.findFirst*` |
+| R-17 | P1 | Local Docker `JWT_SECRET` is only 7 characters; any production secret must be long and random. | Verified (length only) | `.env` |
+| R-18 | P2 | Malformed JSON bodies and unknown paths return 500 (`HttpMessageNotReadableException`, `NoResourceFoundException` hit the catch-all handler). Part of step 4. | Verified at runtime | `GlobalExceptionHandler` |
 | ~~R-15~~ | P0 | `JWT_SECRET` values that are not valid Base64 (e.g. containing `-`, as in `.env.docker.example`) crashed token signing: `DecodingException` was not caught. **Fixed 2026-11-13 (commit 3bcc82c).** | Verified by unit test | `JwtService.getSigningKey` |
 | R-3 | P0 | Applied migrations V1, V2, V12 were edited after first commit; older databases will fail checksum validation and may keep `users.google_id NOT NULL` or lack catalog enums. `baseline-version: 12` can mask this. | Verified git; DB state unknown | [database-migrations](modules/database-migrations.md) |
 | R-4 | P0 | Sample members, events and a fixed BCN account are seeded by versioned migrations and will land in production. | Verified | [database-migrations](modules/database-migrations.md#other-observations) |

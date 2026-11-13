@@ -92,6 +92,18 @@ Note: CMS admin routes live under the `/public` prefix and rely on controller ch
 
 `POST /tasks` also writes a `TASK_ASSIGNED` notification per created task. Detail: [notifications.md](modules/notifications.md).
 
+### Finance, publications, tenure, activity log (added 2026-11-13)
+
+| Method & path | Check | Frontend caller |
+|---|---|---|
+| `GET/POST /finance/transactions`, `DELETE /finance/transactions/{id}` | module `FINANCE` | FinancePage |
+| `GET /publications` | `MEMBER`+ | PublicationsPage, LibraryPage, DashboardHomePage, HealthDashboardPage |
+| `POST /publications`, `DELETE /publications/{id}` | module `PUBLICATIONS`; lead own department | PublicationsPage |
+| `GET/POST /seasons`, `DELETE /seasons/{id}`, `GET/POST /seasons/{id}/members`, `DELETE /seasons/{id}/members/{memberId}` | module `TENURE` | TenurePage |
+| `GET /activity-logs?limit=` | module `ACTIVITY_LOG` (BCN) | ActivityLogPage |
+
+Every write endpoint (tasks, members, events, notifications, CMS publish, finance, publications, seasons) records an `activity_logs` row in the same transaction via `ActivityLogService`. Dev-only sample data: [backend/dev-seed/dashboard-sample-data.sql](../backend/dev-seed/dashboard-sample-data.sql) (see DOCKER.md), not a Flyway migration.
+
 ## Module traces
 
 | Module | DB (migration) | Entity / repo | Controller & DTOs | Frontend client → UI | Tests |

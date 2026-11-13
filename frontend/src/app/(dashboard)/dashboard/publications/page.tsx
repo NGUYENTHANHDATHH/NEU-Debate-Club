@@ -1,4 +1,4 @@
-import { PublicationsPage } from "@/components/dashboard/MockPages";
+import { PublicationsPage } from "@/components/dashboard/PublicationsPage";
 
 export default function Page() {
   return <PublicationsPage />;

@@ -1,5 +1,6 @@
 package com.neudebateclub.backend.user;
 
+import com.neudebateclub.backend.activity.ActivityLogService;
 import com.neudebateclub.backend.auth.security.UserPrincipal;
 import com.neudebateclub.backend.common.annotation.CurrentUser;
 import com.neudebateclub.backend.common.enums.AdminModule;
@@ -38,6 +39,7 @@ public class MemberController {
 
     private final UserRepository userRepository;
     private final RoleGuard roleGuard;
+    private final ActivityLogService activityLogService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<MemberResponse>>> list(
@@ -63,6 +65,7 @@ public class MemberController {
             @CurrentUser UserPrincipal currentUser) {
         roleGuard.requireModuleManager(currentUser, AdminModule.MEMBERSHIP);
         User member = save(new User(), request, currentUser);
+        record(currentUser, "CREATE", member);
         return ResponseEntity.status(201)
                 .body(ApiResponse.success("Đã thêm thành viên", MemberResponse.from(member)));
     }
@@ -79,8 +82,15 @@ public class MemberController {
         if (member.getRole() == Role.BCN && currentUser.getRole() != Role.BCN) {
             throw new ForbiddenException("Chỉ BCN được chỉnh sửa tài khoản BCN");
         }
-        return ResponseEntity.ok(ApiResponse.success("Đã cập nhật thành viên",
-                MemberResponse.from(save(member, request, currentUser))));
+        User saved = save(member, request, currentUser);
+        record(currentUser, "UPDATE", saved);
+        return ResponseEntity.ok(ApiResponse.success("Đã cập nhật thành viên", MemberResponse.from(saved)));
+    }
+
+    private void record(UserPrincipal currentUser, String action, User member) {
+        activityLogService.record(currentUser.getId(), action, "MEMBER", member.getId(),
+                ActivityLogService.metadata("fullName", member.getFullName(), "department", member.getDepartment(),
+                        "role", member.getRole(), "active", member.isActive()));
     }
 
     private User save(User member, MemberRequest request, UserPrincipal currentUser) {

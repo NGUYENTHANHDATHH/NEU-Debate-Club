@@ -521,3 +521,176 @@ export function fetchCmsHistory(section: string) {
   return cmsRequest<CmsHistoryItem[]>(`/public/landing/cms/landing/${section}/history`);
 }
 import type { AdminModuleKey } from "@/constants/dashboard-modules";
+
+// ============================================================================
+// Shared request helper for the dashboard domains below
+// ============================================================================
+
+async function apiRequest<T>(path: string, init: RequestInit | undefined, fallbackMessage: string): Promise<T> {
+  const response = await authorizedFetch(`${API_BASE_URL}${path}`, init);
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    const validationMessage = payload?.data && typeof payload.data === "object"
+      ? Object.values(payload.data).join(". ")
+      : null;
+    throw new Error(validationMessage || payload?.message || fallbackMessage);
+  }
+  return (payload?.data ?? payload) as T;
+}
+
+function jsonBody(method: string, body: unknown): RequestInit {
+  return { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
+}
+
+// ---- Finance (module FINANCE) ----------------------------------------------
+
+export type TransactionType = "INCOME" | "EXPENSE";
+
+export type FinanceTransaction = {
+  id: string;
+  type: TransactionType;
+  amount: number;
+  description: string;
+  category: string | null;
+  eventId: string | null;
+  eventTitle: string | null;
+  transactionDate: string; // yyyy-MM-dd
+  createdById: string | null;
+  createdByName: string | null;
+  createdAt: string;
+};
+
+export type SaveTransactionInput = {
+  type: TransactionType;
+  amount: number;
+  description: string;
+  category?: string | null;
+  eventId?: string | null;
+  transactionDate: string;
+};
+
+export function fetchTransactions() {
+  return apiRequest<FinanceTransaction[]>("/finance/transactions", undefined, "Không thể tải giao dịch.");
+}
+
+export function createTransaction(input: SaveTransactionInput) {
+  return apiRequest<FinanceTransaction>("/finance/transactions", jsonBody("POST", input), "Không thể thêm giao dịch.");
+}
+
+export function deleteTransaction(id: string) {
+  return apiRequest<void>(`/finance/transactions/${id}`, { method: "DELETE" }, "Không thể xóa giao dịch.");
+}
+
+// ---- Publications / media links (read: MEMBER+, write: module PUBLICATIONS) --
+
+export type PublicationPlatform = "FACEBOOK" | "INSTAGRAM" | "YOUTUBE" | "TIKTOK" | "OTHER";
+
+export type Publication = {
+  id: string;
+  title: string;
+  url: string;
+  platform: PublicationPlatform;
+  department: string;
+  eventId: string | null;
+  eventTitle: string | null;
+  reach: number;
+  likes: number;
+  shares: number;
+  comments: number;
+  postedAt: string; // yyyy-MM-dd
+  createdByName: string | null;
+  createdAt: string;
+};
+
+export type SavePublicationInput = {
+  title: string;
+  url: string;
+  platform: PublicationPlatform;
+  department: string;
+  eventId?: string | null;
+  reach?: number;
+  likes?: number;
+  shares?: number;
+  comments?: number;
+  postedAt: string;
+};
+
+export function fetchPublications() {
+  return apiRequest<Publication[]>("/publications", undefined, "Không thể tải ấn phẩm.");
+}
+
+export function createPublication(input: SavePublicationInput) {
+  return apiRequest<Publication>("/publications", jsonBody("POST", input), "Không thể thêm ấn phẩm.");
+}
+
+export function deletePublication(id: string) {
+  return apiRequest<void>(`/publications/${id}`, { method: "DELETE" }, "Không thể xóa ấn phẩm.");
+}
+
+// ---- Tenure / seasons (module TENURE) ----------------------------------------
+
+export type Season = {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  active: boolean;
+  memberCount: number;
+  createdAt: string;
+};
+
+export type SeasonMember = {
+  id: string;
+  userId: string;
+  fullName: string | null;
+  email: string;
+  role: string;
+  department: string;
+  joinedAt: string;
+  leftAt: string | null;
+};
+
+export type SaveSeasonInput = { name: string; startDate: string; endDate: string; active: boolean };
+
+export type AddSeasonMemberInput = { userId: string; role?: string; department?: string; joinedAt?: string };
+
+export function fetchSeasons() {
+  return apiRequest<Season[]>("/seasons", undefined, "Không thể tải nhiệm kỳ.");
+}
+
+export function createSeason(input: SaveSeasonInput) {
+  return apiRequest<Season>("/seasons", jsonBody("POST", input), "Không thể tạo nhiệm kỳ.");
+}
+
+export function deleteSeason(id: string) {
+  return apiRequest<void>(`/seasons/${id}`, { method: "DELETE" }, "Không thể xóa nhiệm kỳ.");
+}
+
+export function fetchSeasonMembers(seasonId: string) {
+  return apiRequest<SeasonMember[]>(`/seasons/${seasonId}/members`, undefined, "Không thể tải thành viên nhiệm kỳ.");
+}
+
+export function addSeasonMember(seasonId: string, input: AddSeasonMemberInput) {
+  return apiRequest<SeasonMember>(`/seasons/${seasonId}/members`, jsonBody("POST", input), "Không thể thêm thành viên vào nhiệm kỳ.");
+}
+
+export function removeSeasonMember(seasonId: string, memberId: string) {
+  return apiRequest<void>(`/seasons/${seasonId}/members/${memberId}`, { method: "DELETE" }, "Không thể xóa thành viên khỏi nhiệm kỳ.");
+}
+
+// ---- Activity log (module ACTIVITY_LOG, BCN only) -----------------------------
+
+export type ActivityLogEntry = {
+  id: string;
+  userId: string;
+  userName: string | null;
+  action: string;
+  entityType: string;
+  entityId: string;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+};
+
+export function fetchActivityLogs(limit?: number) {
+  return apiRequest<ActivityLogEntry[]>(`/activity-logs${limit ? `?limit=${limit}` : ""}`, undefined, "Không thể tải activity log.");
+}

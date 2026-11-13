@@ -1,4 +1,4 @@
-import { LibraryPage } from "@/components/dashboard/MockPages";
+import { LibraryPage } from "@/components/dashboard/LibraryPage";
 
 export default function Page() {
   return <LibraryPage />;

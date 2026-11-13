@@ -1,5 +1,6 @@
 package com.neudebateclub.backend.notification;
 
+import com.neudebateclub.backend.activity.ActivityLogService;
 import com.neudebateclub.backend.auth.security.UserPrincipal;
 import com.neudebateclub.backend.common.enums.AdminModule;
 import com.neudebateclub.backend.common.enums.Department;
@@ -37,6 +38,7 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final RoleGuard roleGuard;
+    private final ActivityLogService activityLogService;
 
     /** Thông báo mới nhất của người dùng hiện tại. */
     public List<Notification> listForUser(UserPrincipal currentUser, Integer limit) {
@@ -95,7 +97,7 @@ public class NotificationService {
         User createdBy = userRepository.getReferenceById(sender.getId());
         String cleanTitle = title.trim();
         String cleanBody = body.trim();
-        notificationRepository.saveAll(recipients.stream()
+        List<Notification> saved = notificationRepository.saveAll(recipients.stream()
                 .map(recipient -> Notification.builder()
                         .user(recipient)
                         .title(cleanTitle)
@@ -104,6 +106,9 @@ public class NotificationService {
                         .createdBy(createdBy)
                         .build())
                 .toList());
+        activityLogService.record(sender.getId(), "SEND", "NOTIFICATION", saved.getFirst().getId(),
+                ActivityLogService.metadata("recipientCount", recipients.size(), "title", cleanTitle, "type", type,
+                        "audience", audience));
         return recipients.size();
     }
 

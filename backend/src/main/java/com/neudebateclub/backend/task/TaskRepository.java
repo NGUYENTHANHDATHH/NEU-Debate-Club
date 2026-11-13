@@ -22,9 +22,9 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
 
     @Query(value = """
             SELECT * FROM tasks
-            WHERE (CAST(:department AS text) IS NULL OR department::text = LOWER(CAST(:department AS text)))
-              AND (CAST(:status AS text) IS NULL OR status::text = LOWER(CAST(:status AS text)))
-              AND (CAST(:priority AS text) IS NULL OR priority::text = LOWER(CAST(:priority AS text)))
+            WHERE (CAST(:#{#department?.name()} AS text) IS NULL OR department::text = LOWER(CAST(:#{#department?.name()} AS text)))
+              AND (CAST(:#{#status?.name()} AS text) IS NULL OR status::text = LOWER(CAST(:#{#status?.name()} AS text)))
+              AND (CAST(:#{#priority?.name()} AS text) IS NULL OR priority::text = LOWER(CAST(:#{#priority?.name()} AS text)))
             ORDER BY created_at DESC
             """, nativeQuery = true)
     List<Task> findWithFilters(

@@ -1,5 +1,6 @@
 package com.neudebateclub.backend.notification;
 
+import com.neudebateclub.backend.activity.ActivityLogService;
 import com.neudebateclub.backend.auth.security.UserPrincipal;
 import com.neudebateclub.backend.common.enums.Department;
 import com.neudebateclub.backend.common.enums.Role;
@@ -49,7 +50,9 @@ class NotificationServiceTest {
     void setUp() {
         notificationRepository = mock(NotificationRepository.class);
         userRepository = mock(UserRepository.class);
-        service = new NotificationService(notificationRepository, userRepository, new RoleGuard());
+        service = new NotificationService(notificationRepository, userRepository, new RoleGuard(),
+                mock(ActivityLogService.class));
+        when(notificationRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
 
         bcn = user("BCN", Role.BCN, Department.BCN, true);
         leadTt = user("Lead TT", Role.TRUONG_BAN, Department.TRUYEN_THONG, true);

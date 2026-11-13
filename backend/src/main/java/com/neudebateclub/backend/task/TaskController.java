@@ -1,5 +1,6 @@
 package com.neudebateclub.backend.task;
 
+import com.neudebateclub.backend.activity.ActivityLogService;
 import com.neudebateclub.backend.auth.security.UserPrincipal;
 import com.neudebateclub.backend.common.annotation.CurrentUser;
 import com.neudebateclub.backend.common.enums.AdminModule;
@@ -40,6 +41,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -53,6 +55,7 @@ public class TaskController {
     private final EventRepository eventRepository;
     private final RoleGuard roleGuard;
     private final NotificationService notificationService;
+    private final ActivityLogService activityLogService;
 
     private static final List<Department> SPECIALIZED_DEPARTMENTS = List.of(
             Department.TRUYEN_THONG,
@@ -169,6 +172,7 @@ public class TaskController {
                 }
                 Task saved = taskRepository.save(task);
                 notificationService.notifyTaskAssigned(saved);
+                recordCreate(currentUser, saved);
                 responses.add(TaskResponse.from(saved));
             }
 
@@ -203,6 +207,7 @@ public class TaskController {
 
             Task saved = taskRepository.save(task);
             notificationService.notifyTaskAssigned(saved);
+            recordCreate(currentUser, saved);
             responses.add(TaskResponse.from(saved));
 
             return ResponseEntity.status(201).body(ApiResponse.success(
@@ -210,6 +215,12 @@ public class TaskController {
                     responses
             ));
         }
+    }
+
+    private void recordCreate(UserPrincipal currentUser, Task saved) {
+        activityLogService.record(currentUser.getId(), "CREATE", "TASK", saved.getId(),
+                ActivityLogService.metadata("title", saved.getTitle(), "department", saved.getDepartment(),
+                        "assignedTo", saved.getAssignedTo() == null ? null : saved.getAssignedTo().getFullName()));
     }
 
     private User resolveAssignee(CreateTaskRequest request, UserPrincipal currentUser, User fallbackUser) {
@@ -279,6 +290,9 @@ public class TaskController {
         if (previousStatus != saved.getStatus()) {
             saveComment(saved, currentUser, "Chuyển trạng thái sang " + saved.getStatus().name());
         }
+        activityLogService.record(currentUser.getId(), "UPDATE", "TASK", saved.getId(),
+                ActivityLogService.metadata("title", saved.getTitle(), "department", saved.getDepartment(),
+                        "from", previousStatus, "to", saved.getStatus()));
         return ResponseEntity.ok(ApiResponse.success(
                 "Đã cập nhật nhiệm vụ",
                 TaskResponse.from(saved)
@@ -297,6 +311,7 @@ public class TaskController {
                 .orElseThrow(() -> new ResourceNotFoundException("Task", id.toString()));
 
         requireTaskViewer(currentUser, task);
+        TaskStatus previousStatus = task.getStatus();
 
         task.setStatus(request.status());
         if (request.status() == TaskStatus.DONE) {
@@ -310,6 +325,9 @@ public class TaskController {
 
         Task saved = taskRepository.save(task);
         saveComment(saved, currentUser, "Chuyển trạng thái sang " + request.status().name());
+        activityLogService.record(currentUser.getId(), "STATUS_CHANGE", "TASK", saved.getId(),
+                ActivityLogService.metadata("title", saved.getTitle(),
+                        "from", previousStatus, "to", saved.getStatus()));
 
         return ResponseEntity.ok(ApiResponse.success(
                 "Đã cập nhật trạng thái nhiệm vụ",
@@ -355,6 +373,9 @@ public class TaskController {
         }
         Task saved = taskRepository.save(task);
         saveComment(saved, currentUser, request.content().trim());
+        activityLogService.record(currentUser.getId(), "PROGRESS_UPDATE", "TASK", saved.getId(),
+                ActivityLogService.metadata("title", saved.getTitle(), "progress", saved.getProgress(),
+                        "status", saved.getStatus()));
         return ResponseEntity.ok(ApiResponse.success("Đã cập nhật tiến độ nhiệm vụ", TaskResponse.from(saved)));
     }
 
@@ -399,7 +420,10 @@ public class TaskController {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task", id.toString()));
         requireTaskManager(currentUser, task);
+        Map<String, Object> metadata = ActivityLogService.metadata("title", task.getTitle(),
+                "department", task.getDepartment(), "status", task.getStatus());
         taskRepository.delete(task);
+        activityLogService.record(currentUser.getId(), "DELETE", "TASK", id, metadata);
         return ResponseEntity.ok(ApiResponse.success("Đã xóa nhiệm vụ", null));
     }
 

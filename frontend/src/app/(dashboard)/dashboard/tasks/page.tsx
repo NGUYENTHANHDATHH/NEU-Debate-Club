@@ -1,4 +1,4 @@
-import { TasksHubPage } from "@/components/dashboard/MockPages";
+import { TasksHubPage } from "@/components/dashboard/TasksHubPage";
 
 export default function Page() {
   return <TasksHubPage />;

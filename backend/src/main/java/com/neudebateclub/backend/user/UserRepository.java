@@ -32,8 +32,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     @Query(value = """
             SELECT * FROM users
-            WHERE department::text = LOWER(CAST(:department AS text))
-              AND role::text = LOWER(CAST(:role AS text))
+            WHERE department::text = LOWER(CAST(:#{#department?.name()} AS text))
+              AND role::text = LOWER(CAST(:#{#role?.name()} AS text))
               AND is_active = true
             LIMIT 1
             """, nativeQuery = true)
@@ -43,7 +43,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     @Query(value = """
             SELECT * FROM users
-            WHERE department::text = LOWER(CAST(:department AS text))
+            WHERE department::text = LOWER(CAST(:#{#department?.name()} AS text))
               AND is_active = true
             LIMIT 1
             """, nativeQuery = true)
@@ -51,7 +51,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     @Query(value = """
             SELECT * FROM users
-            WHERE role::text = LOWER(CAST(:role AS text))
+            WHERE role::text = LOWER(CAST(:#{#role?.name()} AS text))
               AND is_active = true
             LIMIT 1
             """, nativeQuery = true)

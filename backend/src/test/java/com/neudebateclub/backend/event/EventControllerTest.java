@@ -1,5 +1,6 @@
 package com.neudebateclub.backend.event;
 
+import com.neudebateclub.backend.activity.ActivityLogService;
 import com.neudebateclub.backend.auth.security.UserPrincipal;
 import com.neudebateclub.backend.common.enums.AdminModule;
 import com.neudebateclub.backend.common.enums.EventStatus;
@@ -39,7 +40,8 @@ class EventControllerTest {
         eventRepository = mock(EventRepository.class);
         userRepository = mock(UserRepository.class);
         roleGuard = mock(RoleGuard.class);
-        controller = new EventController(eventRepository, userRepository, roleGuard);
+        controller = new EventController(eventRepository, userRepository, roleGuard,
+                mock(ActivityLogService.class));
         manager = UserPrincipal.builder().id(UUID.randomUUID()).role(Role.BCN).active(true).build();
     }
 

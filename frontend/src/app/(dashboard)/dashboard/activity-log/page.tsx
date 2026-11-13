@@ -1,4 +1,4 @@
-import { ActivityLogPage } from "@/components/dashboard/MockPages";
+import { ActivityLogPage } from "@/components/dashboard/ActivityLogPage";
 
 export default function Page() {
   return <ActivityLogPage />;
