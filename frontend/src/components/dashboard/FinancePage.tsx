@@ -1,45 +1,50 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, Filter, Plus, RefreshCw, Search, Trash2, Wallet, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  AlertTriangle,
+  ArrowDown,
+  ArrowDownLeft,
+  ArrowUp,
+  ArrowUpRight,
+  CircleCheck,
+  Filter,
+  Plus,
+  RefreshCw,
+  Search,
+  Trash2,
+  Wallet,
+  X,
+} from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import {
   NO_EVENT,
+  eventBudgetRows,
   filterTransactions,
-  summarizeByEvent,
   summarizeTransactions,
   type TransactionFilters,
 } from "@/components/dashboard/financeMetrics";
-import { StatGrid } from "@/components/dashboard/DashboardWidgets";
 import { formatIsoDate, localIsoDate } from "@/components/dashboard/PublicationsPage";
+import { BUDGET_TONE, TYPE_META, TransactionForm, inputClass, money } from "@/components/dashboard/TransactionForm";
 import { ActionButton } from "@/components/ui/Dashboard/ActionButton";
 import { PageFrame } from "@/components/ui/Dashboard/PageFrame";
 import { Section } from "@/components/ui/Dashboard/Section";
 import {
-  createTransaction,
   deleteTransaction,
   fetchEvents,
   fetchTransactions,
   type ClubEvent,
   type FinanceTransaction,
-  type TransactionType,
 } from "@/lib/api";
-
-const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder-slate-400 outline-none transition aria-[invalid=true]:border-rose-400 focus:border-[#E11D48] focus:ring-2 focus:ring-[#E11D48]/10";
-
-const money = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 });
 
 const PAGE_SIZE = 20;
 const EMPTY_FILTERS: TransactionFilters = { query: "", type: "", month: "", eventId: "" };
 type SortKey = "date" | "amount";
-type FieldErrors = Partial<Record<"amount" | "description" | "transactionDate", string>>;
 
-const TYPE_META: Record<TransactionType, { label: string; badge: string; sign: string }> = {
-  INCOME: { label: "Thu", badge: "bg-emerald-50 text-emerald-700", sign: "+" },
-  EXPENSE: { label: "Chi", badge: "bg-rose-50 text-[#E11D48]", sign: "−" },
-};
+function signed(value: number) {
+  return `${value < 0 ? "−" : "+"}${money.format(Math.abs(value))}`;
+}
 
 export function FinancePage() {
   const [today] = useState(() => localIsoDate(new Date()));
@@ -50,22 +55,10 @@ export function FinancePage() {
   const searchParams = useSearchParams();
   // ?new=1 (từ thao tác nhanh) mở sẵn form.
   const [open, setOpen] = useState(() => searchParams.has("new"));
-  const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [formError, setFormError] = useState("");
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [filters, setFilters] = useState<TransactionFilters>(EMPTY_FILTERS);
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "date", dir: "desc" });
   const [page, setPage] = useState(1);
-  const [form, setForm] = useState({
-    type: "INCOME" as TransactionType,
-    amount: "",
-    description: "",
-    category: "",
-    eventId: "",
-    transactionDate: today,
-  });
-
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -83,7 +76,20 @@ export function FinancePage() {
 
   const summary = useMemo(() => summarizeTransactions(items, today.slice(0, 7)), [items, today]);
 
-  const byEvent = useMemo(() => summarizeByEvent(items), [items]);
+  const eventRows = useMemo(() => eventBudgetRows(items, events), [items, events]);
+  const overBudget = eventRows.filter((row) => row.usage.tone === "over");
+  const nearBudget = eventRows.filter((row) => row.usage.tone === "warn");
+  const totalIncome = summary.categories.reduce((sum, category) => sum + category.income, 0);
+  const totalExpense = summary.categories.reduce((sum, category) => sum + category.expense, 0);
+  const monthNet = summary.monthIncome - summary.monthExpense;
+  const monthFlow = summary.monthIncome + summary.monthExpense;
+  const monthLabel = `tháng ${Number(today.slice(5, 7))}/${today.slice(0, 4)}`;
+
+  function showEvent(eventId: string) {
+    setFilters({ ...EMPTY_FILTERS, eventId });
+    setPage(1);
+    document.getElementById("finance-transactions")?.scrollIntoView({ behavior: "smooth" });
+  }
   const filtered = useMemo(() => filterTransactions(items, filters), [items, filters]);
   const filteredTotals = useMemo(() => summarizeTransactions(filtered, ""), [filtered]);
   const sorted = useMemo(() => {
@@ -115,48 +121,6 @@ export function FinancePage() {
     () => [...new Set(items.map((item) => item.category?.trim()).filter((c): c is string => !!c))].sort(),
     [items],
   );
-
-  function update<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
-    setForm((current) => ({ ...current, [key]: value }));
-  }
-
-  function closeForm() {
-    setOpen(false);
-    setFormError("");
-    setFieldErrors({});
-    setForm({ type: "INCOME", amount: "", description: "", category: "", eventId: "", transactionDate: today });
-  }
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const amount = Number(form.amount);
-    const nextErrors: FieldErrors = {};
-    if (!Number.isFinite(amount) || amount <= 0) nextErrors.amount = "Nhập số tiền lớn hơn 0.";
-    if (!form.description.trim()) nextErrors.description = "Nhập mô tả để người khác biết khoản này là gì.";
-    if (!form.transactionDate) nextErrors.transactionDate = "Chọn ngày phát sinh giao dịch.";
-    setFieldErrors(nextErrors);
-    const firstInvalid = Object.keys(nextErrors)[0];
-    if (firstInvalid) return document.getElementById(`finance-${firstInvalid}`)?.focus();
-    setSaving(true);
-    setFormError("");
-    try {
-      const saved = await createTransaction({
-        type: form.type,
-        amount,
-        description: form.description.trim(),
-        category: form.category.trim() || null,
-        eventId: form.eventId || null,
-        transactionDate: form.transactionDate,
-      });
-      setItems((current) => [saved, ...current]);
-      toast.success(`Đã thêm khoản ${form.type === "INCOME" ? "thu" : "chi"} ${money.format(amount)}.`);
-      closeForm();
-    } catch (caught) {
-      setFormError(caught instanceof Error ? caught.message : "Không thể thêm giao dịch.");
-    } finally {
-      setSaving(false);
-    }
-  }
 
   async function handleDelete(item: FinanceTransaction) {
     if (
@@ -200,126 +164,23 @@ Số dư quỹ sẽ được tính lại và không thể hoàn tác.`,
       {open ? (
         <Section
           title="Thêm giao dịch"
+          subtitle="Khoản gắn sự kiện cũng hiện trong trang Quản lý sự kiện."
           action={
-            <button type="button" onClick={closeForm} aria-label="Đóng" className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+            <button type="button" onClick={() => setOpen(false)} aria-label="Đóng" className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
               <X className="h-5 w-5" />
             </button>
           }
         >
-          <form onSubmit={handleSubmit} noValidate className="space-y-4">
-            {formError ? (
-              <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                {formError}
-              </p>
-            ) : null}
-            <div className="grid gap-4 md:grid-cols-3">
-              <label className="space-y-1.5 text-sm font-medium text-slate-700">
-                <span>Loại</span>
-                <select value={form.type} onChange={(e) => update("type", e.target.value as TransactionType)} className={inputClass}>
-                  <option value="INCOME">Thu</option>
-                  <option value="EXPENSE">Chi</option>
-                </select>
-              </label>
-              <label className="space-y-1.5 text-sm font-medium text-slate-700">
-                <span>
-                  Số tiền (VND) <span className="text-rose-500">*</span>
-                </span>
-                <input
-                  id="finance-amount"
-                  aria-invalid={Boolean(fieldErrors.amount)}
-                  aria-describedby={fieldErrors.amount ? "finance-amount-error" : undefined}
-                  type="number"
-                  inputMode="numeric"
-                  required
-                  min="1"
-                  step="1000"
-                  value={form.amount}
-                  onChange={(e) => update("amount", e.target.value)}
-                  placeholder="0"
-                  className={inputClass}
-                />
-                {fieldErrors.amount ? (
-                  <span id="finance-amount-error" className="block text-xs font-normal text-rose-700">{fieldErrors.amount}</span>
-                ) : null}
-              </label>
-              <label className="space-y-1.5 text-sm font-medium text-slate-700">
-                <span>
-                  Ngày giao dịch <span className="text-rose-500">*</span>
-                </span>
-                <input
-                  id="finance-transactionDate"
-                  aria-invalid={Boolean(fieldErrors.transactionDate)}
-                  aria-describedby={fieldErrors.transactionDate ? "finance-transactionDate-error" : undefined}
-                  type="date"
-                  required
-                  value={form.transactionDate}
-                  onChange={(e) => update("transactionDate", e.target.value)}
-                  className={inputClass}
-                />
-                {fieldErrors.transactionDate ? (
-                  <span id="finance-transactionDate-error" className="block text-xs font-normal text-rose-700">{fieldErrors.transactionDate}</span>
-                ) : null}
-              </label>
-            </div>
-            <label className="block space-y-1.5 text-sm font-medium text-slate-700">
-              <span>
-                Mô tả <span className="text-rose-500">*</span>
-              </span>
-              <input
-                id="finance-description"
-                aria-invalid={Boolean(fieldErrors.description)}
-                aria-describedby={fieldErrors.description ? "finance-description-error" : undefined}
-                type="text"
-                required
-                maxLength={500}
-                value={form.description}
-                onChange={(e) => update("description", e.target.value)}
-                placeholder="Ví dụ: Tài trợ giải Debate Open, in ấn poster..."
-                className={inputClass}
-              />
-              {fieldErrors.description ? (
-                <span id="finance-description-error" className="block text-xs font-normal text-rose-700">{fieldErrors.description}</span>
-              ) : null}
-            </label>
-            <div className="grid gap-4 md:grid-cols-2">
-              <label className="space-y-1.5 text-sm font-medium text-slate-700">
-                <span>Danh mục</span>
-                <input
-                  type="text"
-                  list="finance-categories"
-                  maxLength={100}
-                  value={form.category}
-                  onChange={(e) => update("category", e.target.value)}
-                  placeholder="Ví dụ: Tài trợ, Sự kiện, Văn phòng phẩm"
-                  className={inputClass}
-                />
-                <datalist id="finance-categories">
-                  {existingCategories.map((category) => (
-                    <option key={category} value={category} />
-                  ))}
-                </datalist>
-              </label>
-              <label className="space-y-1.5 text-sm font-medium text-slate-700">
-                <span>Sự kiện liên quan</span>
-                <select value={form.eventId} onChange={(e) => update("eventId", e.target.value)} className={inputClass}>
-                  <option value="">Không gắn sự kiện</option>
-                  {events.map((ev) => (
-                    <option key={ev.id} value={ev.id}>
-                      {ev.title}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <div className="flex justify-end gap-3">
-              <ActionButton variant="outline" onClick={closeForm}>
-                Hủy
-              </ActionButton>
-              <ActionButton type="submit" disabled={saving}>
-                {saving ? "Đang lưu..." : "Lưu giao dịch"}
-              </ActionButton>
-            </div>
-          </form>
+          <TransactionForm
+            events={events}
+            categories={existingCategories}
+            defaultType="INCOME"
+            onSaved={(saved) => {
+              setItems((current) => [saved, ...current]);
+              setOpen(false);
+            }}
+            onCancel={() => setOpen(false)}
+          />
         </Section>
       ) : null}
 
@@ -330,60 +191,182 @@ Số dư quỹ sẽ được tính lại và không thể hoàn tác.`,
         </div>
       ) : error ? null : (
         <>
-          <StatGrid
-            items={[
-              { label: "Tổng quỹ", value: money.format(summary.balance), note: "Tổng thu trừ tổng chi, từ trước đến nay" },
-              { label: "Thu tháng này", value: money.format(summary.monthIncome), note: `Tháng ${today.slice(5, 7)}/${today.slice(0, 4)}` },
-              { label: "Chi tháng này", value: money.format(summary.monthExpense), note: `Tháng ${today.slice(5, 7)}/${today.slice(0, 4)}` },
-              { label: "Giao dịch tháng này", value: String(summary.monthCount), note: `Trên tổng ${items.length} giao dịch` },
-            ]}
-          />
+          <div className="grid gap-4 lg:grid-cols-3">
+            <section aria-labelledby="fund-heading" className="rounded-2xl border border-slate-200/70 bg-white p-5">
+              <h2 id="fund-heading" className="flex items-center gap-2 text-sm font-medium text-slate-600">
+                <Wallet className="h-4 w-4" aria-hidden />
+                Quỹ hiện tại
+              </h2>
+              <p className={`mt-2 text-3xl font-semibold tracking-tight tabular-nums ${summary.balance < 0 ? "text-[#BE123C]" : "text-emerald-700"}`}>
+                {summary.balance < 0 ? "−" : ""}
+                {money.format(Math.abs(summary.balance))}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                {summary.balance < 0 ? "Quỹ đang âm: chi nhiều hơn thu." : "Tổng thu trừ tổng chi, từ trước đến nay."}
+              </p>
+              <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-3 text-sm">
+                <div>
+                  <dt className="text-xs text-slate-500">Tổng thu</dt>
+                  <dd className="font-semibold tabular-nums text-emerald-700">{money.format(totalIncome)}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-slate-500">Tổng chi</dt>
+                  <dd className="font-semibold tabular-nums text-[#BE123C]">{money.format(totalExpense)}</dd>
+                </div>
+              </dl>
+            </section>
 
-          <Section title="Theo sự kiện" subtitle="Thu, chi và chênh lệch của từng sự kiện có gắn giao dịch (VND).">
-            {byEvent.length === 0 ? (
+            <section aria-labelledby="month-heading" className="rounded-2xl border border-slate-200/70 bg-white p-5">
+              <h2 id="month-heading" className="text-sm font-medium text-slate-600">
+                Thu chi {monthLabel}
+              </h2>
+              <dl className="mt-3 space-y-2 text-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="flex items-center gap-2 text-slate-600">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+                      <ArrowDownLeft className="h-3.5 w-3.5" aria-hidden />
+                    </span>
+                    Thu
+                  </dt>
+                  <dd className="font-semibold tabular-nums text-emerald-700">{money.format(summary.monthIncome)}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="flex items-center gap-2 text-slate-600">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-50 text-[#BE123C]">
+                      <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+                    </span>
+                    Chi
+                  </dt>
+                  <dd className="font-semibold tabular-nums text-[#BE123C]">{money.format(summary.monthExpense)}</dd>
+                </div>
+              </dl>
+              <div className="mt-3 flex h-2 overflow-hidden rounded-full bg-slate-100" aria-hidden>
+                {monthFlow > 0 ? (
+                  <>
+                    <span className="bg-emerald-500" style={{ width: `${(summary.monthIncome / monthFlow) * 100}%` }} />
+                    <span className="bg-[#E11D48]" style={{ width: `${(summary.monthExpense / monthFlow) * 100}%` }} />
+                  </>
+                ) : null}
+              </div>
+              <p className="mt-3 flex items-baseline justify-between gap-3 border-t border-slate-100 pt-3 text-sm">
+                <span className="text-slate-600">Chênh lệch ({summary.monthCount} giao dịch)</span>
+                <span className={`font-semibold tabular-nums ${monthNet < 0 ? "text-[#BE123C]" : "text-emerald-700"}`}>{signed(monthNet)}</span>
+              </p>
+            </section>
+
+            <section
+              aria-labelledby="budget-heading"
+              className={`rounded-2xl border p-5 ${
+                overBudget.length ? "border-rose-200 bg-rose-50/60" : nearBudget.length ? "border-amber-200 bg-amber-50/60" : "border-emerald-200 bg-emerald-50/50"
+              }`}
+            >
+              <h2 id="budget-heading" className="text-sm font-medium text-slate-600">
+                Dự toán sự kiện
+              </h2>
+              {overBudget.length || nearBudget.length ? (
+                <>
+                  <p className={`mt-2 flex items-center gap-2 text-lg font-semibold ${overBudget.length ? "text-[#BE123C]" : "text-amber-800"}`}>
+                    <AlertTriangle className="h-5 w-5 shrink-0" aria-hidden />
+                    {overBudget.length ? `${overBudget.length} sự kiện vượt dự toán` : `${nearBudget.length} sự kiện sắp chạm dự toán`}
+                  </p>
+                  <ul className="mt-2 space-y-1 text-sm">
+                    {[...overBudget, ...nearBudget].slice(0, 3).map((row) => (
+                      <li key={row.eventId}>
+                        <button
+                          type="button"
+                          onClick={() => showEvent(row.eventId)}
+                          className="flex w-full items-baseline justify-between gap-3 rounded-md text-left hover:underline"
+                        >
+                          <span className="truncate text-slate-800">{row.title}</span>
+                          <span className={`shrink-0 tabular-nums ${BUDGET_TONE[row.usage.tone].text}`}>
+                            {Math.round((row.usage.ratio ?? 0) * 100)}%
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <p className="mt-2 flex items-center gap-2 text-lg font-semibold text-emerald-800">
+                  <CircleCheck className="h-5 w-5 shrink-0" aria-hidden />
+                  {eventRows.some((row) => row.usage.tone !== "none") ? "Mọi sự kiện trong dự toán" : "Chưa có sự kiện nào đặt dự toán"}
+                </p>
+              )}
+              <p className="mt-3 text-xs text-slate-600">
+                So số đã chi với &ldquo;Ngân sách&rdquo; đặt trong Quản lý sự kiện. Đỏ: vượt; vàng: từ 80%.
+              </p>
+            </section>
+          </div>
+
+          <Section title="Theo sự kiện" subtitle="Dự toán so với thực chi, cùng số đã thu của từng sự kiện (VND).">
+            {eventRows.length === 0 ? (
               <p className="py-4 text-sm text-[#71717A]">
-                Chưa có giao dịch nào gắn sự kiện. Khi thêm giao dịch, chọn &ldquo;Sự kiện liên quan&rdquo; để theo dõi ở đây.
+                Chưa có sự kiện nào có dự toán hoặc giao dịch. Ghi thu chi ngay trong trang Quản lý sự kiện, hoặc chọn
+                &ldquo;Sự kiện liên quan&rdquo; khi thêm giao dịch.
               </p>
             ) : (
               <div className="relative overflow-x-auto">
-                <table className="w-full min-w-[640px] text-left text-sm tabular-nums">
+                <table className="w-full min-w-[760px] text-left text-sm tabular-nums">
                   <thead className="border-b border-slate-200 text-xs text-slate-500">
                     <tr>
                       <th scope="col" className="py-2 pr-4 font-semibold">Sự kiện</th>
-                      <th scope="col" className="px-4 py-2 text-right font-semibold">Thu</th>
-                      <th scope="col" className="px-4 py-2 text-right font-semibold">Chi</th>
-                      <th scope="col" className="px-4 py-2 text-right font-semibold">Chênh lệch</th>
+                      <th scope="col" className="px-4 py-2 text-right font-semibold">Dự toán</th>
+                      <th scope="col" className="w-56 px-4 py-2 font-semibold">Đã chi (% dự toán)</th>
+                      <th scope="col" className="px-4 py-2 text-right font-semibold">Đã thu</th>
+                      <th scope="col" className="px-4 py-2 text-right font-semibold">Thu − chi</th>
                       <th scope="col" className="py-2 pl-4"><span className="sr-only">Thao tác</span></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {byEvent.map((row) => (
-                      <tr key={row.eventId}>
-                        <td className="py-2.5 pr-4 font-medium text-[#18181B]">
-                          {row.title}
-                          <span className="ml-2 text-xs font-normal text-slate-500">{row.count} giao dịch</span>
-                        </td>
-                        <td className="px-4 py-2.5 text-right text-emerald-700">{money.format(row.income)}</td>
-                        <td className="px-4 py-2.5 text-right text-[#BE123C]">{money.format(row.expense)}</td>
-                        <td className={`px-4 py-2.5 text-right font-semibold ${row.net < 0 ? "text-[#BE123C]" : "text-emerald-700"}`}>
-                          {row.net < 0 ? "−" : "+"}
-                          {money.format(Math.abs(row.net))}
-                        </td>
-                        <td className="py-2.5 pl-4 text-right">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setFilters({ ...EMPTY_FILTERS, eventId: row.eventId });
-                              setPage(1);
-                              document.getElementById("finance-transactions")?.scrollIntoView({ behavior: "smooth" });
-                            }}
-                            className="whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium text-[#BE123C] hover:bg-rose-50"
-                          >
-                            Xem giao dịch
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {eventRows.map((row) => {
+                      const tone = BUDGET_TONE[row.usage.tone];
+                      const pct = Math.round((row.usage.ratio ?? 0) * 100);
+                      return (
+                        <tr key={row.eventId}>
+                          <td className="min-w-[200px] py-3 pr-4">
+                            <span className="font-medium text-[#18181B]">{row.title}</span>
+                            <span className="block text-xs text-slate-500">{row.count ? `${row.count} giao dịch` : "Chưa ghi khoản nào"}</span>
+                          </td>
+                          <td className="px-4 py-3 text-right text-slate-700">{row.budget ? money.format(row.budget) : "—"}</td>
+                          {row.count === 0 ? (
+                            <td colSpan={3} className="px-4 py-3 text-xs text-slate-500">
+                              Chưa có khoản thu chi nào. Dự toán còn nguyên.
+                            </td>
+                          ) : (
+                          <>
+                          <td className="px-4 py-3">
+                            <div className="flex items-baseline justify-between gap-2">
+                              <span className="font-semibold text-[#BE123C]">{money.format(row.expense)}</span>
+                              <span className={`whitespace-nowrap text-xs font-medium ${tone.text}`}>
+                                {row.usage.ratio === null ? "Chưa có dự toán" : `${pct}%${tone.status ? ` · ${tone.status}` : ""}`}
+                              </span>
+                            </div>
+                            {row.usage.ratio !== null ? (
+                              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100" aria-hidden>
+                                <div className={`h-full rounded-full ${tone.bar}`} style={{ width: `${Math.min(100, pct)}%` }} />
+                              </div>
+                            ) : null}
+                          </td>
+                          <td className="px-4 py-3 text-right text-emerald-700">{money.format(row.income)}</td>
+                          <td className={`px-4 py-3 text-right font-semibold ${row.net < 0 ? "text-[#BE123C]" : "text-emerald-700"}`}>
+                            {signed(row.net)}
+                          </td>
+                          </>
+                          )}
+                          <td className="py-3 pl-4 text-right">
+                            {row.count ? (
+                              <button
+                                type="button"
+                                onClick={() => showEvent(row.eventId)}
+                                className="whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium text-[#BE123C] hover:bg-rose-50"
+                              >
+                                Xem giao dịch
+                              </button>
+                            ) : null}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -521,7 +504,7 @@ Số dư quỹ sẽ được tính lại và không thể hoàn tác.`,
                                   <td className="max-w-xs px-4 py-3 text-slate-900">{item.description}</td>
                                   <td className="px-4 py-3 text-slate-600">{item.category || "—"}</td>
                                   <td className="px-4 py-3 text-slate-600">{item.eventTitle || "—"}</td>
-                                  <td className={`whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums ${item.type === "INCOME" ? "text-emerald-700" : "text-[#BE123C]"}`}>
+                                  <td className={`whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums ${meta.text}`}>
                                     {meta.sign}
                                     {money.format(Number(item.amount))}
                                   </td>

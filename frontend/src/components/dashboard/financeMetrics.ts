@@ -77,3 +77,47 @@ export function summarizeByEvent(items: FilterableTransaction[]) {
     .map((row) => ({ ...row, net: row.income - row.expense }))
     .sort((a, b) => b.expense - a.expense || b.income - a.income);
 }
+
+export type BudgetTone = "none" | "ok" | "warn" | "over";
+
+/** Mức dùng dự toán: ≥80% là cảnh báo, >100% là vượt; không có dự toán thì "none". */
+export function budgetUsage(spent: number, budget: number) {
+  if (!(budget > 0)) return { ratio: null, remaining: null, tone: "none" as BudgetTone };
+  const ratio = spent / budget;
+  const tone: BudgetTone = ratio > 1 ? "over" : ratio >= 0.8 ? "warn" : "ok";
+  return { ratio, remaining: budget - spent, tone };
+}
+
+const TONE_ORDER: Record<BudgetTone, number> = { over: 0, warn: 1, ok: 2, none: 3 };
+
+/**
+ * Mỗi sự kiện có dự toán hoặc có giao dịch: dự toán, đã thu, đã chi, mức dùng dự toán.
+ * Vượt dự toán lên đầu, rồi gần vượt, rồi chi nhiều nhất.
+ */
+export function eventBudgetRows(
+  items: FilterableTransaction[],
+  events: { id: string; title: string; budget: number | string | null }[],
+) {
+  const totals = new Map(summarizeByEvent(items).map((row) => [row.eventId, row]));
+  const eventById = new Map(events.map((event) => [event.id, event]));
+  const ids = new Set([...totals.keys(), ...events.filter((event) => Number(event.budget) > 0).map((event) => event.id)]);
+  return [...ids]
+    .map((eventId) => {
+      const event = eventById.get(eventId);
+      const total = totals.get(eventId);
+      const budget = Number(event?.budget) || 0;
+      const income = total?.income ?? 0;
+      const expense = total?.expense ?? 0;
+      return {
+        eventId,
+        title: event?.title ?? total?.title ?? "Sự kiện không tên",
+        budget,
+        income,
+        expense,
+        net: income - expense,
+        count: total?.count ?? 0,
+        usage: budgetUsage(expense, budget),
+      };
+    })
+    .sort((a, b) => TONE_ORDER[a.usage.tone] - TONE_ORDER[b.usage.tone] || b.expense - a.expense);
+}

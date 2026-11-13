@@ -17,6 +17,7 @@ import {
   MapPin,
   Pencil,
   Plus,
+  Receipt,
   Search,
   Sparkles,
   Table as TableIcon,
@@ -25,15 +26,21 @@ import {
 } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { EventFinanceDialog } from "@/components/dashboard/EventFinanceDialog";
+import { eventBudgetRows } from "@/components/dashboard/financeMetrics";
+import { BUDGET_TONE } from "@/components/dashboard/TransactionForm";
 import { ActionButton } from "@/components/ui/Dashboard/ActionButton";
+import { useUserContext } from "@/context/userContext";
 import { PageFrame } from "@/components/ui/Dashboard/PageFrame";
 import { Section } from "@/components/ui/Dashboard/Section";
 import {
   ClubEvent,
+  FinanceTransaction,
   SaveEventInput,
   createEvent,
   deleteEvent,
   fetchEvents,
+  fetchTransactions,
   updateEvent,
 } from "@/lib/api";
 
@@ -202,6 +209,50 @@ export function EventsPage() {
   // Input helper for new URL
   const [newUrlInput, setNewUrlInput] = useState("");
   const [urlError, setUrlError] = useState("");
+
+  // Thu chi sự kiện = giao dịch Tài chính gắn sự kiện; lỗi tải chỉ ẩn phần thực chi, không chặn trang.
+  const { user } = useUserContext();
+  const [transactions, setTransactions] = useState<FinanceTransaction[]>([]);
+  const [financeError, setFinanceError] = useState("");
+  const [financeEvent, setFinanceEvent] = useState<ClubEvent | null>(null);
+  const budgetById = useMemo(
+    () => new Map(eventBudgetRows(transactions, events).map((row) => [row.eventId, row])),
+    [transactions, events],
+  );
+  const categories = useMemo(
+    () => [...new Set(transactions.map((tx) => tx.category?.trim()).filter((c): c is string => !!c))].sort(),
+    [transactions],
+  );
+
+  useEffect(() => {
+    fetchTransactions()
+      .then(setTransactions)
+      .catch((loadError: Error) => setFinanceError(loadError.message || "Không thể tải thu chi sự kiện."));
+  }, []);
+
+  function spentLine(item: ClubEvent, compact = false) {
+    if (financeError) return null;
+    const row = budgetById.get(item.id);
+    if (!row || (!row.expense && !row.income)) {
+      return <span className="block text-xs font-normal text-slate-500">Chưa ghi thu chi</span>;
+    }
+    const tone = BUDGET_TONE[row.usage.tone];
+    const pct = Math.round((row.usage.ratio ?? 0) * 100);
+    return (
+      <span className="block font-normal">
+        <span className={`block text-xs ${tone.text}`}>
+          Đã chi {money.format(row.expense)}
+          {row.usage.ratio !== null ? ` · ${pct}%` : ""}
+        </span>
+        {!compact && row.income ? <span className="block text-xs text-emerald-700">Đã thu {money.format(row.income)}</span> : null}
+        {row.usage.ratio !== null ? (
+          <span className="mt-1 block h-1.5 w-28 overflow-hidden rounded-full bg-slate-100" aria-hidden>
+            <span className={`block h-full rounded-full ${tone.bar}`} style={{ width: `${Math.min(100, pct)}%` }} />
+          </span>
+        ) : null}
+      </span>
+    );
+  }
 
   useEffect(() => {
     fetchEvents()
@@ -802,6 +853,12 @@ export function EventsPage() {
           </div>
         </div>
 
+        {financeError ? (
+          <p role="alert" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
+            Không tải được thu chi của sự kiện ({financeError}). Cột &ldquo;Thực chi&rdquo; tạm ẩn.
+          </p>
+        ) : null}
+
         {/* Content list */}
         {loading ? (
           <div className="py-16 text-center">
@@ -836,7 +893,7 @@ export function EventsPage() {
                   <th className="px-4 py-3.5 font-semibold">Tên sự kiện & Mô tả</th>
                   <th className="px-4 py-3.5 font-semibold">Thời gian & Địa điểm</th>
                   <th className="px-4 py-3.5 font-semibold">Trạng thái</th>
-                  <th className="px-4 py-3.5 font-semibold">Ngân sách</th>
+                  <th className="px-4 py-3.5 font-semibold">Dự toán / Thực chi</th>
                   <th className="px-4 py-3.5 font-semibold">Tài liệu & Liên kết</th>
                   <th className="px-4 py-3.5 font-semibold text-right">Thao tác</th>
                 </tr>
@@ -847,7 +904,7 @@ export function EventsPage() {
 
                   return (
                     <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="max-w-xs px-4 py-4">
+                      <td className="min-w-[220px] max-w-xs px-4 py-4">
                         <p className="font-semibold text-slate-900">{item.title}</p>
                         {item.description ? (
                           <p className="mt-1 line-clamp-2 text-xs text-slate-500 leading-relaxed">
@@ -876,7 +933,8 @@ export function EventsPage() {
                         </span>
                       </td>
                       <td className="whitespace-nowrap px-4 py-4 font-semibold text-slate-800">
-                        {money.format(Number(item.budget))}
+                        {Number(item.budget) ? money.format(Number(item.budget)) : <span className="font-normal text-slate-500">Chưa đặt dự toán</span>}
+                        {spentLine(item)}
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex flex-wrap items-center gap-1.5 max-w-xs">
@@ -906,10 +964,19 @@ export function EventsPage() {
                         <div className="inline-flex items-center gap-2">
                           <button
                             type="button"
-                            onClick={() => openEdit(item)}
+                            onClick={() => setFinanceEvent(item)}
                             className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-2xs transition hover:bg-slate-50 hover:text-[#E11D48] hover:border-[#E11D48]/30"
                           >
-                            <Pencil className="h-3.5 w-3.5" /> Sửa
+                            <Receipt className="h-3.5 w-3.5" /> Thu chi
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => openEdit(item)}
+                            aria-label={`Sửa sự kiện ${item.title}`}
+                            title="Sửa sự kiện"
+                            className="rounded-full border border-slate-200 bg-white p-1.5 text-slate-500 shadow-2xs transition hover:bg-slate-50 hover:text-[#E11D48] hover:border-[#E11D48]/30"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
                           </button>
                           <button
                             type="button"
@@ -946,8 +1013,9 @@ export function EventsPage() {
                         <span className={`h-1.5 w-1.5 rounded-full ${statusInfo.dotClass}`} />
                         {statusInfo.label}
                       </span>
-                      <span className="text-xs font-bold text-slate-900">
-                        {money.format(Number(item.budget))}
+                      <span className="text-right text-xs font-bold text-slate-900">
+                        {Number(item.budget) ? money.format(Number(item.budget)) : "Chưa đặt dự toán"}
+                        {spentLine(item, true)}
                       </span>
                     </div>
 
@@ -1006,6 +1074,13 @@ export function EventsPage() {
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
+                    <ActionButton
+                      variant="outline"
+                      icon={<Receipt className="h-3.5 w-3.5" />}
+                      onClick={() => setFinanceEvent(item)}
+                    >
+                      Thu chi
+                    </ActionButton>
                     <ActionButton
                       variant="outline"
                       icon={<Pencil className="h-3.5 w-3.5" />}
@@ -1358,6 +1433,16 @@ export function EventsPage() {
           </div>
         </div>
       ) : null}
+
+      <EventFinanceDialog
+        event={financeEvent}
+        transactions={transactions}
+        categories={categories}
+        canOpenFinance={Boolean(user?.modules?.includes("FINANCE"))}
+        onClose={() => setFinanceEvent(null)}
+        onAdded={(saved) => setTransactions((current) => [saved, ...current])}
+        onDeleted={(id) => setTransactions((current) => current.filter((tx) => tx.id !== id))}
+      />
     </PageFrame>
   );
 }
