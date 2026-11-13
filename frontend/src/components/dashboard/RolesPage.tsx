@@ -58,7 +58,6 @@ export function RolesPage() {
 
   return (
     <PageFrame
-      eyebrow="Toàn câu lạc bộ"
       title="Phân quyền"
       description="Quyền truy cập được xác định bởi vai trò và ban của mỗi thành viên. Trang này chỉ để xem; đổi vai trò hoặc ban ở trang Quản lý thành viên."
       action={

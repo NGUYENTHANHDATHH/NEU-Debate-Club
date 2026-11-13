@@ -171,7 +171,6 @@ export function HealthDashboardPage() {
 
   return (
     <PageFrame
-      eyebrow="BCN"
       title="Health Dashboard"
       description="Các chỉ số thật về thành viên, tiến độ task, ấn phẩm và sự kiện của toàn câu lạc bộ."
       action={

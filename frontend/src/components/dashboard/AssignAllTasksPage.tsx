@@ -479,7 +479,6 @@ export function AssignAllTasksPage() {
 
   return (
     <PageFrame
-      eyebrow="BCN · ĐIỀU HÀNH & PHÂN PHỐI NHIỆM VỤ"
       title="Giao nhiệm vụ cho các Ban"
       description="Dành riêng cho Ban Chủ Nhiệm (BCN) phân công chỉ đạo trực tiếp xuống từng ban chuyên môn. Nhiệm vụ sẽ được gửi trực tiếp đến Trưởng ban phụ trách để điều phối nội bộ, không giao lẻ từng thành viên."
       action={

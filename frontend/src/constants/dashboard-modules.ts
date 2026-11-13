@@ -1,3 +1,24 @@
+import {
+  Bell,
+  Briefcase,
+  CalendarDays,
+  ChartColumn,
+  ClipboardList,
+  HeartPulse,
+  History,
+  LayoutDashboard,
+  Library,
+  Link2,
+  ListTodo,
+  Megaphone,
+  Network,
+  PanelsTopLeft,
+  ScrollText,
+  ShieldCheck,
+  Users,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
 import { ROUTES } from "@/constants/routes";
 
 export const ADMIN_MODULE_KEYS = [
@@ -46,50 +67,78 @@ export const MODULE_DEPARTMENTS: Record<AdminModuleKey, readonly string[]> = {
 type DashboardNavItem = {
   name: string;
   path: string;
+  icon: LucideIcon;
   module?: AdminModuleKey;
 };
 
+// Nhóm theo việc cần làm, không theo vai trò; mục không có quyền sẽ bị ẩn.
 export const DASHBOARD_NAV_GROUPS: { title: string; items: DashboardNavItem[] }[] = [
   {
-    title: "Cá nhân",
+    title: "Tổng quan",
     items: [
-      { name: "Todo-list", path: ROUTES.todoList },
-      { name: "Đọc thông báo", path: ROUTES.readNotification },
+      { name: "Tổng quan", path: ROUTES.dashboard, icon: LayoutDashboard },
+      { name: "Health dashboard", path: ROUTES.healthDashboard, icon: HeartPulse, module: "HEALTH_DASHBOARD" },
+      { name: "Biểu đồ", path: ROUTES.charts, icon: ChartColumn, module: "ANALYTICS" },
     ],
   },
   {
-    title: "Nghiệp vụ ban",
+    title: "Công việc",
     items: [
-      { name: "Giao task", path: ROUTES.assignTask, module: "TASK_ASSIGNMENT" },
-      { name: "Tạo thông báo", path: ROUTES.createNotification, module: "NOTIFICATION_MANAGEMENT" },
-      { name: "Nghiệp vụ ban", path: ROUTES.departmentOperations, module: "DEPARTMENT_OPERATIONS" },
-      { name: "Biểu đồ", path: ROUTES.charts, module: "ANALYTICS" },
-      { name: "Link ấn phẩm", path: ROUTES.publications, module: "PUBLICATIONS" },
-      { name: "Thư viện", path: ROUTES.library, module: "ASSET_LIBRARY" },
-      { name: "CMS", path: ROUTES.cms, module: "LANDING_CMS" },
-      { name: "Tài chính", path: ROUTES.finance, module: "FINANCE" },
-      { name: "Quản lý sự kiện", path: ROUTES.events, module: "EVENT_MANAGEMENT" },
-      { name: "Quản lý thành viên", path: ROUTES.members, module: "MEMBERSHIP" },
-      { name: "Nhiệm kỳ", path: ROUTES.tenure, module: "TENURE" },
+      { name: "Todo-list", path: ROUTES.todoList, icon: ListTodo },
+      { name: "Giao task", path: ROUTES.assignTask, icon: ClipboardList, module: "TASK_ASSIGNMENT" },
+      { name: "Giao task mọi ban", path: ROUTES.assignAllTasks, icon: Network, module: "CROSS_DEPARTMENT_TASKS" },
+      { name: "Nghiệp vụ ban", path: ROUTES.departmentOperations, icon: Briefcase, module: "DEPARTMENT_OPERATIONS" },
     ],
   },
   {
-    title: "Toàn câu lạc bộ",
+    title: "Thông báo & truyền thông",
     items: [
-      { name: "Phân quyền", path: ROUTES.roles, module: "MEMBERSHIP" },
-      { name: "Giao task mọi ban", path: ROUTES.assignAllTasks, module: "CROSS_DEPARTMENT_TASKS" },
-      { name: "Activity Log", path: ROUTES.activityLog, module: "ACTIVITY_LOG" },
-      { name: "Health Dashboard", path: ROUTES.healthDashboard, module: "HEALTH_DASHBOARD" },
+      { name: "Đọc thông báo", path: ROUTES.readNotification, icon: Bell },
+      { name: "Tạo thông báo", path: ROUTES.createNotification, icon: Megaphone, module: "NOTIFICATION_MANAGEMENT" },
+      { name: "Link ấn phẩm", path: ROUTES.publications, icon: Link2, module: "PUBLICATIONS" },
+      { name: "Thư viện", path: ROUTES.library, icon: Library, module: "ASSET_LIBRARY" },
+      { name: "CMS", path: ROUTES.cms, icon: PanelsTopLeft, module: "LANDING_CMS" },
+    ],
+  },
+  {
+    title: "Tài chính & sự kiện",
+    items: [
+      { name: "Tài chính", path: ROUTES.finance, icon: Wallet, module: "FINANCE" },
+      { name: "Quản lý sự kiện", path: ROUTES.events, icon: CalendarDays, module: "EVENT_MANAGEMENT" },
+    ],
+  },
+  {
+    title: "Thành viên & hệ thống",
+    items: [
+      { name: "Thành viên", path: ROUTES.members, icon: Users, module: "MEMBERSHIP" },
+      { name: "Nhiệm kỳ", path: ROUTES.tenure, icon: History, module: "TENURE" },
+      { name: "Phân quyền", path: ROUTES.roles, icon: ShieldCheck, module: "MEMBERSHIP" },
+      { name: "Activity log", path: ROUTES.activityLog, icon: ScrollText, module: "ACTIVITY_LOG" },
     ],
   },
 ];
 
-const personalPaths = new Set([
-  ...DASHBOARD_NAV_GROUPS[0].items.map((item) => item.path),
-  ROUTES.tasks,
-]);
+/** Thao tác thường dùng: hiện ở trang Tổng quan và bảng lệnh Ctrl K. `?new=1` mở sẵn form. */
+export const DASHBOARD_QUICK_ACTIONS: DashboardNavItem[] = [
+  { name: "Tạo thông báo", path: ROUTES.createNotification, icon: Megaphone, module: "NOTIFICATION_MANAGEMENT" },
+  { name: "Giao task", path: ROUTES.assignTask, icon: ClipboardList, module: "TASK_ASSIGNMENT" },
+  { name: "Thêm giao dịch", path: `${ROUTES.finance}?new=1`, icon: Wallet, module: "FINANCE" },
+  { name: "Thêm ấn phẩm", path: `${ROUTES.publications}?new=1`, icon: Link2, module: "PUBLICATIONS" },
+];
+
+export function visibleQuickActions(modules: readonly string[] = []) {
+  return DASHBOARD_QUICK_ACTIONS.filter((item) => item.module && modules.includes(item.module));
+}
+
+/** Mục sidebar đang mở: khớp chính xác, hoặc là trang con (trừ "Tổng quan" vốn là tiền tố của mọi trang). */
+export function isActiveNavPath(pathname: string, itemPath: string) {
+  return pathname === itemPath || (itemPath !== ROUTES.dashboard && pathname.startsWith(`${itemPath}/`));
+}
+
+const allNavItems = DASHBOARD_NAV_GROUPS.flatMap((group) => group.items);
+const personalPaths = new Set([...allNavItems.filter((item) => !item.module).map((item) => item.path), ROUTES.tasks]);
 const moduleByPath = new Map(
-  DASHBOARD_NAV_GROUPS.flatMap((group) => group.items)
+  allNavItems
     .filter((item): item is DashboardNavItem & { module: AdminModuleKey } => Boolean(item.module))
     .map((item) => [item.path, item.module]),
 );

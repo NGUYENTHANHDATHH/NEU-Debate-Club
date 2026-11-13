@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { CalendarDays, ExternalLink, Heart, Megaphone, MessageCircle, Plus, RefreshCw, Search, Share2, Trash2, Users, X } from "lucide-react";
 import { toast } from "sonner";
+import { useSearchParams } from "next/navigation";
 import { ActionButton } from "@/components/ui/Dashboard/ActionButton";
 import { PageFrame } from "@/components/ui/Dashboard/PageFrame";
 import { Section } from "@/components/ui/Dashboard/Section";
@@ -77,7 +78,9 @@ export function PublicationsPage() {
   const [platform, setPlatform] = useState<PublicationPlatform | "ALL">("ALL");
   const [department, setDepartment] = useState("ALL");
   const [query, setQuery] = useState("");
-  const [open, setOpen] = useState(false);
+  const searchParams = useSearchParams();
+  // ?new=1 (từ thao tác nhanh) mở sẵn form.
+  const [open, setOpen] = useState(() => searchParams.has("new"));
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [formError, setFormError] = useState("");
@@ -186,7 +189,6 @@ export function PublicationsPage() {
 
   return (
     <PageFrame
-      eyebrow="Truyền thông"
       title="Link ấn phẩm"
       description="Các bài đăng của CLB trên mạng xã hội cùng chỉ số tiếp cận và tương tác."
       action={

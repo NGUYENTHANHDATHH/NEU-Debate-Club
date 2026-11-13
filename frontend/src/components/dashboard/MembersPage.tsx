@@ -138,7 +138,6 @@ export function MembersPage() {
 
   return (
     <PageFrame
-      eyebrow="BCN / NHÂN SỰ"
       title="Quản lý thành viên"
       description="Danh sách thành viên và trạng thái tài khoản nội bộ."
       action={

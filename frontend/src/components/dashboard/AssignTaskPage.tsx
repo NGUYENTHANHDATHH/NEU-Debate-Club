@@ -122,7 +122,6 @@ export function AssignTaskPage() {
 
   return (
     <PageFrame
-      eyebrow={`${departmentNames[department] ?? "Ban"} · Trưởng ban`}
       title="Giao task cho thành viên"
       description="Chỉ hiển thị thành viên đang hoạt động trong ban của bạn. Dữ liệu được lưu trực tiếp vào PostgreSQL."
     >

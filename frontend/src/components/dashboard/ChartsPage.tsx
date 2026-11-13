@@ -69,7 +69,6 @@ export function ChartsPage() {
 
   return (
     <PageFrame
-      eyebrow={isBcn ? "BCN" : "Trưởng ban"}
       title="Biểu đồ"
       description={
         isBcn
@@ -106,27 +105,29 @@ export function ChartsPage() {
           <StatGrid
             items={[
               { label: "Tổng task", value: String(counts.total) },
-              { label: "Đã hoàn thành", value: String(counts.DONE), tone: "emerald" },
-              { label: "Đang quá hạn", value: String(overdue), tone: overdue ? "rose" : "slate" },
+              { label: "Đã hoàn thành", value: String(counts.DONE), note: `${percent(counts.DONE, counts.total)}% tổng task` },
+              { label: "Đang quá hạn", value: String(overdue), note: "Chưa xong và đã qua deadline", tone: overdue ? "rose" : undefined },
               {
                 label: "Hoàn thành đúng hạn",
                 value: onTime.rate === null ? "—" : `${onTime.rate}%`,
                 note: `${onTime.onTime}/${onTime.total} task đã xong có deadline`,
-                tone: "amber",
               },
             ]}
           />
           <div className="grid gap-6 xl:grid-cols-2">
-            <Section title="Hoàn thành task theo tuần" subtitle="8 tuần gần nhất, tuần bắt đầu từ thứ Hai.">
+            <Section
+              title="Hoàn thành task theo tuần"
+              subtitle={`Số task hoàn thành mỗi tuần, ${weeks.length} tuần gần nhất (${shortDate.format(weeks[0].start)} – nay). Nhãn dưới cột là ngày thứ Hai đầu tuần.`}
+            >
               <WeeklyBars weeks={weeks} />
             </Section>
-            <Section title="Phân bổ task theo trạng thái">
+            <Section title="Phân bổ task theo trạng thái" subtitle="Tất cả task hiện có, đơn vị: task.">
               <StatusDonut counts={counts} />
             </Section>
           </div>
           <Section
             title={isBcn ? "Task theo ban" : "Task theo người được giao"}
-            subtitle="Mỗi thanh chia theo trạng thái, độ dài tỉ lệ với số task."
+            subtitle="Tất cả task hiện có. Mỗi thanh chia theo trạng thái; số bên phải là tổng task."
           >
             <StackedBars rows={groups} keyLabel={isBcn ? "Ban" : "Người được giao"} />
           </Section>
@@ -138,6 +139,13 @@ export function ChartsPage() {
 
 function WeeklyBars({ weeks }: { weeks: { start: number; count: number }[] }) {
   const max = Math.max(1, ...weeks.map((week) => week.count));
+  if (weeks.every((week) => week.count === 0)) {
+    return (
+      <p className="rounded-3xl border border-dashed border-slate-200 p-6 text-center text-sm text-[#71717A]">
+        Chưa có task nào được hoàn thành trong {weeks.length} tuần qua. Cột sẽ hiện khi task chuyển sang &ldquo;Hoàn thành&rdquo;.
+      </p>
+    );
+  }
   return (
     <>
       <div aria-hidden="true" className="flex h-64 items-end gap-3 rounded-3xl border border-slate-200/60 bg-slate-50 p-5">

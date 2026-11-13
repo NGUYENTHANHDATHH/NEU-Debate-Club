@@ -92,7 +92,6 @@ export function ReadNotificationPage() {
 
   return (
     <PageFrame
-      eyebrow="Thành viên"
       title="Đọc thông báo"
       description="Thông báo gửi tới bạn, bao gồm thông báo giao nhiệm vụ tự động và thông báo từ BCN, trưởng ban."
       action={
@@ -247,6 +246,7 @@ export function CreateNotificationPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [membersError, setMembersError] = useState("");
   const [sending, setSending] = useState(false);
+  const [errors, setErrors] = useState<Partial<Record<"title" | "body" | "departments" | "members", string>>>({});
 
   // Trưởng ban không có lựa chọn "Toàn CLB"; mặc định là cả ban của mình.
   const audience: NotificationAudience =
@@ -314,16 +314,15 @@ export function CreateNotificationPage() {
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (!title.trim() || !body.trim()) {
-      toast.error("Vui lòng nhập tiêu đề và nội dung.");
-      return;
-    }
-    if (audience === "DEPARTMENTS" && isBcn && departments.length === 0) {
-      toast.error("Vui lòng chọn ít nhất một ban.");
-      return;
-    }
-    if (audience === "MEMBERS" && memberIds.length === 0) {
-      toast.error("Vui lòng chọn ít nhất một thành viên.");
+    const nextErrors: typeof errors = {};
+    if (!title.trim()) nextErrors.title = "Nhập tiêu đề để người nhận biết thông báo nói về gì.";
+    if (audience === "DEPARTMENTS" && isBcn && departments.length === 0) nextErrors.departments = "Chọn ít nhất một ban.";
+    if (audience === "MEMBERS" && memberIds.length === 0) nextErrors.members = "Chọn ít nhất một thành viên.";
+    if (!body.trim()) nextErrors.body = "Nhập nội dung thông báo.";
+    setErrors(nextErrors);
+    const firstInvalid = Object.keys(nextErrors)[0];
+    if (firstInvalid) {
+      document.getElementById(`notification-${firstInvalid}`)?.focus();
       return;
     }
 
@@ -337,7 +336,7 @@ export function CreateNotificationPage() {
         departments: audience === "DEPARTMENTS" ? (isBcn ? departments : [ownDepartment]) : undefined,
         memberIds: audience === "MEMBERS" ? memberIds : undefined,
       });
-      toast.success(`Đã gửi thông báo tới ${result.recipientCount} người.`);
+      toast.success(`Đã gửi "${title.trim()}" tới ${result.recipientCount} người.`);
       setTitle("");
       setBody("");
       setMemberIds([]);
@@ -352,7 +351,6 @@ export function CreateNotificationPage() {
 
   return (
     <PageFrame
-      eyebrow={isBcn ? "Ban Chủ nhiệm" : "Trưởng ban"}
       title="Tạo thông báo"
       description={
         isBcn
@@ -360,18 +358,29 @@ export function CreateNotificationPage() {
           : "Gửi thông báo tới cả ban hoặc từng thành viên trong ban của bạn."
       }
     >
-      <form onSubmit={submit} className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+      <form onSubmit={submit} noValidate className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         <Section title="Biên soạn" subtitle="Tiêu đề, loại, người nhận và nội dung.">
           <div className="space-y-4">
             <label className="block">
-              <span className="mb-1.5 block text-sm font-medium text-[#18181B]">Tiêu đề</span>
+              <span className="mb-1.5 block text-sm font-medium text-[#18181B]">
+                Tiêu đề <span className="text-rose-600">*</span>
+              </span>
               <input
+                id="notification-title"
                 value={title}
-                onChange={(event) => setTitle(event.target.value)}
+                onChange={(event) => {
+                  setTitle(event.target.value);
+                  setErrors((current) => ({ ...current, title: undefined }));
+                }}
                 maxLength={255}
-                className={inputClass}
-                placeholder="Tiêu đề thông báo..."
+                aria-invalid={Boolean(errors.title)}
+                aria-describedby={errors.title ? "notification-title-error" : undefined}
+                className={`${inputClass} aria-[invalid=true]:border-rose-400`}
+                placeholder="Ví dụ: Họp toàn ban tối thứ Hai"
               />
+              {errors.title ? (
+                <span id="notification-title-error" className="mt-1 block text-xs text-rose-700">{errors.title}</span>
+              ) : null}
             </label>
 
             <div className="grid gap-4 md:grid-cols-2">
@@ -406,15 +415,17 @@ export function CreateNotificationPage() {
             </div>
 
             {audience === "DEPARTMENTS" && isBcn && (
-              <fieldset>
-                <legend className="mb-2 text-sm font-medium text-[#18181B]">Chọn ban</legend>
-                <div className="flex flex-wrap gap-2">
+              <fieldset aria-describedby={errors.departments ? "notification-departments-error" : undefined}>
+                <legend className="mb-2 text-sm font-medium text-[#18181B]">
+                  Chọn ban <span className="text-rose-600">*</span>
+                </legend>
+                <div id="notification-departments" tabIndex={-1} className="flex flex-wrap gap-2 outline-none">
                   {Object.entries(DEPARTMENT_NAMES).map(([code, name]) => {
                     const checked = departments.includes(code);
                     return (
                       <label
                         key={code}
-                        className={`cursor-pointer rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                        className={`cursor-pointer rounded-full border px-3 py-1.5 text-sm transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-rose-300 ${
                           checked
                             ? "border-rose-200 bg-rose-50 text-[#E11D48]"
                             : "border-slate-200 bg-white text-[#71717A] hover:bg-slate-50"
@@ -424,22 +435,36 @@ export function CreateNotificationPage() {
                           type="checkbox"
                           className="sr-only"
                           checked={checked}
-                          onChange={() => setDepartments((current) => toggle(current, code))}
+                          onChange={() => {
+                            setDepartments((current) => toggle(current, code));
+                            setErrors((current) => ({ ...current, departments: undefined }));
+                          }}
                         />
                         {name}
                       </label>
                     );
                   })}
                 </div>
+                {errors.departments ? (
+                  <p id="notification-departments-error" className="mt-1.5 text-xs text-rose-700">{errors.departments}</p>
+                ) : null}
               </fieldset>
             )}
 
             {audience === "MEMBERS" && (
-              <fieldset className="rounded-2xl border border-slate-200 p-4">
+              <fieldset
+                className={`rounded-2xl border p-4 ${errors.members ? "border-rose-300" : "border-slate-200"}`}
+                aria-describedby={errors.members ? "notification-members-error" : undefined}
+              >
                 <legend className="px-1 text-sm font-medium text-[#18181B]">
                   Chọn thành viên ({memberIds.length} đã chọn)
                 </legend>
+                {errors.members ? (
+                  <p id="notification-members-error" className="mb-2 text-xs text-rose-700">{errors.members}</p>
+                ) : null}
                 <input
+                  id="notification-members"
+                  aria-label="Tìm thành viên"
                   value={memberQuery}
                   onChange={(event) => setMemberQuery(event.target.value)}
                   className={`${inputClass} py-2`}
@@ -458,7 +483,10 @@ export function CreateNotificationPage() {
                       <input
                         type="checkbox"
                         checked={memberIds.includes(member.id)}
-                        onChange={() => setMemberIds((current) => toggle(current, member.id))}
+                        onChange={() => {
+                          setMemberIds((current) => toggle(current, member.id));
+                          setErrors((current) => ({ ...current, members: undefined }));
+                        }}
                         className="h-4 w-4 accent-[#E11D48]"
                       />
                       <span className="min-w-0 flex-1 truncate text-[#18181B]">{member.fullName}</span>
@@ -474,15 +502,26 @@ export function CreateNotificationPage() {
             )}
 
             <label className="block">
-              <span className="mb-1.5 block text-sm font-medium text-[#18181B]">Nội dung</span>
+              <span className="mb-1.5 block text-sm font-medium text-[#18181B]">
+                Nội dung <span className="text-rose-600">*</span>
+              </span>
               <textarea
+                id="notification-body"
                 value={body}
-                onChange={(event) => setBody(event.target.value)}
+                onChange={(event) => {
+                  setBody(event.target.value);
+                  setErrors((current) => ({ ...current, body: undefined }));
+                }}
                 maxLength={5000}
-                className={`${inputClass} min-h-64 rounded-[1.5rem] p-4`}
+                aria-invalid={Boolean(errors.body)}
+                aria-describedby={errors.body ? "notification-body-error" : undefined}
+                className={`${inputClass} min-h-64 rounded-[1.5rem] p-4 aria-[invalid=true]:border-rose-400`}
                 placeholder="Nội dung thông báo..."
               />
-              <span className="mt-1 block text-right text-xs text-[#A1A1AA]">{body.length}/5000</span>
+              <span className="mt-1 flex justify-between gap-3 text-xs">
+                <span id="notification-body-error" className="text-rose-700">{errors.body}</span>
+                <span className="text-[#71717A]">{body.length}/5000</span>
+              </span>
             </label>
 
             <ActionButton type="submit" icon={<Send className="h-4 w-4" />} disabled={sending}>

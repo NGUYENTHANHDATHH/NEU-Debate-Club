@@ -193,7 +193,6 @@ export function TodoListPage() {
 
   return (
     <PageFrame
-      eyebrow="Công việc cá nhân"
       title={`Việc cần làm${user?.name ? ` của ${user.name}` : ""}`}
       description="Task quá hạn và gần deadline được tự động đưa lên đầu để bạn biết việc nào cần xử lý trước."
       action={

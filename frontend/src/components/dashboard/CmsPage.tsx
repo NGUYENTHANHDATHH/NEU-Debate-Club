@@ -376,7 +376,6 @@ export function CmsPage() {
 
   return (
     <PageFrame
-      eyebrow="BCN / TRUYỀN THÔNG"
       title="Landing Page CMS"
       description="Biên tập nội dung landing page theo từng section, lưu nháp và xuất bản."
     >

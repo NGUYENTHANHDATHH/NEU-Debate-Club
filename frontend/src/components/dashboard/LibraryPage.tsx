@@ -124,7 +124,6 @@ export function LibraryPage() {
 
   return (
     <PageFrame
-      eyebrow="Thành viên"
       title="Thư viện"
       description="Tổng hợp link ấn phẩm đã đăng và tài nguyên (Docs, Sheets, Drive...) của các sự kiện."
     >

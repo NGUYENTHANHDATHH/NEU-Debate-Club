@@ -65,7 +65,6 @@ export function DepartmentOperationsPage() {
 
   return (
     <PageFrame
-      eyebrow={isBcn ? "BCN" : "Trưởng ban"}
       title="Nghiệp vụ ban"
       description={`${departmentName}: tổng quan thành viên, task tuần này và tỷ lệ hoàn thành đúng hạn.`}
     >

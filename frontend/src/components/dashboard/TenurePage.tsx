@@ -227,7 +227,6 @@ export function TenurePage() {
 
   return (
     <PageFrame
-      eyebrow="BCN"
       title="Nhiệm kỳ"
       description="Danh sách các nhiệm kỳ của CLB và thành viên tham gia từng nhiệm kỳ."
       action={

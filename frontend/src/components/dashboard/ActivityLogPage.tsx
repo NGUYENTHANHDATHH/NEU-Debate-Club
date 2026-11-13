@@ -1,6 +1,7 @@
 "use client";
 
 import { History, Search, X } from "lucide-react";
+import { localIsoDate } from "@/components/dashboard/PublicationsPage";
 import { useCallback, useEffect, useState } from "react";
 import { ActionButton } from "@/components/ui/Dashboard/ActionButton";
 import { PageFrame } from "@/components/ui/Dashboard/PageFrame";
@@ -31,7 +32,9 @@ const MODULE_LABELS: Record<string, string> = {
   SEASON: "Nhiệm kỳ",
 };
 
-const LOG_LIMIT = 200;
+// Backend trả tối đa 500 bản ghi mới nhất; "Tải thêm" nâng giới hạn theo từng bước.
+const LOG_STEP = 200;
+const LOG_MAX = 500;
 
 const dateTime = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "medium" });
 
@@ -65,12 +68,16 @@ export function ActivityLogPage() {
   const [query, setQuery] = useState("");
   const [moduleFilter, setModuleFilter] = useState("");
   const [actionFilter, setActionFilter] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [limit, setLimit] = useState(LOG_STEP);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (nextLimit: number) => {
     setLoading(true);
     setError("");
     try {
-      setLogs(await fetchActivityLogs(LOG_LIMIT));
+      setLogs(await fetchActivityLogs(nextLimit));
+      setLimit(nextLimit);
     } catch (caught) {
       setError((caught as Error).message);
     } finally {
@@ -79,13 +86,16 @@ export function ActivityLogPage() {
   }, []);
 
   useEffect(() => {
-    void load();
+    void load(LOG_STEP);
   }, [load]);
 
   const needle = query.trim().toLocaleLowerCase("vi");
   const visible = logs.filter((log) => {
     if (moduleFilter && log.entityType?.toUpperCase() !== moduleFilter) return false;
     if (actionFilter && log.action?.toUpperCase() !== actionFilter) return false;
+    const day = localIsoDate(new Date(log.createdAt));
+    if (fromDate && day < fromDate) return false;
+    if (toDate && day > toDate) return false;
     if (!needle) return true;
     return `${log.userName ?? ""} ${log.action} ${log.entityType} ${formatDetails(log.metadata)}`
       .toLocaleLowerCase("vi")
@@ -95,24 +105,32 @@ export function ActivityLogPage() {
   // Offer every known value plus any unknown one that appears in the loaded logs.
   const moduleOptions = [...new Set([...Object.keys(MODULE_LABELS), ...logs.map((log) => log.entityType?.toUpperCase())])].filter(Boolean);
   const actionOptions = [...new Set([...Object.keys(ACTION_LABELS), ...logs.map((log) => log.action?.toUpperCase())])].filter(Boolean);
-  const filtering = Boolean(needle || moduleFilter || actionFilter);
+  const filtering = Boolean(needle || moduleFilter || actionFilter || fromDate || toDate);
+  // Đủ đúng "limit" bản ghi nghĩa là có thể còn bản ghi cũ hơn chưa tải.
+  const mayHaveMore = logs.length === limit && limit < LOG_MAX;
+  const oldest = logs.at(-1);
 
   return (
     <PageFrame
-      eyebrow="BCN"
       title="Nhật ký hoạt động"
-      description={`Các thao tác gần nhất trong hệ thống (tối đa ${LOG_LIMIT} bản ghi mới nhất).`}
+      description="Ai đã làm gì, ở module nào, lúc nào. Mới nhất ở trên cùng."
     >
       <Section
         title="Danh sách log"
-        subtitle={loading || error ? undefined : `${visible.length} / ${logs.length} bản ghi`}
+        subtitle={
+          loading || error
+            ? undefined
+            : `${filtering ? `${visible.length} khớp bộ lọc / ` : ""}${logs.length} bản ghi mới nhất${
+                oldest ? `, từ ${dateTime.format(new Date(oldest.createdAt))}` : ""
+              }`
+        }
         action={
-          <ActionButton variant="outline" onClick={() => void load()} disabled={loading}>
+          <ActionButton variant="outline" onClick={() => void load(limit)} disabled={loading}>
             Tải lại
           </ActionButton>
         }
       >
-        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center">
+        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center">
           <label className="relative flex-1 lg:max-w-md">
             <span className="sr-only">Tìm kiếm</span>
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -149,6 +167,28 @@ export function ActivityLogPage() {
               </option>
             ))}
           </select>
+          <div className="flex items-center gap-2 text-sm text-slate-600">
+            <label className="flex items-center gap-2">
+              Từ
+              <input
+                type="date"
+                value={fromDate}
+                max={toDate || undefined}
+                onChange={(e) => setFromDate(e.target.value)}
+                className={inputClass}
+              />
+            </label>
+            <label className="flex items-center gap-2">
+              đến
+              <input
+                type="date"
+                value={toDate}
+                min={fromDate || undefined}
+                onChange={(e) => setToDate(e.target.value)}
+                className={inputClass}
+              />
+            </label>
+          </div>
           {filtering ? (
             <ActionButton
               variant="ghost"
@@ -157,6 +197,8 @@ export function ActivityLogPage() {
                 setQuery("");
                 setModuleFilter("");
                 setActionFilter("");
+                setFromDate("");
+                setToDate("");
               }}
             >
               Xóa lọc
@@ -164,7 +206,7 @@ export function ActivityLogPage() {
           ) : null}
         </div>
 
-        {loading ? (
+        {loading && logs.length === 0 ? (
           <p role="status" className="py-10 text-center text-sm text-slate-500">
             Đang tải nhật ký...
           </p>
@@ -175,10 +217,14 @@ export function ActivityLogPage() {
         ) : visible.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-200 py-10 text-center text-sm text-slate-500">
             <History className="mx-auto mb-2 h-8 w-8 text-slate-300" />
-            {filtering ? "Không có log nào khớp bộ lọc." : "Chưa có hoạt động nào được ghi nhận."}
+            {filtering
+              ? mayHaveMore
+                ? "Không có log nào khớp bộ lọc trong các bản ghi đã tải. Thử “Tải thêm bản ghi cũ hơn”."
+                : "Không có log nào khớp bộ lọc."
+              : "Chưa có hoạt động nào được ghi nhận. Mọi thao tác thêm, sửa, xóa sẽ tự động xuất hiện ở đây."}
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-[1.5rem] border border-slate-200/60">
+          <div className="relative overflow-x-auto rounded-[1.5rem] border border-slate-200/60">
             <table className="w-full min-w-[860px] divide-y divide-slate-200/60 text-left text-sm">
               <thead className="bg-slate-50/80 text-xs font-semibold uppercase tracking-[0.18em] text-[#94A3B8]">
                 <tr>
@@ -207,6 +253,22 @@ export function ActivityLogPage() {
             </table>
           </div>
         )}
+
+        {!error && logs.length > 0 ? (
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-sm text-slate-500">
+            {mayHaveMore ? (
+              <ActionButton variant="outline" onClick={() => void load(Math.min(limit + LOG_STEP, LOG_MAX))} disabled={loading}>
+                {loading ? "Đang tải…" : "Tải thêm bản ghi cũ hơn"}
+              </ActionButton>
+            ) : (
+              <span>
+                {logs.length >= LOG_MAX
+                  ? `Đã tải tối đa ${LOG_MAX} bản ghi mới nhất mà hệ thống cho xem.`
+                  : "Đã hiển thị toàn bộ nhật ký."}
+              </span>
+            )}
+          </div>
+        ) : null}
       </Section>
     </PageFrame>
   );

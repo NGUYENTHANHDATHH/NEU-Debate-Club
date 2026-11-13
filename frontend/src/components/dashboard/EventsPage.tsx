@@ -476,7 +476,6 @@ export function EventsPage() {
 
   return (
     <PageFrame
-      eyebrow="BCN / BAN SỰ KIỆN"
       title="Quản lý sự kiện"
       description="Lập kế hoạch, theo dõi tiến độ ngân sách, lưu trữ tài nguyên và thống kê toàn bộ các sự kiện của câu lạc bộ."
       action={

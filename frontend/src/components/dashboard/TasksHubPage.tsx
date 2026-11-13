@@ -140,7 +140,6 @@ export function TasksHubPage() {
 
   return (
     <PageFrame
-      eyebrow="Quản lý công việc"
       title="Trung tâm task"
       description={`Số liệu task của ${scope}, các luồng thao tác và những task sắp đến hạn.`}
       action={
