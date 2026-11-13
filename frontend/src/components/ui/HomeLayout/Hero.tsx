@@ -4,6 +4,7 @@ import clubLogo from "@/../public/logo.png";
 import Image from "next/image";
 import { useLanguage } from "@/provider/LanguageProvider";
 import { fetchLandingSection } from "@/lib/api";
+import { InstallAppButton } from "./InstallAppButton";
 
 type HeroContent = { headline: string; subtext: string };
 
@@ -77,6 +78,7 @@ export const Hero = () => {
           >
             {content?.subtext ?? t("history")}
           </p>
+          <InstallAppButton />
         </motion.div>
       </div>
 

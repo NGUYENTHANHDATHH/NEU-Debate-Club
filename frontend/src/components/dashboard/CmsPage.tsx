@@ -34,6 +34,7 @@ const sectionLabels: Record<string, string> = {
   comments: "Comments",
   achievements: "Achievements",
   projects: "Projects",
+  announcement: "Sự kiện (nút thông báo)",
 };
 
 type ContentItem = Record<string, unknown>;
@@ -73,12 +74,14 @@ function Field({
   onChange,
   multiline = false,
   className = "",
+  type = "text",
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   multiline?: boolean;
   className?: string;
+  type?: string;
 }) {
   return (
     <label
@@ -93,6 +96,7 @@ function Field({
         />
       ) : (
         <input
+          type={type}
           value={value}
           onChange={(event) => onChange(event.target.value)}
           className={inputClassName()}
@@ -510,6 +514,57 @@ export function CmsPage() {
                     onChange={(value) => updateContent("title2", value)}
                   />
                 )}
+              </div>
+            ) : selected === "announcement" ? (
+              <div className="grid gap-3 md:grid-cols-2">
+                <Field
+                  label="Tên sự kiện"
+                  value={textValue(content.title)}
+                  onChange={(value) => updateContent("title", value)}
+                />
+                <Field
+                  label="Thời điểm diễn ra (dùng cho đếm ngược)"
+                  type="datetime-local"
+                  value={textValue(content.eventAt)}
+                  onChange={(value) => updateContent("eventAt", value)}
+                />
+                <Field
+                  label="Thông tin chính (mỗi dòng một ý: thời gian, địa điểm, đối tượng...)"
+                  multiline
+                  value={textValue(content.info)}
+                  onChange={(value) => updateContent("info", value)}
+                />
+                <Field
+                  label="Liên hệ (mỗi dòng một ý)"
+                  multiline
+                  value={textValue(content.contact)}
+                  onChange={(value) => updateContent("contact", value)}
+                />
+                <Field
+                  label="Nội dung giới thiệu (mỗi dòng một đoạn)"
+                  multiline
+                  className="md:col-span-2"
+                  value={textValue(content.body)}
+                  onChange={(value) => updateContent("body", value)}
+                />
+                <Field
+                  label="Ảnh nền (URL)"
+                  value={textValue(content.imageUrl)}
+                  onChange={(value) => updateContent("imageUrl", value)}
+                />
+                <label className="flex items-center gap-2 self-end pb-2 text-xs font-medium text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={content.hidden === true}
+                    onChange={(event) =>
+                      setContent((current) => ({
+                        ...current,
+                        hidden: event.target.checked,
+                      }))
+                    }
+                  />
+                  Ẩn nút thông báo trên landing page
+                </label>
               </div>
             ) : isListSection ? (
               <div

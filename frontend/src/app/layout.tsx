@@ -23,6 +23,7 @@ export const metadata: Metadata = {
   description: "Website for the NEU Debate Club",
   icons: {
     icon: "/logo.png",
+    apple: "/icon-192.png",
   },
 };
 

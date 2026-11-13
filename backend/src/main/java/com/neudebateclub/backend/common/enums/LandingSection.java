@@ -6,5 +6,6 @@ public enum LandingSection {
     PROJECTS,
     ACHIEVEMENTS,
    DEPARTMENTS,
-   COMMENTS
+   COMMENTS,
+   ANNOUNCEMENT
 }
