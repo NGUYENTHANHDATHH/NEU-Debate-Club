@@ -3,6 +3,7 @@ package com.neudebateclub.backend.auth;
 import com.neudebateclub.backend.auth.dto.AuthResponse;
 import com.neudebateclub.backend.auth.jwt.JwtService;
 import io.jsonwebtoken.Claims;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.security.MessageDigest;
@@ -37,6 +38,7 @@ public class GoogleLoginFlow {
     private final SecureRandom random = new SecureRandom();
     private final Map<String, PendingLogin> pendingLogins = new ConcurrentHashMap<>();
 
+    @Autowired
     public GoogleLoginFlow(JwtService jwtService) {
         this(jwtService, Clock.systemUTC());
     }

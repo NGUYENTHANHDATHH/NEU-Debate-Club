@@ -22,6 +22,7 @@
 | V19 | DDL | `events.resource_urls` |
 | V20 | Seed | 10 sample events (creates a system BCN user if none exists) |
 | V21 | DDL + data | task progress columns and backfill |
+| V22 | DDL | `notifications.created_by` (FK `users`, `ON DELETE SET NULL`) + index `(user_id, created_at DESC)` — added 2026-11-13; applied to the local Docker DB (`ndc_db`) on 2026-11-13 |
 
 ## Integrity findings (verified from git)
 

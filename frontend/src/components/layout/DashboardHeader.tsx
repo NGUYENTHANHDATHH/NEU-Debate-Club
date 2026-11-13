@@ -1,8 +1,9 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Bell, Search, Sparkles } from "lucide-react";
+import { Search, Sparkles } from "lucide-react";
 import { useUserContext } from "@/context/userContext";
+import NotificationBell from "@/components/layout/NotificationBell";
 
 const labels: Record<string, string> = {
   "/dashboard": "Tổng quan",
@@ -59,9 +60,7 @@ export default function DashboardHeader() {
         </label>
 
         <div className="flex items-center gap-2">
-          <button className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-[#18181B]">
-            <Bell className="h-4 w-4" />
-          </button>
+          <NotificationBell />
           <button
             onClick={logout}
             className="hidden items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-[#18181B] md:flex"

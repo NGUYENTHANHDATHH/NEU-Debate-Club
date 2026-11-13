@@ -1,4 +1,4 @@
-import { CreateNotificationPage } from "@/components/dashboard/MockPages";
+import { CreateNotificationPage } from "@/components/dashboard/NotificationPages";
 
 export default function Page() {
   return <CreateNotificationPage />;

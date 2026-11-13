@@ -14,6 +14,7 @@ import com.neudebateclub.backend.common.response.ApiResponse;
 import com.neudebateclub.backend.common.security.RoleGuard;
 import com.neudebateclub.backend.event.Event;
 import com.neudebateclub.backend.event.EventRepository;
+import com.neudebateclub.backend.notification.NotificationService;
 import com.neudebateclub.backend.user.User;
 import com.neudebateclub.backend.user.UserRepository;
 import jakarta.transaction.Transactional;
@@ -51,6 +52,7 @@ public class TaskController {
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
     private final RoleGuard roleGuard;
+    private final NotificationService notificationService;
 
     private static final List<Department> SPECIALIZED_DEPARTMENTS = List.of(
             Department.TRUYEN_THONG,
@@ -165,7 +167,9 @@ public class TaskController {
                 } else if (task.getStatus() == TaskStatus.IN_PROGRESS) {
                     task.setProgress(1);
                 }
-                responses.add(TaskResponse.from(taskRepository.save(task)));
+                Task saved = taskRepository.save(task);
+                notificationService.notifyTaskAssigned(saved);
+                responses.add(TaskResponse.from(saved));
             }
 
             return ResponseEntity.status(201).body(ApiResponse.success(
@@ -198,6 +202,7 @@ public class TaskController {
             }
 
             Task saved = taskRepository.save(task);
+            notificationService.notifyTaskAssigned(saved);
             responses.add(TaskResponse.from(saved));
 
             return ResponseEntity.status(201).body(ApiResponse.success(

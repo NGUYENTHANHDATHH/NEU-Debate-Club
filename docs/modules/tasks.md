@@ -12,7 +12,8 @@
 | Controller + DTOs | [TaskController.java](../../backend/src/main/java/com/neudebateclub/backend/task/TaskController.java) — no service layer; DTO records nested in the controller |
 | Frontend client | `BackendTask`, `CreateTaskPayload`, `UpdateTaskPayload`, `TaskComment` and helpers in [api.ts](../../frontend/src/lib/api.ts) |
 | UI | [TodoListPage](../../frontend/src/components/dashboard/TodoListPage.tsx) (assignee), [AssignTaskPage](../../frontend/src/components/dashboard/AssignTaskPage.tsx) (department lead), [AssignAllTasksPage](../../frontend/src/components/dashboard/AssignAllTasksPage.tsx) (BCN), [TaskHistory](../../frontend/src/components/dashboard/TaskHistory.tsx), `DepartmentOperationsPage` in MockPages |
-| Tests | [TaskControllerTest](../../backend/src/test/java/com/neudebateclub/backend/task/TaskControllerTest.java) — 6 Mockito tests, passed on 2026-11-13 |
+| Tests | [TaskControllerTest](../../backend/src/test/java/com/neudebateclub/backend/task/TaskControllerTest.java) — 14 Mockito tests, passed on 2026-11-13 |
+| Notifications | `create` calls `NotificationService.notifyTaskAssigned` for every saved task (assignee notified; skipped on self-assignment). See [notifications.md](notifications.md). |
 
 Endpoints are listed in [dependency-map.md](../dependency-map.md#tasks--taskcontroller).
 
@@ -26,7 +27,7 @@ Endpoints are listed in [dependency-map.md](../dependency-map.md#tasks--taskcont
 
 ## Verified gaps
 
-**Status 2026-11-13:** T-1, T-2, T-3, T-4, T-8 and T-9 are fixed in the working tree (uncommitted) under the strict visibility rule; `TaskControllerTest` now uses the real `RoleGuard` and has 14 passing tests. T-5, T-6, T-7 remain open.
+**Status 2026-11-13:** T-1, T-2, T-3, T-4, T-8 and T-9 are fixed (commit 3bcc82c) under the strict visibility rule; `TaskControllerTest` now uses the real `RoleGuard` and has 14 passing tests. T-5, T-6, T-7 remain open.
 
 | ID | Gap (as found by the audit) | Evidence |
 |---|---|---|

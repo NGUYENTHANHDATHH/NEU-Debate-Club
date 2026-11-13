@@ -39,6 +39,8 @@
 | `PUT/DELETE /tasks/{id}` | `TASK_ASSIGNMENT` and task in lead's department (BCN: any) | Yes (since 2026-11-13) |
 | `GET /tasks` | BCN: all; lead: own department only (other department → 403); member: own assigned tasks | Yes (since 2026-11-13) |
 | `GET /tasks/{id}`, `/comments`, `PATCH /status` | assignee, BCN, or lead of the task's department | Yes |
+| `POST /notifications` | `requireModuleManager(NOTIFICATION_MANAGEMENT)`; lead limited to own department/members | Yes (since 2026-11-13) |
+| `GET /notifications` | `MEMBER`+, own rows only | n/a |
 | Mock-only modules | none (no API) | n/a |
 
 ## Frontend enforcement (verified)

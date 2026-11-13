@@ -4,7 +4,7 @@
 
 All paths include the Spring context path `/api`. "Auth" column: `public` = permitted by `SecurityConfig`; otherwise a valid JWT is required, plus the controller-level check shown.
 
-## Endpoint inventory (verified: 38 application routes plus actuator/springdoc)
+## Endpoint inventory (verified: 40 application routes plus actuator/springdoc)
 
 ### Auth — [AuthController](../backend/src/main/java/com/neudebateclub/backend/auth/AuthController.java)
 
@@ -83,16 +83,26 @@ All paths include the Spring context path `/api`. "Auth" column: `public` = perm
 
 Note: CMS admin routes live under the `/public` prefix and rely on controller checks; their `GET`s pass the security filter anonymously and return 403 from `RoleGuard`, not 401.
 
+### Notifications — [NotificationController](../backend/src/main/java/com/neudebateclub/backend/notification/NotificationController.java)
+
+| Method & path | Controller check | Frontend caller |
+|---|---|---|
+| `GET /notifications?limit=` | `MEMBER`+; caller's own rows only; limit 1–100 (default 50) | `fetchNotifications` ← NotificationBell, ReadNotificationPage |
+| `POST /notifications` | module `NOTIFICATION_MANAGEMENT`; BCN: all/departments/members; lead: own department or its members | `createNotification` ← CreateNotificationPage |
+
+`POST /tasks` also writes a `TASK_ASSIGNED` notification per created task. Detail: [notifications.md](modules/notifications.md).
+
 ## Module traces
 
 | Module | DB (migration) | Entity / repo | Controller & DTOs | Frontend client → UI | Tests |
 |---|---|---|---|---|---|
 | Auth | `users` V2, `google_id` V9 | `User`, `UserRepository` | `AuthController`, `AuthService`; `AuthResponse`, `GoogleLoginRequest` (classes) | `api.ts` auth helpers, `userContext.tsx`, `GoogleLoginButton`, `DashboardAccessGuard`, `Sidebar` | `AuthServiceTest` (2), `RoleGuardTest` (3) |
 | Members | `users` V2 (+V18 seed) | `User`, `UserRepository` | `MemberController`; nested records `MemberRequest`, `MemberResponse` | `Member`, `CreateMemberInput` in `api.ts` → [MembersPage](../frontend/src/components/dashboard/MembersPage.tsx) | `MemberControllerTest` (5) |
-| Tasks | `tasks`, `task_comments` V3; `event_id` V9; `progress` V21 | `Task`, `TaskComment`, two repos | `TaskController`; nested `CreateTaskRequest`, `UpdateTaskRequest`, `UpdateStatusRequest`, `UpdateProgressRequest`, `TaskResponse`, `TaskCommentResponse` | `BackendTask`, `CreateTaskPayload`, `UpdateTaskPayload`, `TaskComment` → TodoListPage, AssignTaskPage, AssignAllTasksPage, TaskHistory, DepartmentOperationsPage | `TaskControllerTest` (6) |
+| Tasks | `tasks`, `task_comments` V3; `event_id` V9; `progress` V21 | `Task`, `TaskComment`, two repos | `TaskController`; nested `CreateTaskRequest`, `UpdateTaskRequest`, `UpdateStatusRequest`, `UpdateProgressRequest`, `TaskResponse`, `TaskCommentResponse` | `BackendTask`, `CreateTaskPayload`, `UpdateTaskPayload`, `TaskComment` → TodoListPage, AssignTaskPage, AssignAllTasksPage, TaskHistory, DepartmentOperationsPage | `TaskControllerTest` (14) |
 | Events | `events` V5; `resource_urls` V19 (+V20 seed) | `Event`, `EventRepository` | `EventController`; nested `EventRequest`, `EventResponse` | `ClubEvent`, `SaveEventInput` → [EventsPage](../frontend/src/components/dashboard/EventsPage.tsx); event pickers in task pages | `EventControllerTest` (4) |
 | Landing sections | `landing_content` V7/V9, versions V13 (+V10–V12 seed) | 2 entities/repos | `LandingContentController`; untyped `JsonNode`/`Map` | `CmsSection`, `CmsHistoryItem`; section shapes declared per component | `CmsPublishIntegrationTest` (opt-in) |
 | Catalog | `projects` V14, `achievements` V15 (+V16–V17 seed) | 2 entities/repos | `LandingCatalogController`; entities serialized directly | `CmsCatalogItem` → CmsPage, public pages | `CmsPublishIntegrationTest` (opt-in) |
+| Notifications | `notifications` V4 + `created_by` V22 | `Notification`, `NotificationRepository`, `NotificationService` | `NotificationController`; nested `CreateNotificationRequest`, `NotificationResponse`, `CreateNotificationResponse` | `AppNotification`, `CreateNotificationPayload` → NotificationBell, NotificationPages | `NotificationServiceTest` (9) |
 | Module access | none | — | `AdminModule`, `RoleGuard`, `/auth/modules` | [dashboard-modules.ts](../frontend/src/constants/dashboard-modules.ts) | `RoleGuardTest` |
 
 Per-module detail: [auth.md](modules/auth.md), [members.md](modules/members.md), [tasks.md](modules/tasks.md), [events.md](modules/events.md), [landing-cms.md](modules/landing-cms.md), [access-control.md](modules/access-control.md), [database-migrations.md](modules/database-migrations.md).
@@ -133,7 +143,7 @@ flowchart TD
 | Area | Tables | Migration | UI |
 |---|---|---|---|
 | Tenure | `seasons`, `season_members` | V2, V8 trigger | `/dashboard/tenure` → MockPages |
-| Notifications | `announcements`, `notifications` | V4 | `/dashboard/notifications/{create,read}` → MockPages |
+| Announcements | `announcements` | V4 | none |
 | Event checklists | `checklist_templates`, `checklist_template_items`, `event_checklist_items` | V5 | none |
 | Finance & partners | `transactions`, `partners`, `partner_contacts`, `outreach_logs`, `collaborations` | V6, V8 trigger, V9 | `/dashboard/finance` → MockPages |
 | Media & activity | `media_links`, `activity_logs` | V7 | `/dashboard/publications`, `/dashboard/activity-log` → MockPages |
@@ -150,7 +160,9 @@ Unused Java enums tied to these tables: `ChecklistStatus`, `ContentStatus`, `Out
 |---|---|---|
 | `/dashboard` | `DashboardHomePage` (MockPages) | static |
 | `/dashboard/tasks` | `TasksHubPage` (MockPages) | static |
-| `/dashboard/tasks/todo-list` | TodoListPage | live |
+| `/dashboard/tasks/todo-list` | TodoListPage | live (`?task=<id>` opens that task) |
+| `/dashboard/notifications/read` | ReadNotificationPage (NotificationPages) | live (`?id=<id>` selects one) |
+| `/dashboard/notifications/create` | CreateNotificationPage (NotificationPages) | live |
 | `/dashboard/tasks/update` | server `redirect` → todo-list | — (not in access map; guard would also redirect) |
 | `/dashboard/tasks/assign` | AssignTaskPage | live |
 | `/dashboard/tasks/assign-all` | AssignAllTasksPage | live (also contains an unused `INITIAL_SAMPLE_TASKS` constant) |
@@ -159,7 +171,7 @@ Unused Java enums tied to these tables: `ChecklistStatus`, `ContentStatus`, `Out
 | `/dashboard/events` | EventsPage | live |
 | `/dashboard/cms` | CmsPage | live |
 | `/dashboard/roles` (module `MEMBERSHIP`) | `RolesPage` (MockPages) | static |
-| `/dashboard/charts`, `/health-dashboard`, `/activity-log`, `/finance`, `/library`, `/publications`, `/tenure`, `/notifications/*` | MockPages | static |
+| `/dashboard/charts`, `/health-dashboard`, `/activity-log`, `/finance`, `/library`, `/publications`, `/tenure` | MockPages | static |
 | `/departments/[slug]` (public) | page component | no API call found |
 
 ## Contract authority (current practice, not a decision)

@@ -33,8 +33,9 @@
 
 | ID | Risk | Evidence level |
 |---|---|---|
-| ~~A-1~~ | Unvalidated `state`/`returnUrl` open redirect + no CSRF binding. **Fixed 2026-11-13 (uncommitted):** return path restricted to `/…` (no `//`, `\`, control chars); state signed and bound to the nonce cookie. `GoogleLoginFlowTest` covers it. | Verified by unit tests. |
-| ~~A-2~~ | JWT in the URL query string. **Fixed 2026-11-13 (uncommitted):** URL carries only a single-use 60 s code. Not yet tested against real Google OAuth in a browser. | Verified by unit tests. |
+| ~~A-1~~ | Unvalidated `state`/`returnUrl` open redirect + no CSRF binding. **Fixed 2026-11-13 (commit 3bcc82c):** return path restricted to `/…` (no `//`, `\`, control chars); state signed and bound to the nonce cookie. `GoogleLoginFlowTest` covers it. | Verified by unit tests. |
+| ~~A-2~~ | JWT in the URL query string. **Fixed 2026-11-13 (commit 3bcc82c):** URL carries only a single-use 60 s code. Not yet tested against real Google OAuth in a browser. | Verified by unit tests. |
+| ~~A-10~~ | `GoogleLoginFlow` had two constructors without `@Autowired`, so the Spring context failed to start (unit tests did not catch it). **Fixed 2026-11-13**; backend verified healthy in Docker, `/auth/google/authorize` returns 302 with the nonce cookie and signed state. | Verified at runtime. |
 | A-8 | Login codes are stored in memory: lost on restart, not shared across multiple backend instances. | Verified (design limitation). |
 | ~~A-9~~ | `JWT_SECRET` not valid Base64 (e.g. contains `-`) crashed signing. **Fixed 2026-11-13.** | Verified by unit test. |
 | A-3 | `AuthResponse.expiresIn` is hard-coded `604800000` and ignores `JWT_EXPIRATION_MS`. | Verified. |

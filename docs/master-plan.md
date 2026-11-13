@@ -19,7 +19,8 @@ A Next.js 16 client-rendered frontend calls a Spring Boot 4.1 / Java 21 REST API
 | Events | `events` (+V20 seed) | CRUD | EventsPage, task pickers | EventControllerTest 4 ✔ | Partial (subset of columns) |
 | Landing sections | `landing_content`, versions | public + CMS | home sections, CmsPage | CMS integration — not run | Working slice |
 | Landing catalog | `projects`, `achievements` | public + CMS | home, list/detail, CmsPage | CMS integration — not run | Working slice |
-| Tenure, notifications, finance/partners, media, activity log, checklists, proposals, check-in, equipment, design assets | 20 tables | none | mock pages or none | none | Schema only |
+| Notifications | `notifications` V4 (+`created_by` V22) | 2 routes + task-create hook | bell, read page, create page | NotificationServiceTest 9 ✔ | Implemented 2026-11-13 (uncommitted); see [notifications.md](modules/notifications.md) |
+| Tenure, finance/partners, media, activity log, checklists, proposals, check-in, equipment, design assets | 20 tables | none | mock pages or none | none | Schema only |
 | Dashboard home, charts, health, roles | n/a | none | mock pages | none | Mock only |
 
 ## Risk register
@@ -28,9 +29,9 @@ Severity: **P0** = data loss, security exposure, or deploy blocker; **P1** = wro
 
 | ID | Sev | Risk | Evidence | Detail |
 |---|---|---|---|---|
-| ~~R-1~~ | P0 | Open-redirect / token leak via OAuth `state`/`returnUrl` and JWT in query string. **Fixed in working tree (2026-11-13, uncommitted):** safe relative return path, signed state bound to an HttpOnly nonce cookie, single-use 60 s login code redeemed by `POST /auth/google/exchange`. Covered by `GoogleLoginFlowTest`; not yet exercised end-to-end against Google. | Verified by unit tests | [auth](modules/auth.md#risks) |
-| ~~R-2~~ | P0 | Task authorization gaps. **Fixed in working tree (2026-11-13, uncommitted)** per owner decision 3 (strict). Covered by 8 new `TaskControllerTest` cases using the real `RoleGuard`. | Verified by unit tests | [tasks](modules/tasks.md#verified-gaps) |
-| ~~R-15~~ | P0 | `JWT_SECRET` values that are not valid Base64 (e.g. containing `-`, as in `.env.docker.example`) crashed token signing: `DecodingException` was not caught. **Fixed in working tree (2026-11-13).** | Verified by unit test | `JwtService.getSigningKey` |
+| ~~R-1~~ | P0 | Open-redirect / token leak via OAuth `state`/`returnUrl` and JWT in query string. **Fixed 2026-11-13 (commit 3bcc82c):** safe relative return path, signed state bound to an HttpOnly nonce cookie, single-use 60 s login code redeemed by `POST /auth/google/exchange`. Covered by `GoogleLoginFlowTest`; not yet exercised end-to-end against Google. | Verified by unit tests | [auth](modules/auth.md#risks) |
+| ~~R-2~~ | P0 | Task authorization gaps. **Fixed 2026-11-13 (commit 3bcc82c)** per owner decision 3 (strict). Covered by 8 new `TaskControllerTest` cases using the real `RoleGuard`. | Verified by unit tests | [tasks](modules/tasks.md#verified-gaps) |
+| ~~R-15~~ | P0 | `JWT_SECRET` values that are not valid Base64 (e.g. containing `-`, as in `.env.docker.example`) crashed token signing: `DecodingException` was not caught. **Fixed 2026-11-13 (commit 3bcc82c).** | Verified by unit test | `JwtService.getSigningKey` |
 | R-3 | P0 | Applied migrations V1, V2, V12 were edited after first commit; older databases will fail checksum validation and may keep `users.google_id NOT NULL` or lack catalog enums. `baseline-version: 12` can mask this. | Verified git; DB state unknown | [database-migrations](modules/database-migrations.md) |
 | R-4 | P0 | Sample members, events and a fixed BCN account are seeded by versioned migrations and will land in production. | Verified | [database-migrations](modules/database-migrations.md#other-observations) |
 | R-5 | P1 | Java `TaskStatus.BLOCKED/CANCELLED`, `TaskPriority.URGENT` silently persisted as `todo`/`high`. | Verified | [tasks T-5](modules/tasks.md#verified-gaps) |
@@ -53,11 +54,11 @@ A proposal only — not approval to change behaviour. Each step lists what prove
 1. **Establish a safe baseline (R-3, R-4, R-11).**
    Inspect every real database read-only using the queries in [database-migrations.md](modules/database-migrations.md#safe-verification-procedure-proposed-not-executed). Decide per environment between `flyway repair` and forward-fix migrations. Freeze V1–V21 (no more edits). Decide where sample data belongs: a Flyway location enabled only for local/dev, or a separate script. Add a disposable-DB CI job running `mvnw test` plus `tsc --noEmit` and `lint`.
    *Done when:* CI is green on a fresh Postgres, and each environment's history is recorded.
-2. **Close security gaps (R-1, R-2).** — *Implemented in the working tree on 2026-11-13, unit-tested, not yet committed or tested end-to-end with real Google login.*
+2. **Close security gaps (R-1, R-2).** — *Implemented 2026-11-13 (commit 3bcc82c), unit-tested; not yet tested end-to-end with real Google login.*
    Validate `returnUrl` as a relative path. Replace raw `state` with a signed nonce. Move the token off the URL (one-time code or HttpOnly cookie). Apply the decided task-visibility rule (owner decision 3, option A): members read only their own tasks, leads read and write only their department's tasks, and only BCN may assign to all departments.
    *Done when:* controller/integration tests cover each boundary listed in [tasks.md](modules/tasks.md) T-1…T-3 and [auth.md](modules/auth.md) missing coverage.
 3. **Fix silent data corruption (R-5).**
-   Add a forward migration (V22+) extending `task_status_enum` with `blocked`, `cancelled` and `task_priority_enum` with `urgent` (owner decision 4). Map them in the converters, make converters throw on unknown values, and add them to the frontend task types and UI.
+   Add a forward migration (**V23** — V22 is now taken by notifications) extending `task_status_enum` with `blocked`, `cancelled` and `task_priority_enum` with `urgent` (owner decision 4). Map them in the converters, make converters throw on unknown values, and add them to the frontend task types and UI.
 4. **Contract workflow (R-6, R-8) — decided: springdoc-generated (owner decision 6).**
    Export `/v3/api-docs` in CI and generate frontend TypeScript types from it. Standardise the `ApiResponse` envelope and enum casing. Add handlers for `HttpMessageNotReadableException` and `MethodArgumentTypeMismatchException`.
    *Done when:* a backend DTO change breaks the frontend type-check.
@@ -65,7 +66,7 @@ A proposal only — not approval to change behaviour. Each step lists what prove
    Use one DB name. Remove or implement `ALLOWED_DOMAIN`. Permit or remove `/health`. Add an auth redirect for anonymous dashboard access. Declare `react`/`react-dom`. Pick one lockfile. Fix the lint error.
 6. **Extend core vertical slices.**
    Finish members (deactivate flow, student-id unique constraint) → tenure (`seasons`) → event sub-domains (checklists, then attendees/check-in). Introduce a service layer for any slice that adds business rules.
-7. **Notifications**, which depend on users, tasks and events.
+7. **Notifications** — *v1 implemented early on 2026-11-13 at the owner's request (in-app only, task-created hook, manual send); see [notifications.md](modules/notifications.md). PWA push and deadline reminders remain.*
 8. **Department operations** (finance/partners, media/publications, design assets, equipment, proposals), ordered by confirmed club priority. Each needs an `AdminModule` check and an API contract before its mock page goes live.
 9. **Reporting last** (charts, health dashboard, activity log), consuming real data from steps 6–8. Label or remove mock content until then (R-14).
 10. **Reconcile product docs (R-13)** after each step, rather than in bulk.

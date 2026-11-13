@@ -9,6 +9,7 @@ import com.neudebateclub.backend.common.exception.ForbiddenException;
 import com.neudebateclub.backend.common.response.ApiResponse;
 import com.neudebateclub.backend.common.security.RoleGuard;
 import com.neudebateclub.backend.event.EventRepository;
+import com.neudebateclub.backend.notification.NotificationService;
 import com.neudebateclub.backend.user.User;
 import com.neudebateclub.backend.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +39,7 @@ class TaskControllerTest {
     private UserRepository userRepository;
     private EventRepository eventRepository;
     private RoleGuard roleGuard;
+    private NotificationService notificationService;
     private TaskController taskController;
     private UserPrincipal bcnManager;
     private User bcnUser;
@@ -50,7 +52,9 @@ class TaskControllerTest {
         userRepository = mock(UserRepository.class);
         eventRepository = mock(EventRepository.class);
         roleGuard = new RoleGuard();
-        taskController = new TaskController(taskRepository, taskCommentRepository, userRepository, eventRepository, roleGuard);
+        notificationService = mock(NotificationService.class);
+        taskController = new TaskController(taskRepository, taskCommentRepository, userRepository, eventRepository, roleGuard,
+                notificationService);
 
         UUID bcnId = UUID.randomUUID();
         bcnManager = UserPrincipal.builder()
@@ -117,6 +121,7 @@ class TaskControllerTest {
         assertEquals(Department.TRUYEN_THONG, savedTask.getDepartment());
         assertEquals(leadTruyenThong.getId(), savedTask.getAssignedTo().getId());
         assertEquals(bcnUser.getId(), savedTask.getAssignedBy().getId());
+        verify(notificationService).notifyTaskAssigned(savedTask);
     }
 
     @Test
@@ -146,6 +151,7 @@ class TaskControllerTest {
         assertNotNull(response.getBody());
         assertEquals(6, response.getBody().getData().size());
         verify(taskRepository, times(6)).save(any(Task.class));
+        verify(notificationService, times(6)).notifyTaskAssigned(any(Task.class));
     }
 
     @Test

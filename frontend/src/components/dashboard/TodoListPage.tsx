@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { BackendTask, fetchMyTasks, updateTaskProgress } from "@/lib/api";
 import { useUserContext } from "@/context/userContext";
 import { TaskHistory } from "@/components/dashboard/TaskHistory";
@@ -82,6 +83,21 @@ export function TodoListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [now] = useState(() => Date.now());
+  const router = useRouter();
+  const pathname = usePathname();
+  // ?task=<id> (từ thông báo giao nhiệm vụ) mở thẳng task đó sau khi tải xong.
+  const linkedTaskId = useSearchParams().get("task")?.toLowerCase() ?? null;
+  const [handledLink, setHandledLink] = useState<string | null>(null);
+  if (!linkedTaskId && handledLink) setHandledLink(null);
+  if (linkedTaskId && linkedTaskId !== handledLink && !loading) {
+    setHandledLink(linkedTaskId);
+    const linkedTask = tasks.find((task) => task.id.toLowerCase() === linkedTaskId);
+    if (linkedTask) {
+      setSelectedTask(linkedTask);
+      setEditProgress(linkedTask.progress);
+      setComment("");
+    }
+  }
 
   const loadTasks = useCallback(async () => {
     setLoading(true);
@@ -98,6 +114,14 @@ export function TodoListPage() {
   useEffect(() => {
     void loadTasks();
   }, [loadTasks]);
+
+  useEffect(() => {
+    if (!linkedTaskId || loading) return;
+    if (!tasks.some((task) => task.id.toLowerCase() === linkedTaskId)) {
+      toast.error("Không tìm thấy nhiệm vụ trong danh sách của bạn.");
+    }
+    router.replace(pathname, { scroll: false });
+  }, [linkedTaskId, loading, tasks, router, pathname]);
 
   useEffect(() => {
     if (!selectedTask) return;

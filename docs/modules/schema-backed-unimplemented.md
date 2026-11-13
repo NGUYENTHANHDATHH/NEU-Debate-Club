@@ -7,7 +7,7 @@
 | Domain | Migration | Tables | UI evidence | Status |
 |---|---|---|---|---|
 | Tenure | V2 (+V8 one-active-season trigger) | `seasons`, `season_members` | `/dashboard/tenure` → `TenurePage` mock | Schema only |
-| Announcements & notifications | V4 | `announcements`, `notifications` | `/dashboard/notifications/create`, `/read` mocks; public `NotificationWidget` | Schema only |
+| Announcements | V4 | `announcements` | none (notifications use the `notifications` table instead); public `NotificationWidget` is static | Schema only |
 | Event checklists | V5 | `checklist_templates`, `checklist_template_items`, `event_checklist_items` | none | Schema only |
 | Finance & partner CRM | V6 (+V8 partner-stats trigger), V9 columns | `transactions`, `partners`, `partner_contacts`, `outreach_logs`, `collaborations` | `/dashboard/finance` mock | Schema only |
 | Media & activity log | V7 | `media_links`, `activity_logs` | `/dashboard/publications`, `/dashboard/activity-log` mocks | Schema only; no code writes `activity_logs` |

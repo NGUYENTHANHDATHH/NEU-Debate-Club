@@ -10,7 +10,6 @@ import { fetchMembers, fetchTasks, type BackendTask, type Member } from "@/lib/a
 import {
   ArrowRight,
   BarChart3,
-  Bell,
   BookOpen,
   CalendarDays,
   CheckCircle2,
@@ -24,17 +23,15 @@ import {
   FileText,
   Filter,
   HeartPulse,
-  Mail,
+  Image as ImageIcon,
   MoreHorizontal,
   PenLine,
   Plus,
   Search,
-  Sparkles,
   SquareCheckBig,
   Upload,
   Users,
   Workflow,
-  Image as ImageIcon,
   Video,
 } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
@@ -850,147 +847,6 @@ export function UpdateTaskPage() {
   );
 }
 
-export function ReadNotificationPage() {
-  return (
-    <PageFrame
-      eyebrow="Thành viên"
-      title="Đọc thông báo"
-      description="Bố cục 2 panel: list trái và detail phải, trạng thái unread được nhấn rõ."
-      action={
-        <ActionButton icon={<Bell className="h-4 w-4" />}>
-          Đánh dấu tất cả đã đọc
-        </ActionButton>
-      }
-    >
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <Section
-          title="Danh sách thông báo"
-          subtitle="Tìm kiếm, tab và dot unread."
-        >
-          <InputToolbar />
-          <div className="mt-4 flex flex-wrap gap-2">
-            <span className="rounded-full bg-rose-50 px-3 py-1.5 text-sm text-[#E11D48]">
-              Tất cả
-            </span>
-            <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-[#71717A]">
-              Chưa đọc 5
-            </span>
-            <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-[#71717A]">
-              Đã ghim
-            </span>
-            <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-[#71717A]">
-              Quan trọng
-            </span>
-          </div>
-          <div className="mt-4 space-y-3">
-            {[
-              {
-                title: "Lịch sinh hoạt tuần này",
-                meta: "2 giờ trước",
-                detail: "Có thay đổi nhỏ ở phòng họp và giờ check-in.",
-                tone: "rose" as const,
-              },
-              {
-                title: "Task poster đã liên kết",
-                meta: "Hôm qua",
-                detail: "Mở task liên quan và kiểm tra file đính kèm.",
-                tone: "emerald" as const,
-              },
-              {
-                title: "Nghiệp vụ ban cập nhật",
-                meta: "Hôm qua",
-                detail: "Dashboard nội bộ có thêm thống kê mới.",
-                tone: "amber" as const,
-              },
-            ].map((item) => (
-              <article
-                key={item.title}
-                className="rounded-2xl border border-slate-200/60 bg-white p-4"
-              >
-                <div className="flex items-start gap-3">
-                  <span
-                    className={`mt-1 h-2.5 w-2.5 rounded-full ${item.tone === "rose" ? "bg-rose-500" : item.tone === "emerald" ? "bg-emerald-500" : "bg-amber-500"}`}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-3">
-                      <h3 className="font-medium text-[#18181B]">
-                        {item.title}
-                      </h3>
-                      <span className="text-xs text-[#71717A]">
-                        {item.meta}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-sm leading-6 text-[#71717A]">
-                      {item.detail}
-                    </p>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </Section>
-        <Section
-          title="Chi tiết thông báo"
-          subtitle="Markdown, metadata, file đính kèm và liên kết liên quan."
-        >
-          <div className="space-y-4">
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="text-2xl font-semibold tracking-tight text-[#18181B]">
-                Lịch họp BCN tuần này
-              </h3>
-              <span className="rounded-full bg-rose-50 px-3 py-1.5 text-sm text-[#E11D48]">
-                Khẩn cấp
-              </span>
-            </div>
-            <div className="flex flex-wrap items-center gap-3 text-sm text-[#71717A]">
-              <span className="inline-flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Người gửi: Ban Điều phối
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <CalendarDays className="h-4 w-4" />
-                24/06/2026
-              </span>
-            </div>
-            <div className="rounded-[1.5rem] border border-slate-200/60 bg-slate-50 p-5 text-sm leading-7 text-[#18181B]">
-              Nội dung thông báo được render như markdown, hỗ trợ tiêu đề, danh
-              sách và liên kết liên quan đến task hoặc ấn phẩm.
-            </div>
-            <div className="grid gap-3 md:grid-cols-2">
-              {["Tệp chương trình.pdf", "Ảnh minh họa.png"].map((file) => (
-                <div
-                  key={file}
-                  className="flex items-center justify-between rounded-2xl border border-slate-200/60 bg-white p-4"
-                >
-                  <div className="flex items-center gap-3">
-                    <FileText className="h-4 w-4 text-[#E11D48]" />
-                    <span className="text-sm text-[#18181B]">{file}</span>
-                  </div>
-                  <Download className="h-4 w-4 text-[#71717A]" />
-                </div>
-              ))}
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <ActionButton
-                variant="outline"
-                icon={<ArrowRight className="h-4 w-4" />}
-              >
-                Xem task liên quan
-              </ActionButton>
-              <ActionButton
-                variant="outline"
-                icon={<ExternalLink className="h-4 w-4" />}
-              >
-                Xem ấn phẩm
-              </ActionButton>
-            </div>
-          </div>
-        </Section>
-      </div>
-    </PageFrame>
-  );
-}
-
 export function LibraryPage() {
   return (
     <PageFrame
@@ -1168,90 +1024,6 @@ export function AssignTaskPage() {
               },
             ]}
           />
-        </Section>
-      </div>
-    </PageFrame>
-  );
-}
-
-export function CreateNotificationPage() {
-  return (
-    <PageFrame
-      eyebrow="Trưởng ban"
-      title="Tạo thông báo"
-      description="Editor page full-width, có preview và draft autosave style."
-      action={
-        <ActionButton icon={<Mail className="h-4 w-4" />}>
-          Gửi ngay
-        </ActionButton>
-      }
-    >
-      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <Section
-          title="Biên soạn"
-          subtitle="Tiêu đề, loại, người nhận và nội dung."
-        >
-          <div className="space-y-4">
-            <input
-              className="w-full rounded-[1.5rem] border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#E11D48]"
-              placeholder="Tiêu đề thông báo..."
-            />
-            <div className="grid gap-4 md:grid-cols-2">
-              <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#E11D48]">
-                <option>Thông báo chung</option>
-                <option>Cập nhật task</option>
-                <option>Khen thưởng</option>
-                <option>Khẩn cấp</option>
-              </select>
-              <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#E11D48]">
-                <option>Toàn ban</option>
-                <option>Chọn thành viên cụ thể</option>
-              </select>
-            </div>
-            <textarea
-              className="min-h-64 w-full rounded-[1.5rem] border border-slate-200 bg-white p-4 text-sm outline-none focus:border-[#E11D48]"
-              placeholder="Nội dung thông báo..."
-            />
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
-                <Upload className="mx-auto h-6 w-6 text-[#E11D48]" />
-                <p className="mt-3 text-sm text-[#18181B]">
-                  Upload file đính kèm
-                </p>
-              </div>
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6">
-                <p className="text-sm font-medium text-[#18181B]">
-                  Lên lịch gửi
-                </p>
-                <p className="mt-2 text-sm text-[#71717A]">
-                  Toggle + date/time picker theo spec.
-                </p>
-              </div>
-            </div>
-          </div>
-        </Section>
-        <Section
-          title="Preview panel"
-          subtitle="Xem trước thông báo như người nhận."
-        >
-          <div className="space-y-4">
-            <div className="rounded-[1.75rem] border border-slate-200/60 bg-slate-50 p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#71717A]">
-                Thông báo khẩn
-              </p>
-              <h3 className="mt-3 text-2xl font-semibold tracking-tight text-[#18181B]">
-                Lịch họp bổ sung chiều nay
-              </h3>
-              <p className="mt-3 text-sm leading-7 text-[#71717A]">
-                Thông báo preview thể hiện giống giao diện người nhận, gồm
-                metadata, file đính kèm và action nhanh.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <ActionButton variant="outline">Xem trước</ActionButton>
-              <ActionButton variant="outline">Lưu nháp</ActionButton>
-            </div>
-          </div>
         </Section>
       </div>
     </PageFrame>

@@ -372,6 +372,65 @@ export function deleteTask(id: string) {
   });
 }
 
+export type NotificationType =
+  | "TASK_ASSIGNED"
+  | "GENERAL"
+  | "TASK_UPDATE"
+  | "REWARD"
+  | "URGENT";
+
+export type ManualNotificationType = Exclude<NotificationType, "TASK_ASSIGNED">;
+
+export type NotificationAudience = "ALL" | "DEPARTMENTS" | "MEMBERS";
+
+export type AppNotification = {
+  id: string;
+  title: string;
+  body: string;
+  type: NotificationType;
+  entityId: string | null;
+  senderId: string | null;
+  senderName: string | null;
+  senderAvatarUrl: string | null;
+  createdAt: string;
+};
+
+export type CreateNotificationPayload = {
+  title: string;
+  body: string;
+  type: ManualNotificationType;
+  audience: NotificationAudience;
+  departments?: string[];
+  memberIds?: string[];
+};
+
+async function notificationRequest<T>(path = "", init?: RequestInit): Promise<T> {
+  const response = await authorizedFetch(`${API_BASE_URL}/notifications${path}`, init);
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    const validationMessage = payload?.data
+      ? Object.values(payload.data).join(". ")
+      : null;
+    throw new Error(
+      validationMessage || payload?.message || "Không thể xử lý thông báo.",
+    );
+  }
+  return (payload?.data ?? payload) as T;
+}
+
+/** Thông báo của người dùng hiện tại, mới nhất trước (backend: mặc định 50, tối đa 100). */
+export function fetchNotifications(limit?: number) {
+  return notificationRequest<AppNotification[]>(limit ? `?limit=${limit}` : "");
+}
+
+export function createNotification(notification: CreateNotificationPayload) {
+  return notificationRequest<{ recipientCount: number }>("", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(notification),
+  });
+}
+
 export async function fetchAccessibleModules(token?: string): Promise<AdminModuleKey[]> {
   const response = await fetch(`${API_BASE_URL}/auth/modules`, {
     headers: { Authorization: `Bearer ${token ?? getAuthToken() ?? ""}` },

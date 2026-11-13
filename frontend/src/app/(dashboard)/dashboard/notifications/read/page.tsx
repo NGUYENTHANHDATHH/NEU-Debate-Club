@@ -1,5 +1,10 @@
-import { ReadNotificationPage } from "@/components/dashboard/MockPages";
+import { Suspense } from "react";
+import { ReadNotificationPage } from "@/components/dashboard/NotificationPages";
 
 export default function Page() {
-  return <ReadNotificationPage />;
+  return (
+    <Suspense>
+      <ReadNotificationPage />
+    </Suspense>
+  );
 }
