@@ -26,7 +26,7 @@ import { DEPARTMENT_NAMES } from "@/lib/notifications";
 const ROLES = [
   { key: "BCN", label: "BCN", description: "Luôn có mọi chức năng; là người duy nhất được sửa ma trận quyền." },
   { key: "TRUONG_BAN", label: "Trưởng/Phó ban", description: "Các chức năng ban mình được tick trong ma trận." },
-  { key: "MEMBER", label: "Thành viên", description: "Chỉ dùng trang cá nhân: Todo-list, đọc thông báo." },
+  { key: "MEMBER", label: "Thành viên", description: "Chỉ dùng trang cá nhân: Todo-list, đọc thông báo, công cụ." },
 ] as const;
 
 // Tên module lấy theo mục sidebar đầu tiên dùng module đó.

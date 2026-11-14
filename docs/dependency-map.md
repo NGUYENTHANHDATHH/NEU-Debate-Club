@@ -160,7 +160,7 @@ flowchart TD
 | Finance & partners | `transactions`, `partners`, `partner_contacts`, `outreach_logs`, `collaborations` | V6, V8 trigger, V9 | `/dashboard/finance` → MockPages |
 | Media & activity | `media_links`, `activity_logs` | V7 | `/dashboard/publications`, `/dashboard/activity-log` → MockPages |
 | Content pipeline | `event_contents`, `proposals` | V9 | none |
-| Check-in | `event_attendees` | V9 | none |
+| Check-in | `event_attendees` | V9, V26 | `EventAttendeeController` |
 | Equipment | `equipment`, `equipment_borrows` | V9 | none |
 | Design assets | `design_assets` | V9 | `/dashboard/library` → MockPages |
 

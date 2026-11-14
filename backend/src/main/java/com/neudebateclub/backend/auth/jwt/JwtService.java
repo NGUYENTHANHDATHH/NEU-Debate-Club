@@ -92,6 +92,32 @@ public class JwtService {
         }
     }
 
+    private static final String GUEST_TYPE = "guest";
+
+    /**
+     * Phiên khách cho tài khoản Google ngoài CLB. Không có subject nên {@link #isTokenValid} luôn từ chối:
+     * khách không bao giờ thành người dùng đã đăng nhập, token chỉ dùng để đăng ký sự kiện.
+     */
+    public String generateGuestToken(String email, String name) {
+        return Jwts.builder()
+            .claim("typ", GUEST_TYPE)
+            .claim("email", email)
+            .claim("name", name)
+            .issuedAt(new Date())
+            .expiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
+            .signWith(getSigningKey())
+            .compact();
+    }
+
+    public Optional<Claims> parseGuest(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            return GUEST_TYPE.equals(claims.get("typ", String.class)) ? Optional.of(claims) : Optional.empty();
+        } catch (JwtException | IllegalArgumentException e) {
+            return Optional.empty();
+        }
+    }
+
     public Claims extractAllClaims(String token) {
         return Jwts.parser()
             .verifyWith(getSigningKey())

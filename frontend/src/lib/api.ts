@@ -11,7 +11,8 @@ export async function fetchLandingSection<T>(section: string): Promise<T> {
 }
 
 export interface BackendUserDTO {
-  id: string;
+  /** null = khách (tài khoản Google ngoài CLB, `role` là "guest"): chỉ đăng ký được sự kiện. */
+  id: string | null;
   email: string;
   fullName: string;
   avatarUrl?: string | null;
@@ -220,6 +221,45 @@ export function deleteEvent(id: string) {
   return eventRequest<void>(`/${encodeURIComponent(id)}`, {
     method: "DELETE",
   });
+}
+
+// ---- Đăng ký tham gia sự kiện (người đã đăng nhập ở header) + vé QR (đọc/quét: MEMBER+) ----
+
+/** `id` là nội dung mã QR của người tham gia; chỉ thành viên đọc được (để gửi mail và quét). */
+export type EventTicket = {
+  id: string;
+  eventId: string;
+  eventTitle: string;
+  fullName: string;
+  email: string;
+  checkedInAt: string | null;
+  checkedOutAt: string | null;
+};
+
+/**
+ * Đăng ký cho người đang đăng nhập ở header (thành viên hoặc khách); backend lấy email và tên từ phiên đó.
+ * Không trả mã QR: mã chỉ tới người đăng ký qua email. Lỗi mang `status` HTTP.
+ */
+export async function registerForEvent(eventId: string): Promise<void> {
+  const response = await authorizedFetch(
+    `${API_BASE_URL}/public/events/${encodeURIComponent(eventId)}/registrations`,
+    { method: "POST" },
+  );
+  if (response.ok) return;
+  const payload = await response.json().catch(() => null);
+  throw Object.assign(new Error(payload?.message ?? "Không thể đăng ký."), { status: response.status });
+}
+
+export function fetchEventAttendees(eventId: string) {
+  return apiRequest<EventTicket[]>(`/events/${encodeURIComponent(eventId)}/attendees`, undefined, "Không thể tải người đăng ký.");
+}
+
+export function scanEventTicket(eventId: string, ticketId: string, action: "check-in" | "check-out") {
+  return apiRequest<EventTicket>(
+    `/events/${encodeURIComponent(eventId)}/attendees/${encodeURIComponent(ticketId)}/${action}`,
+    { method: "POST" },
+    "Không thể quét mã.",
+  );
 }
 
 export type BackendTask = {

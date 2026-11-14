@@ -12,7 +12,7 @@
 | Finance & partner CRM | V6 (+V8 partner-stats trigger), V9 columns | `transactions`, `partners`, `partner_contacts`, `outreach_logs`, `collaborations` | `/dashboard/finance` mock | Schema only |
 | Media & activity log | V7 | `media_links`, `activity_logs` | `/dashboard/publications`, `/dashboard/activity-log` mocks | Schema only; no code writes `activity_logs` |
 | Event content & proposals | V9 | `event_contents`, `proposals` | none | Schema only |
-| Attendee check-in | V9 | `event_attendees` | none | Schema only |
+| Attendee check-in | V9, V26 | `event_attendees` | landing bell popup (sign-up), `/dashboard/tools/checkin` | **Implemented 2026-11-14** — see [events.md](events.md) |
 | Equipment borrowing | V9 | `equipment`, `equipment_borrows` | none | Schema only |
 | Design asset library | V9 | `design_assets` | `/dashboard/library` mock | Schema only |
 

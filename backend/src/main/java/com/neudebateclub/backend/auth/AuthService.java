@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Locale;
 
 @Service @RequiredArgsConstructor @Slf4j
 public class AuthService {
@@ -56,7 +57,10 @@ public class AuthService {
     }
 
     public AuthResponse loginWithGoogle(String idToken) {
-        // 1. Verify Google ID Token
+        return loginVerifiedGoogleAccount(verifyGoogleIdToken(idToken));
+    }
+
+    private GoogleIdToken.Payload verifyGoogleIdToken(String idToken) {
         GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
             new NetHttpTransport(), new GsonFactory())
             .setAudience(Collections.singletonList(googleClientId))
@@ -70,7 +74,7 @@ public class AuthService {
         }
         if (googleIdToken == null) throw new UnauthorizedException("Token verification failed");
 
-        return loginVerifiedGoogleAccount(googleIdToken.getPayload());
+        return googleIdToken.getPayload();
     }
 
     AuthResponse loginVerifiedGoogleAccount(GoogleIdToken.Payload payload) {
@@ -79,15 +83,30 @@ public class AuthService {
         String fullName  = (String) payload.get("name");
         String avatarUrl = (String) payload.get("picture");
 
-        // 2. Chỉ tài khoản đã có trong database mới được đăng nhập
+        // 2. Chỉ nhận tài khoản Google đã xác minh email
         if (email == null || !Boolean.TRUE.equals(payload.getEmailVerified())) {
             throw new UnauthorizedException("Google account email is not verified");
         }
 
         // 3. Đồng bộ Google identity với tài khoản đã được quản lý trong database
-        User user = userRepository.findByEmailIgnoreCase(email)
-            .orElseThrow(() -> new UnauthorizedException(
-                "Google account is not registered in the database"));
+        User user = userRepository.findByEmailIgnoreCase(email).orElse(null);
+
+        if (user == null) {
+            // Tài khoản ngoài CLB đăng nhập với tư cách khách: không tạo dòng users, chỉ được đăng ký sự kiện.
+            String guestEmail = email.toLowerCase(Locale.ROOT);
+            String guestName = fullName == null || fullName.isBlank() ? guestEmail : fullName.trim();
+            return AuthResponse.builder()
+                .token(jwtService.generateGuestToken(guestEmail, guestName))
+                .tokenType("Bearer")
+                .expiresIn(604800000L)
+                .user(AuthResponse.UserDTO.builder()
+                    .email(guestEmail)
+                    .fullName(guestName)
+                    .avatarUrl(avatarUrl)
+                    .role("guest")
+                    .build())
+                .build();
+        }
 
         if (!user.isActive()) {
             throw new UnauthorizedException("Account is inactive");

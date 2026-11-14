@@ -15,6 +15,10 @@ export const ROUTES = {
   updateTask: `${DASHBOARD}/tasks/todo-list`,
   readNotification: `${DASHBOARD}/notifications/read`,
   library: `${DASHBOARD}/library`,
+  toolMail: `${DASHBOARD}/tools/mail`,
+  toolTimer: `${DASHBOARD}/tools/timer`,
+  toolDraw: `${DASHBOARD}/tools/draw`,
+  toolCheckin: `${DASHBOARD}/tools/checkin`,
 
   // -- Trưởng ban --
   assignTask: `${DASHBOARD}/tasks/assign`,

@@ -36,6 +36,8 @@ public class SecurityConfig {
                 .requestMatchers("/auth/google", "/auth/google/**", "/auth/logout").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers(HttpMethod.GET, "/public/**").permitAll()
+                // Khách ngoài CLB cũng đăng ký được sự kiện; controller tự kiểm tra JWT thành viên hoặc token khách.
+                .requestMatchers(HttpMethod.POST, "/public/events/*/registrations").permitAll()
                 // Khách chưa đăng nhập cũng bật được thông báo sự kiện của landing page.
                 .requestMatchers(HttpMethod.GET, "/push/public-key").permitAll()
                 .requestMatchers(HttpMethod.POST, "/push/subscriptions").permitAll()

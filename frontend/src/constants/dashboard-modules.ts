@@ -10,11 +10,15 @@ import {
   Library,
   Link2,
   ListTodo,
+  Mail,
   Megaphone,
   Network,
   PanelsTopLeft,
+  QrCode,
   ScrollText,
   ShieldCheck,
+  Shuffle,
+  Timer,
   Users,
   Wallet,
   type LucideIcon,
@@ -77,6 +81,16 @@ export const DASHBOARD_NAV_GROUPS: { title: string; items: DashboardNavItem[] }[
       { name: "Link ấn phẩm", path: ROUTES.publications, icon: Link2, module: "PUBLICATIONS" },
       { name: "Thư viện", path: ROUTES.library, icon: Library, module: "ASSET_LIBRARY" },
       { name: "CMS", path: ROUTES.cms, icon: PanelsTopLeft, module: "LANDING_CMS" },
+    ],
+  },
+  {
+    // Không gắn module: mọi thành viên đều dùng được.
+    title: "Công cụ",
+    items: [
+      { name: "Gửi mail hàng loạt", path: ROUTES.toolMail, icon: Mail },
+      { name: "Đồng hồ tranh biện", path: ROUTES.toolTimer, icon: Timer },
+      { name: "Bốc thăm & chia đội", path: ROUTES.toolDraw, icon: Shuffle },
+      { name: "Quét QR check-in", path: ROUTES.toolCheckin, icon: QrCode },
     ],
   },
   {

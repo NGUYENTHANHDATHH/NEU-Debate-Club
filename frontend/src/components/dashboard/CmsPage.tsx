@@ -18,10 +18,12 @@ import { ActionButton } from "@/components/ui/Dashboard/ActionButton";
 import { PageFrame } from "@/components/ui/Dashboard/PageFrame";
 import { Section } from "@/components/ui/Dashboard/Section";
 import {
+  ClubEvent,
   CmsCatalogItem,
   CmsSection,
   checkCmsCatalogSlug,
   fetchCmsCatalog,
+  fetchEvents,
   fetchCmsSection,
   fetchCmsSections,
   publishCmsCatalog,
@@ -126,6 +128,7 @@ function catalogItemContent(item: CmsCatalogItem): ContentItem {
 
 export function CmsPage() {
   const [sections, setSections] = useState<CmsSection[]>([]);
+  const [events, setEvents] = useState<ClubEvent[]>([]);
   const [selected, setSelected] = useState("hero");
   const [content, setContent] = useState<ContentItem>({});
   const [activeItem, setActiveItem] = useState<number | null>(null);
@@ -160,6 +163,8 @@ export function CmsPage() {
   const currentItem = activeItem === null ? undefined : items[activeItem];
 
   useEffect(() => {
+    // Chỉ dùng cho ô "Sự kiện nhận đăng ký" của mục announcement; lỗi thì ô đó chỉ còn lựa chọn hiện tại.
+    fetchEvents().then(setEvents).catch(() => undefined);
     fetchCmsSections()
       .then((items) => {
         setSections(items);
@@ -576,6 +581,23 @@ export function CmsPage() {
                   value={textValue(content.imageUrl)}
                   onChange={(value) => updateContent("imageUrl", value)}
                 />
+                <label className="space-y-1 text-xs font-medium text-slate-700">
+                  <span>Sự kiện nhận đăng ký (hiện nút &quot;Đăng ký tham gia&quot; trong thông báo)</span>
+                  <select
+                    value={textValue(content.eventId)}
+                    onChange={(event) => updateContent("eventId", event.target.value)}
+                    className={inputClassName()}
+                  >
+                    <option value="">Không mở đăng ký</option>
+                    {events
+                      .filter((event) => event.status !== "FINISHED" || event.id === content.eventId)
+                      .map((event) => (
+                        <option key={event.id} value={event.id}>
+                          {event.title}
+                        </option>
+                      ))}
+                  </select>
+                </label>
                 <label className="flex items-center gap-2 self-end pb-2 text-xs font-medium text-slate-700">
                   <input
                     type="checkbox"

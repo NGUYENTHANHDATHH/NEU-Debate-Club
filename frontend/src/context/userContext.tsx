@@ -110,7 +110,7 @@ export const UserProvider: React.FC<IUserProviderProps> = ({ children }) => {
               const auth = await exchangeLoginCode(authCode);
               const u = auth.user;
               const profile: IUserProfile = {
-                id: u.id,
+                id: u.id ?? "",
                 name: u.fullName,
                 email: u.email,
                 avatarUrl: u.avatarUrl ?? undefined,
@@ -144,6 +144,8 @@ export const UserProvider: React.FC<IUserProviderProps> = ({ children }) => {
         setToken(response.token);
         setIsAuthenticated(true);
         setLoading(false);
+        // Khách (Google ngoài CLB) không có /auth/me: token khách chỉ được máy chủ kiểm tra lúc đăng ký sự kiện.
+        if (response.user.role === "guest") return;
         const [meResponse, modules] = await Promise.all([
           fetch(`${API_BASE_URL}/auth/me`, {
             headers: { Authorization: `Bearer ${response.token}` },
@@ -193,7 +195,7 @@ export const UserProvider: React.FC<IUserProviderProps> = ({ children }) => {
     const response = await exchangeGoogleIdToken(idToken);
     const backendUser = response.user;
     const profile: IUserProfile = {
-      id: backendUser.id,
+      id: backendUser.id ?? "",
       name: backendUser.fullName,
       email: backendUser.email,
       avatarUrl: backendUser.avatarUrl ?? undefined,
@@ -236,7 +238,8 @@ export const UserProvider: React.FC<IUserProviderProps> = ({ children }) => {
   // Redirect to home "/" if trying to access any route under "/dashboard" and not authorized
   React.useEffect(() => {
     if (!loading && pathname.startsWith("/dashboard")) {
-      const isAuthorized = isAuthenticated && user;
+      // Khách đăng nhập được ở header nhưng không phải thành viên: không vào trang quản trị.
+      const isAuthorized = isAuthenticated && user && user.role !== "guest";
       if (!isAuthorized) {
         router.push("/");
         toast.error("Chỉ tài khoản đã đăng ký mới có quyền truy cập trang quản trị!");

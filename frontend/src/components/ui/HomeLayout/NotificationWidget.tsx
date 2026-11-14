@@ -3,7 +3,9 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Bell, X, Clock } from "lucide-react";
-import { fetchLandingSection } from "@/lib/api";
+import { toast } from "sonner";
+import { useUserContext } from "@/context/userContext";
+import { fetchLandingSection, registerForEvent } from "@/lib/api";
 
 // Edited in the dashboard CMS, section "announcement".
 type Announcement = {
@@ -14,6 +16,8 @@ type Announcement = {
   contact?: string;
   imageUrl?: string;
   hidden?: boolean;
+  /** Sự kiện (bảng events) nhận đăng ký qua nút trong thông báo; trống = không mở đăng ký. */
+  eventId?: string;
 };
 
 const lines = (text?: string) =>
@@ -66,8 +70,33 @@ const CountdownTimer = ({ target }: { target: number }) => {
 };
 
 export const NotificationWidget = () => {
+  // Người đăng ký là người đã đăng nhập bằng nút trên header: thành viên hoặc khách ngoài CLB.
+  const { user, logout } = useUserContext();
   const [isOpen, setIsOpen] = useState(false);
   const [event, setEvent] = useState<Announcement | null>(null);
+  const [registering, setRegistering] = useState(false);
+  /** Email đã đăng ký xong trong lần mở trang này; mã QR không hiện ở đây mà được gửi qua email. */
+  const [registeredEmail, setRegisteredEmail] = useState("");
+  const [registerError, setRegisterError] = useState("");
+
+  async function register(eventId: string) {
+    if (!user) return;
+    setRegistering(true);
+    setRegisterError("");
+    try {
+      await registerForEvent(eventId);
+      setRegisteredEmail(user.email);
+    } catch (problem) {
+      if ((problem as { status?: number }).status === 401) {
+        toast.error("Phiên đăng nhập đã hết hạn, hãy đăng nhập lại.");
+        logout(); // xoá phiên hết hạn để header hiện lại nút đăng nhập
+      } else {
+        setRegisterError(problem instanceof Error ? problem.message : "Không thể đăng ký.");
+      }
+    } finally {
+      setRegistering(false);
+    }
+  }
 
   useEffect(() => {
     // 404 = never published: keep the button hidden.
@@ -161,6 +190,30 @@ export const NotificationWidget = () => {
 
                 {Number.isFinite(eventTime) ? (
                   <CountdownTimer target={eventTime} />
+                ) : null}
+
+                {event.eventId ? (
+                  <div className="mb-8 text-center">
+                    {registeredEmail && registeredEmail === user?.email ? (
+                      <p role="status" className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-emerald-200">
+                        Đăng ký thành công. Mã QR check-in sẽ được gửi tới email {registeredEmail}.
+                      </p>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => void register(event.eventId!)}
+                        disabled={!user || registering}
+                        className="rounded-full bg-[#8A151B] px-8 py-3 font-['Montserrat'] text-sm font-bold tracking-wider text-white transition-colors hover:bg-[#a51a21] disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {registering ? "Đang đăng ký..." : user ? "Đăng ký tham gia" : "Đăng nhập ở góc trên để đăng ký"}
+                      </button>
+                    )}
+                    {registerError ? (
+                      <p role="alert" className="mt-3 text-sm text-red-300">
+                        {registerError}
+                      </p>
+                    ) : null}
+                  </div>
                 ) : null}
 
                 <div className="space-y-6">

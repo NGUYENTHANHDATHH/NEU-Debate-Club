@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -54,14 +55,29 @@ class AuthServiceTest {
     }
 
     @Test
-    void rejectsAccountMissingFromDatabase() {
-        GoogleIdToken.Payload payload = payload("outsider@gmail.com");
-        when(repository.findByEmailIgnoreCase("outsider@gmail.com")).thenReturn(Optional.empty());
+    void signsInAccountMissingFromDatabaseAsGuestWithoutCreatingUser() {
+        GoogleIdToken.Payload payload = payload("Outsider@gmail.com");
+        when(repository.findByEmailIgnoreCase("Outsider@gmail.com")).thenReturn(Optional.empty());
+        when(jwtService.generateGuestToken("outsider@gmail.com", "Member")).thenReturn("guest-token");
+
+        var response = authService.loginVerifiedGoogleAccount(payload);
+
+        assertEquals("guest-token", response.getToken());
+        assertEquals("guest", response.getUser().getRole());
+        assertEquals("outsider@gmail.com", response.getUser().getEmail());
+        assertNull(response.getUser().getId());
+        verify(repository, never()).save(any());
+        verify(jwtService, never()).generateToken(any());
+    }
+
+    @Test
+    void rejectsInactiveMember() {
+        GoogleIdToken.Payload payload = payload("old@gmail.com");
+        when(repository.findByEmailIgnoreCase("old@gmail.com")).thenReturn(Optional.of(
+                User.builder().id(UUID.randomUUID()).email("old@gmail.com").role(Role.MEMBER).active(false).build()));
 
         assertThrows(UnauthorizedException.class,
                 () -> authService.loginVerifiedGoogleAccount(payload));
-
-        verify(repository, never()).save(any());
     }
 
     private GoogleIdToken.Payload payload(String email) {
