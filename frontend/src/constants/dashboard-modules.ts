@@ -91,6 +91,7 @@ export const DASHBOARD_NAV_GROUPS: { title: string; items: DashboardNavItem[] }[
       { name: "Đồng hồ tranh biện", path: ROUTES.toolTimer, icon: Timer },
       { name: "Bốc thăm & chia đội", path: ROUTES.toolDraw, icon: Shuffle },
       { name: "Quét QR check-in", path: ROUTES.toolCheckin, icon: QrCode },
+      { name: "Thu chi của tôi", path: ROUTES.toolFinance, icon: Wallet },
     ],
   },
   {

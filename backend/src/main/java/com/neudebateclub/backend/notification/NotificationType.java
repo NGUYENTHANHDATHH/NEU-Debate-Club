@@ -4,6 +4,8 @@ package com.neudebateclub.backend.notification;
 public enum NotificationType {
     /** Tự động: người nhận vừa được giao một task. */
     TASK_ASSIGNED,
+    /** Tự động: có khoản thu chi gắn với người nhận (cần đóng, đã đóng, CLB chi cho họ). */
+    FINANCE,
     /** Các loại dưới đây do người dùng chọn khi tạo thông báo thủ công. */
     GENERAL,
     TASK_UPDATE,
@@ -11,6 +13,6 @@ public enum NotificationType {
     URGENT;
 
     public boolean isManual() {
-        return this != TASK_ASSIGNED;
+        return this != TASK_ASSIGNED && this != FINANCE;
     }
 }

@@ -387,12 +387,13 @@ export function deleteTask(id: string) {
 
 export type NotificationType =
   | "TASK_ASSIGNED"
+  | "FINANCE"
   | "GENERAL"
   | "TASK_UPDATE"
   | "REWARD"
   | "URGENT";
 
-export type ManualNotificationType = Exclude<NotificationType, "TASK_ASSIGNED">;
+export type ManualNotificationType = Exclude<NotificationType, "TASK_ASSIGNED" | "FINANCE">;
 
 export type NotificationAudience = "ALL" | "DEPARTMENTS" | "MEMBERS";
 
@@ -585,6 +586,10 @@ export type FinanceTransaction = {
   category: string | null;
   eventId: string | null;
   eventTitle: string | null;
+  memberId: string | null;
+  memberName: string | null;
+  /** false: khoản thành viên cần đóng, chưa thu (chưa tính vào quỹ). */
+  paid: boolean;
   transactionDate: string; // yyyy-MM-dd
   createdById: string | null;
   createdByName: string | null;
@@ -597,15 +602,55 @@ export type SaveTransactionInput = {
   description: string;
   category?: string | null;
   eventId?: string | null;
+  memberId?: string | null;
+  paid?: boolean;
   transactionDate: string;
 };
+
+export type FinanceMember = { id: string; fullName: string; email: string };
 
 export function fetchTransactions() {
   return apiRequest<FinanceTransaction[]>("/finance/transactions", undefined, "Không thể tải giao dịch.");
 }
 
+/** Thu chi gắn với chính người đang đăng nhập (mọi thành viên). */
+export function fetchMyTransactions() {
+  return apiRequest<FinanceTransaction[]>("/finance/transactions/mine", undefined, "Không thể tải thu chi của bạn.");
+}
+
+/** Thành viên mọi ban để gắn vào giao dịch (chỉ quản lý Tài chính). */
+export function fetchFinanceMembers() {
+  return apiRequest<FinanceMember[]>("/finance/transactions/members", undefined, "Không thể tải danh sách thành viên.");
+}
+
 export function createTransaction(input: SaveTransactionInput) {
   return apiRequest<FinanceTransaction>("/finance/transactions", jsonBody("POST", input), "Không thể thêm giao dịch.");
+}
+
+/** Lưu cả lô: một dòng lỗi thì không dòng nào được lưu. */
+export function importTransactions(transactions: SaveTransactionInput[]) {
+  return apiRequest<FinanceTransaction[]>(
+    "/finance/transactions/import",
+    jsonBody("POST", { transactions }),
+    "Không thể nhập giao dịch.",
+  );
+}
+
+/** Ghi nhận thành viên đã đóng khoản "chưa thu"; ngày giao dịch thành hôm nay. */
+export function markTransactionPaid(id: string) {
+  return apiRequest<FinanceTransaction>(`/finance/transactions/${id}/paid`, { method: "POST" }, "Không thể ghi nhận khoản thu.");
+}
+
+export type PayosLink = { transactionId: string; amount: number; qrCode: string | null; checkoutUrl: string | null; paid: boolean };
+
+/** QR PayOS cho khoản chưa thu của chính mình (tạo mới hoặc dùng lại link còn hiệu lực). */
+export function createPayosLink(id: string) {
+  return apiRequest<PayosLink>(`/finance/transactions/${id}/payos`, { method: "POST" }, "Không tạo được mã QR thanh toán.");
+}
+
+/** Hỏi PayOS khoản đã được trả chưa; trả rồi thì backend ghi nhận luôn. */
+export function refreshPayosPayment(id: string) {
+  return apiRequest<boolean>(`/finance/transactions/${id}/payos/refresh`, { method: "POST" }, "Không kiểm tra được thanh toán.");
 }
 
 export function deleteTransaction(id: string) {

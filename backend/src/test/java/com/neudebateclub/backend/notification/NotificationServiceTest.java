@@ -8,6 +8,8 @@ import com.neudebateclub.backend.common.exception.ForbiddenException;
 import com.neudebateclub.backend.common.exception.ValidationException;
 import com.neudebateclub.backend.common.security.RoleGuard;
 import com.neudebateclub.backend.common.security.TestRoleGuards;
+import com.neudebateclub.backend.common.enums.TransactionType;
+import com.neudebateclub.backend.finance.Transaction;
 import com.neudebateclub.backend.task.Task;
 import com.neudebateclub.backend.user.User;
 import com.neudebateclub.backend.user.UserRepository;
@@ -16,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.data.domain.Pageable;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -203,5 +206,35 @@ class NotificationServiceTest {
     private static UserPrincipal principal(User user) {
         return UserPrincipal.builder().id(user.getId()).role(user.getRole())
                 .department(user.getDepartment()).active(user.isActive()).build();
+    }
+
+    private Transaction tx(User member, TransactionType type, boolean paid, String amount) {
+        return Transaction.builder().id(UUID.randomUUID()).type(type).amount(new BigDecimal(amount))
+                .description("Khoản " + amount).member(member).paid(paid).build();
+    }
+
+    @Test
+    void memberTransactionsGroupOneNotificationPerMemberAndSkipSender() {
+        service.notifyMemberTransactions(List.of(
+                tx(memberTt, TransactionType.INCOME, false, "200000"),
+                tx(memberTt, TransactionType.INCOME, false, "50000"),
+                tx(memberTt, TransactionType.EXPENSE, true, "30000"),
+                tx(memberSk, TransactionType.INCOME, true, "100000"),
+                tx(leadTt, TransactionType.INCOME, false, "100000"),
+                tx(null, TransactionType.INCOME, true, "999")), leadTt.getId());
+
+        ArgumentCaptor<Notification> saved = ArgumentCaptor.forClass(Notification.class);
+        verify(notificationRepository, org.mockito.Mockito.times(2)).save(saved.capture());
+        Notification grouped = saved.getAllValues().get(0);
+        assertEquals(memberTt, grouped.getUser());
+        assertEquals(NotificationType.FINANCE, grouped.getType());
+        assertEquals("Bạn có 3 khoản thu chi mới", grouped.getTitle());
+        assertTrue(grouped.getBody().contains("Cần đóng: Khoản 200000"));
+        assertTrue(grouped.getBody().contains("CLB chi cho bạn: Khoản 30000"));
+        assertTrue(grouped.getBody().endsWith("Tổng cần đóng: 250.000 ₫"));
+        Notification receipt = saved.getAllValues().get(1);
+        assertEquals(memberSk, receipt.getUser());
+        assertEquals("CLB đã nhận tiền của bạn", receipt.getTitle());
+        verify(pushService).push(saved.getAllValues());
     }
 }

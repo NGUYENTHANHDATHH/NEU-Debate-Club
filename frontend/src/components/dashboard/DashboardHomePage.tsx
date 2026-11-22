@@ -19,13 +19,14 @@ import {
   FinanceTransaction,
   fetchEvents,
   fetchMyTasks,
+  fetchMyTransactions,
   fetchNotifications,
   fetchTasks,
   fetchTransactions,
 } from "@/lib/api";
 import { NOTIFICATION_TYPE_META, formatRelativeTime, notificationHref } from "@/lib/notifications";
 
-type Source = "tasks" | "teamTasks" | "events" | "notifications" | "finance";
+type Source = "tasks" | "teamTasks" | "events" | "notifications" | "finance" | "myFinance";
 
 const money = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 });
 const MAX_ALERTS = 5;
@@ -51,6 +52,7 @@ export function DashboardHomePage() {
   const [events, setEvents] = useState<ClubEvent[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [transactions, setTransactions] = useState<FinanceTransaction[]>([]);
+  const [myTransactions, setMyTransactions] = useState<FinanceTransaction[]>([]);
   const [errors, setErrors] = useState<Partial<Record<Source, string>>>({});
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(() => Date.now());
@@ -63,7 +65,8 @@ export function DashboardHomePage() {
       fetchEvents(),
       fetchNotifications(5),
       seesFinance ? fetchTransactions() : Promise.resolve([]),
-    ]).then(([tasks, team, upcoming, notes, finance]) => {
+      fetchMyTransactions(),
+    ]).then(([tasks, team, upcoming, notes, finance, mine]) => {
       const nextErrors: Partial<Record<Source, string>> = {};
       if (tasks.status === "fulfilled") setMyTasks(tasks.value);
       else nextErrors.tasks = reasonMessage(tasks.reason, "Không thể tải task.");
@@ -75,6 +78,8 @@ export function DashboardHomePage() {
       else nextErrors.notifications = reasonMessage(notes.reason, "Không thể tải thông báo.");
       if (finance.status === "fulfilled") setTransactions(finance.value);
       else nextErrors.finance = reasonMessage(finance.reason, "Không thể tải tài chính.");
+      if (mine.status === "fulfilled") setMyTransactions(mine.value);
+      else nextErrors.myFinance = reasonMessage(mine.reason, "Không thể tải thu chi của bạn.");
       setErrors(nextErrors);
       setNow(Date.now());
       setLoading(false);
@@ -94,6 +99,11 @@ export function DashboardHomePage() {
   const alertTotal = seesTeam ? teamOverdue.length : myOverdue.length;
   const alertError = seesTeam ? errors.teamTasks : errors.tasks;
   const failedNote = "Không tải được dữ liệu";
+  const mySum = (keep: (tx: FinanceTransaction) => boolean) =>
+    myTransactions.filter(keep).reduce((sum, tx) => sum + Number(tx.amount), 0);
+  const myOwed = mySum((tx) => !tx.paid);
+  const myPaid = mySum((tx) => tx.paid && tx.type === "INCOME");
+  const myReceived = mySum((tx) => tx.paid && tx.type === "EXPENSE");
   const show = (source: Source, value: string) => (loading ? "…" : errors[source] ? "—" : value);
 
   const stats = [
@@ -261,6 +271,37 @@ export function DashboardHomePage() {
               </ul>
             )}
           </Section>
+
+          {errors.myFinance || myTransactions.length ? (
+            <Section
+              title="Thu chi của tôi"
+              action={
+                <Link href={ROUTES.toolFinance} className="inline-flex items-center gap-1 text-sm font-medium text-[#BE123C] hover:underline">
+                  Xem chi tiết
+                  <ArrowRight className="h-4 w-4" aria-hidden />
+                </Link>
+              }
+            >
+              {errors.myFinance ? (
+                <p role="alert" className="text-sm text-rose-700">{errors.myFinance}</p>
+              ) : (
+                <dl className="grid grid-cols-3 gap-3 text-sm">
+                  <div>
+                    <dt className="text-xs text-[#71717A]">Còn thiếu</dt>
+                    <dd className={`font-semibold tabular-nums ${myOwed ? "text-amber-700" : "text-slate-400"}`}>{money.format(myOwed)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-[#71717A]">Đã đóng</dt>
+                    <dd className="font-semibold tabular-nums text-emerald-700">{money.format(myPaid)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-[#71717A]">Đã nhận</dt>
+                    <dd className="font-semibold tabular-nums text-[#BE123C]">{money.format(myReceived)}</dd>
+                  </div>
+                </dl>
+              )}
+            </Section>
+          ) : null}
         </div>
       </div>
     </PageFrame>

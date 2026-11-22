@@ -2,7 +2,8 @@ import type { FinanceTransaction } from "@/lib/api";
 
 // Thuần logic (không import runtime) để FinancePage và test node dùng chung.
 
-type MetricTransaction = Pick<FinanceTransaction, "type" | "amount" | "category" | "transactionDate">;
+type MetricTransaction = Pick<FinanceTransaction, "type" | "amount" | "category" | "transactionDate"> &
+  Partial<Pick<FinanceTransaction, "paid">>;
 
 export const NO_CATEGORY = "Chưa phân loại";
 
@@ -14,6 +15,7 @@ export function summarizeTransactions(items: MetricTransaction[], monthKey: stri
   let monthCount = 0;
   const byCategory = new Map<string, { income: number; expense: number }>();
   for (const item of items) {
+    if (item.paid === false) continue; // khoản chưa thu: tiền chưa vào quỹ
     const amount = Number(item.amount) || 0;
     const isIncome = item.type === "INCOME";
     balance += isIncome ? amount : -amount;
@@ -36,12 +38,19 @@ export function summarizeTransactions(items: MetricTransaction[], monthKey: stri
 }
 
 type FilterableTransaction = MetricTransaction &
-  Pick<FinanceTransaction, "description" | "eventId" | "eventTitle" | "createdByName">;
+  Pick<FinanceTransaction, "description" | "eventId" | "eventTitle" | "createdByName" | "memberId" | "memberName">;
 
 /** "" = mọi sự kiện; NO_EVENT = giao dịch không gắn sự kiện. */
 export const NO_EVENT = "__none__";
 
-export type TransactionFilters = { query: string; type: "" | "INCOME" | "EXPENSE"; month: string; eventId: string };
+/** memberId: "" = mọi thành viên. */
+export type TransactionFilters = {
+  query: string;
+  type: "" | "INCOME" | "EXPENSE";
+  month: string;
+  eventId: string;
+  memberId: string;
+};
 
 export function filterTransactions<T extends FilterableTransaction>(items: T[], filters: TransactionFilters) {
   const query = filters.query.trim().toLocaleLowerCase("vi");
@@ -49,10 +58,42 @@ export function filterTransactions<T extends FilterableTransaction>(items: T[], 
     if (filters.type && item.type !== filters.type) return false;
     if (filters.month && !item.transactionDate.startsWith(filters.month)) return false;
     if (filters.eventId === NO_EVENT ? item.eventId : filters.eventId && item.eventId !== filters.eventId) return false;
+    if (filters.memberId && item.memberId !== filters.memberId) return false;
     if (!query) return true;
-    return [item.description, item.category, item.eventTitle, item.createdByName]
+    return [item.description, item.category, item.eventTitle, item.createdByName, item.memberName]
       .some((field) => field?.toLocaleLowerCase("vi").includes(query));
   });
+}
+
+/**
+ * Mỗi thành viên có giao dịch: đã đóng (thu từ họ), đã nhận (chi cho họ), còn thiếu (khoản chưa thu).
+ * Còn thiếu nhiều nhất lên đầu, rồi đóng nhiều nhất.
+ */
+export function summarizeByMember(items: FilterableTransaction[]) {
+  const byMember = new Map<
+    string,
+    { memberId: string; name: string; income: number; expense: number; owed: number; count: number }
+  >();
+  for (const item of items) {
+    if (!item.memberId) continue;
+    const bucket = byMember.get(item.memberId) ?? {
+      memberId: item.memberId,
+      name: item.memberName || "Thành viên đã xóa",
+      income: 0,
+      expense: 0,
+      owed: 0,
+      count: 0,
+    };
+    const amount = Number(item.amount) || 0;
+    if (item.paid === false) bucket.owed += amount;
+    else if (item.type === "INCOME") bucket.income += amount;
+    else bucket.expense += amount;
+    bucket.count += 1;
+    byMember.set(item.memberId, bucket);
+  }
+  return [...byMember.values()]
+    .map((row) => ({ ...row, net: row.income - row.expense }))
+    .sort((a, b) => b.owed - a.owed || b.income - a.income || a.name.localeCompare(b.name, "vi"));
 }
 
 /** Thu, chi, chênh lệch theo từng sự kiện có giao dịch; sự kiện chi nhiều nhất lên đầu. */

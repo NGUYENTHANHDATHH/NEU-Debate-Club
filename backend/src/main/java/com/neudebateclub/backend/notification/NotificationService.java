@@ -7,7 +7,9 @@ import com.neudebateclub.backend.common.enums.Department;
 import com.neudebateclub.backend.common.enums.Role;
 import com.neudebateclub.backend.common.exception.ForbiddenException;
 import com.neudebateclub.backend.common.exception.ValidationException;
+import com.neudebateclub.backend.common.enums.TransactionType;
 import com.neudebateclub.backend.common.security.RoleGuard;
+import com.neudebateclub.backend.finance.Transaction;
 import com.neudebateclub.backend.task.Task;
 import com.neudebateclub.backend.task.TaskController;
 import com.neudebateclub.backend.user.User;
@@ -16,14 +18,21 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.text.NumberFormat;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -73,6 +82,51 @@ public class NotificationService {
                 .entityId(task.getId())
                 .createdBy(assigner)
                 .build())));
+    }
+
+    /**
+     * Báo cho thành viên về các khoản thu chi gắn với họ: mỗi người một thông báo (nhập CSV nhiều dòng được gộp).
+     * Không báo cho chính người ghi giao dịch, giống {@link #notifyTaskAssigned}.
+     */
+    public void notifyMemberTransactions(List<Transaction> transactions, UUID senderId) {
+        Map<UUID, List<Transaction>> byMember = transactions.stream()
+                .filter(tx -> tx.getMember() != null && !tx.getMember().getId().equals(senderId))
+                .collect(Collectors.groupingBy(tx -> tx.getMember().getId(), LinkedHashMap::new, Collectors.toList()));
+        if (byMember.isEmpty()) return;
+
+        User sender = senderId == null ? null : userRepository.getReferenceById(senderId);
+        List<Notification> saved = new ArrayList<>();
+        for (List<Transaction> items : byMember.values()) {
+            Transaction first = items.get(0);
+            String title = items.size() > 1 ? "Bạn có " + items.size() + " khoản thu chi mới"
+                    : !first.isPaid() ? "Bạn có khoản cần đóng"
+                    : first.getType() == TransactionType.INCOME ? "CLB đã nhận tiền của bạn" : "CLB đã chi cho bạn";
+            StringBuilder body = new StringBuilder();
+            for (Transaction tx : items) {
+                String label = !tx.isPaid() ? "Cần đóng"
+                        : tx.getType() == TransactionType.INCOME ? "Đã đóng" : "CLB chi cho bạn";
+                body.append(label).append(": ").append(tx.getDescription()).append(" — ")
+                        .append(vnd(tx.getAmount())).append('\n');
+            }
+            BigDecimal owed = items.stream().filter(tx -> !tx.isPaid())
+                    .map(Transaction::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+            if (items.size() > 1 && owed.signum() > 0) {
+                body.append("Tổng cần đóng: ").append(vnd(owed));
+            }
+            saved.add(notificationRepository.save(Notification.builder()
+                    .user(first.getMember())
+                    .title(title)
+                    .body(body.toString().strip())
+                    .type(NotificationType.FINANCE)
+                    .entityId(items.size() == 1 ? first.getId() : null)
+                    .createdBy(sender)
+                    .build()));
+        }
+        pushService.push(saved);
+    }
+
+    private static String vnd(BigDecimal amount) {
+        return NumberFormat.getNumberInstance(Locale.forLanguageTag("vi-VN")).format(amount) + " ₫";
     }
 
     /**

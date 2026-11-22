@@ -59,6 +59,26 @@ public class Transaction {
     @JoinColumn(name = "event_id")
     private Event event;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id")
+    private User member;
+
+    /** false: khoản thành viên cần đóng, chưa nhận tiền (chưa tính vào quỹ). */
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean paid = true;
+
+    /** Link PayOS đang dùng cho khoản chưa thu (xem MemberPaymentService). */
+    @Column(name = "payos_order_code", unique = true)
+    private Long payosOrderCode;
+
+    @Column(name = "payos_checkout_url", columnDefinition = "TEXT")
+    private String payosCheckoutUrl;
+
+    /** Chuỗi VietQR, frontend vẽ thành ảnh QR. */
+    @Column(name = "payos_qr_code", columnDefinition = "TEXT")
+    private String payosQrCode;
+
     @Column(name = "transaction_date", nullable = false)
     private LocalDate transactionDate;
 

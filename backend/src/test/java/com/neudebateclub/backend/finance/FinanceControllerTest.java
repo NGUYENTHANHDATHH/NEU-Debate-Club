@@ -12,6 +12,7 @@ import com.neudebateclub.backend.common.security.RoleGuard;
 import com.neudebateclub.backend.common.security.TestRoleGuards;
 import com.neudebateclub.backend.event.Event;
 import com.neudebateclub.backend.event.EventRepository;
+import com.neudebateclub.backend.notification.NotificationService;
 import com.neudebateclub.backend.user.User;
 import com.neudebateclub.backend.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +39,9 @@ class FinanceControllerTest {
     private TransactionRepository transactionRepository;
     private EventRepository eventRepository;
     private UserRepository userRepository;
+    private NotificationService notificationService;
+    private MemberPaymentService memberPaymentService;
+    private PayosClient payos;
     private FinanceController controller;
     private UserPrincipal financeLead;
     private User financeLeadUser;
@@ -47,8 +51,12 @@ class FinanceControllerTest {
         transactionRepository = mock(TransactionRepository.class);
         eventRepository = mock(EventRepository.class);
         userRepository = mock(UserRepository.class);
+        notificationService = mock(NotificationService.class);
+        payos = mock(PayosClient.class);
+        memberPaymentService = new MemberPaymentService(transactionRepository, payos, mock(ActivityLogService.class),
+                notificationService, "http://localhost:3000/");
         controller = new FinanceController(transactionRepository, eventRepository, userRepository, TestRoleGuards.withDefaults(),
-                mock(ActivityLogService.class));
+                mock(ActivityLogService.class), notificationService, memberPaymentService);
         financeLead = UserPrincipal.builder().id(UUID.randomUUID()).role(Role.TRUONG_BAN)
                 .department(Department.DOI_NGOAI).active(true).build();
         financeLeadUser = User.builder().id(financeLead.getId()).fullName("Lê Minh Anh").build();
@@ -62,7 +70,7 @@ class FinanceControllerTest {
 
     private FinanceController.TransactionRequest request(TransactionType type, String category, UUID eventId) {
         return new FinanceController.TransactionRequest(type, new BigDecimal("1500000.00"), " Thuê hội trường ",
-                category, eventId, LocalDate.parse("2026-11-10"));
+                category, eventId, null, null, LocalDate.parse("2026-11-10"));
     }
 
     @Test
@@ -183,5 +191,98 @@ class FinanceControllerTest {
 
         assertThrows(ResourceNotFoundException.class, () -> controller.delete(id, financeLead));
         verify(transactionRepository, never()).delete(any());
+    }
+
+    @Test
+    void importSavesEveryRowAndStopsOnForbiddenRow() {
+        var ok = controller.importAll(new FinanceController.ImportRequest(List.of(
+                request(TransactionType.INCOME, null, null), request(TransactionType.EXPENSE, "Địa điểm", null))), financeLead);
+        assertEquals(2, ok.getBody().getData().size());
+
+        UserPrincipal lead = eventLead();
+        assertThrows(ForbiddenException.class, () -> controller.importAll(new FinanceController.ImportRequest(List.of(
+                request(TransactionType.INCOME, null, null))), lead));
+    }
+
+    @Test
+    void linksMemberAndRejectsUnknownMember() {
+        User member = User.builder().id(UUID.randomUUID()).fullName("Trần Bình").build();
+        when(userRepository.findById(member.getId())).thenReturn(Optional.of(member));
+        var dues = new FinanceController.TransactionRequest(TransactionType.INCOME, new BigDecimal("200000"),
+                "Đóng quỹ", "Quỹ thành viên", null, member.getId(), null, LocalDate.parse("2026-11-10"));
+
+        var response = controller.create(dues, financeLead);
+        assertEquals(member.getId(), response.getBody().getData().memberId());
+        assertEquals("Trần Bình", response.getBody().getData().memberName());
+
+        UUID unknown = UUID.randomUUID();
+        when(userRepository.findById(unknown)).thenReturn(Optional.empty());
+        var bad = new FinanceController.TransactionRequest(TransactionType.INCOME, new BigDecimal("200000"),
+                "Đóng quỹ", null, null, unknown, null, LocalDate.parse("2026-11-10"));
+        assertThrows(ResourceNotFoundException.class, () -> controller.create(bad, financeLead));
+    }
+
+    @Test
+    void mineListsOnlyCallersOwnTransactions() {
+        UserPrincipal member = UserPrincipal.builder().id(UUID.randomUUID()).role(Role.MEMBER)
+                .department(Department.TRUYEN_THONG).active(true).build();
+        when(transactionRepository.findAllByMemberIdOrderByTransactionDateDescCreatedAtDesc(member.getId()))
+                .thenReturn(List.of());
+
+        controller.mine(member);
+
+        verify(transactionRepository).findAllByMemberIdOrderByTransactionDateDescCreatedAtDesc(member.getId());
+        assertThrows(ForbiddenException.class, () -> controller.members(member));
+    }
+
+    private FinanceController.TransactionRequest charge(UUID memberId, UUID eventId, TransactionType type) {
+        return new FinanceController.TransactionRequest(type, new BigDecimal("200000"), "Quỹ 2026", "Quỹ thành viên",
+                eventId, memberId, false, LocalDate.parse("2026-11-01"));
+    }
+
+    @Test
+    void unpaidChargeIsSavedAndNotifiedButMustBeMemberIncomeWithoutEvent() {
+        User member = User.builder().id(UUID.randomUUID()).fullName("Trần Bình").build();
+        when(userRepository.findById(member.getId())).thenReturn(Optional.of(member));
+
+        var response = controller.create(charge(member.getId(), null, TransactionType.INCOME), financeLead);
+        assertEquals(false, response.getBody().getData().paid());
+        ArgumentCaptor<List<Transaction>> notified = ArgumentCaptor.captor();
+        verify(notificationService).notifyMemberTransactions(notified.capture(), org.mockito.ArgumentMatchers.eq(financeLead.getId()));
+        assertEquals(1, notified.getValue().size());
+
+        assertThrows(ValidationException.class, () -> controller.create(charge(null, null, TransactionType.INCOME), financeLead));
+        assertThrows(ValidationException.class,
+                () -> controller.create(charge(member.getId(), null, TransactionType.EXPENSE), financeLead));
+        assertThrows(ValidationException.class,
+                () -> controller.create(charge(member.getId(), UUID.randomUUID(), TransactionType.INCOME), financeLead));
+    }
+
+    @Test
+    void markPaidCountsChargeAndRejectsAlreadyPaid() {
+        User member = User.builder().id(UUID.randomUUID()).fullName("Trần Bình").build();
+        Transaction unpaid = Transaction.builder().id(UUID.randomUUID()).type(TransactionType.INCOME).amount(new BigDecimal("200000"))
+                .description("Quỹ 2026").member(member).paid(false).transactionDate(LocalDate.parse("2026-01-01")).build();
+        when(transactionRepository.findById(unpaid.getId())).thenReturn(Optional.of(unpaid));
+
+        var response = controller.markPaid(unpaid.getId(), financeLead);
+
+        assertEquals(true, response.getBody().getData().paid());
+        assertEquals(false, unpaid.getTransactionDate().equals(LocalDate.parse("2026-01-01")));
+        verify(notificationService).notifyMemberTransactions(List.of(unpaid), financeLead.getId());
+        assertThrows(ValidationException.class, () -> controller.markPaid(unpaid.getId(), financeLead));
+    }
+
+    @Test
+    void payosEndpointsOnlyForTheChargedMember() {
+        User member = User.builder().id(UUID.randomUUID()).fullName("Trần Bình").build();
+        Transaction unpaid = Transaction.builder().id(UUID.randomUUID()).type(TransactionType.INCOME).amount(new BigDecimal("200000"))
+                .description("Quỹ 2026").member(member).paid(false).build();
+        when(transactionRepository.findById(unpaid.getId())).thenReturn(Optional.of(unpaid));
+
+        assertThrows(ForbiddenException.class, () -> controller.payosLink(unpaid.getId(), financeLead));
+        UserPrincipal self = UserPrincipal.builder().id(member.getId()).role(Role.MEMBER)
+                .department(Department.TRUYEN_THONG).active(true).build();
+        assertEquals(false, controller.payosRefresh(unpaid.getId(), self).getBody().getData());
     }
 }

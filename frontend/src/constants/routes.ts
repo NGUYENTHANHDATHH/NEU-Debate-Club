@@ -19,6 +19,7 @@ export const ROUTES = {
   toolTimer: `${DASHBOARD}/tools/timer`,
   toolDraw: `${DASHBOARD}/tools/draw`,
   toolCheckin: `${DASHBOARD}/tools/checkin`,
+  toolFinance: `${DASHBOARD}/tools/finance`,
 
   // -- Trưởng ban --
   assignTask: `${DASHBOARD}/tasks/assign`,

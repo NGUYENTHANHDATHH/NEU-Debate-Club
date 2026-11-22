@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   ArrowDown,
@@ -8,11 +8,13 @@ import {
   ArrowUp,
   ArrowUpRight,
   CircleCheck,
+  Download,
   Filter,
   Plus,
   RefreshCw,
   Search,
   Trash2,
+  Upload,
   Wallet,
   X,
 } from "lucide-react";
@@ -22,9 +24,11 @@ import {
   NO_EVENT,
   eventBudgetRows,
   filterTransactions,
+  summarizeByMember,
   summarizeTransactions,
   type TransactionFilters,
 } from "@/components/dashboard/financeMetrics";
+import { parseTransactionsCsv } from "@/components/dashboard/financeImport";
 import { formatIsoDate, localIsoDate } from "@/components/dashboard/PublicationsPage";
 import { BUDGET_TONE, TYPE_META, TransactionForm, inputClass, money } from "@/components/dashboard/TransactionForm";
 import { ActionButton } from "@/components/ui/Dashboard/ActionButton";
@@ -33,13 +37,17 @@ import { Section } from "@/components/ui/Dashboard/Section";
 import {
   deleteTransaction,
   fetchEvents,
+  fetchFinanceMembers,
   fetchTransactions,
+  importTransactions,
+  markTransactionPaid,
   type ClubEvent,
+  type FinanceMember,
   type FinanceTransaction,
 } from "@/lib/api";
 
 const PAGE_SIZE = 20;
-const EMPTY_FILTERS: TransactionFilters = { query: "", type: "", month: "", eventId: "" };
+const EMPTY_FILTERS: TransactionFilters = { query: "", type: "", month: "", eventId: "", memberId: "" };
 type SortKey = "date" | "amount";
 
 function signed(value: number) {
@@ -50,23 +58,32 @@ export function FinancePage() {
   const [today] = useState(() => localIsoDate(new Date()));
   const [items, setItems] = useState<FinanceTransaction[]>([]);
   const [events, setEvents] = useState<ClubEvent[]>([]);
+  const [members, setMembers] = useState<FinanceMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const searchParams = useSearchParams();
   // ?new=1 (từ thao tác nhanh) mở sẵn form.
   const [open, setOpen] = useState(() => searchParams.has("new"));
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [filters, setFilters] = useState<TransactionFilters>(EMPTY_FILTERS);
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "date", dir: "desc" });
   const [page, setPage] = useState(1);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
+  const [importErrors, setImportErrors] = useState<string[]>([]);
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
-    // Sự kiện chỉ dùng cho ô chọn tùy chọn — lỗi tải sự kiện không chặn trang.
-    const [txResult, eventResult] = await Promise.allSettled([fetchTransactions(), fetchEvents()]);
+    // Sự kiện, thành viên chỉ dùng cho ô chọn tùy chọn — lỗi tải chúng không chặn trang.
+    const [txResult, eventResult, memberResult] = await Promise.allSettled([
+      fetchTransactions(),
+      fetchEvents(),
+      fetchFinanceMembers(),
+    ]);
     if (txResult.status === "fulfilled") setItems(txResult.value);
     else setError(txResult.reason instanceof Error ? txResult.reason.message : "Không thể tải giao dịch.");
     if (eventResult.status === "fulfilled") setEvents(eventResult.value);
+    if (memberResult.status === "fulfilled") setMembers(memberResult.value);
     setLoading(false);
   }, []);
 
@@ -77,6 +94,8 @@ export function FinancePage() {
   const summary = useMemo(() => summarizeTransactions(items, today.slice(0, 7)), [items, today]);
 
   const eventRows = useMemo(() => eventBudgetRows(items, events), [items, events]);
+  const memberRows = useMemo(() => summarizeByMember(items), [items]);
+  const totalOwed = memberRows.reduce((sum, row) => sum + row.owed, 0);
   const overBudget = eventRows.filter((row) => row.usage.tone === "over");
   const nearBudget = eventRows.filter((row) => row.usage.tone === "warn");
   const totalIncome = summary.categories.reduce((sum, category) => sum + category.income, 0);
@@ -85,8 +104,8 @@ export function FinancePage() {
   const monthFlow = summary.monthIncome + summary.monthExpense;
   const monthLabel = `tháng ${Number(today.slice(5, 7))}/${today.slice(0, 4)}`;
 
-  function showEvent(eventId: string) {
-    setFilters({ ...EMPTY_FILTERS, eventId });
+  function showFiltered(next: Partial<TransactionFilters>) {
+    setFilters({ ...EMPTY_FILTERS, ...next });
     setPage(1);
     document.getElementById("finance-transactions")?.scrollIntoView({ behavior: "smooth" });
   }
@@ -122,6 +141,42 @@ export function FinancePage() {
     [items],
   );
 
+  async function handleImport(file: File) {
+    setImportErrors([]);
+    const { transactions, errors } = parseTransactionsCsv(await file.text(), events, members);
+    if (errors.length) {
+      setImportErrors(errors);
+      return;
+    }
+    if (!window.confirm(`Nhập ${transactions.length} giao dịch từ "${file.name}"?`)) return;
+    setImporting(true);
+    try {
+      const saved = await importTransactions(transactions);
+      setItems((current) => [...saved, ...current]);
+      toast.success(`Đã nhập ${saved.length} giao dịch.`);
+    } catch (caught) {
+      toast.error(caught instanceof Error ? caught.message : "Không thể nhập giao dịch.");
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  async function handleMarkPaid(item: FinanceTransaction) {
+    if (!window.confirm(`Xác nhận đã nhận ${money.format(Number(item.amount))} từ ${item.memberName ?? "thành viên"} cho "${item.description}"?
+Khoản này sẽ tính vào quỹ từ hôm nay và thành viên nhận được biên nhận.`))
+      return;
+    setBusyId(item.id);
+    try {
+      const saved = await markTransactionPaid(item.id);
+      setItems((current) => current.map((tx) => (tx.id === saved.id ? saved : tx)));
+      toast.success(`Đã ghi nhận khoản thu "${item.description}".`);
+    } catch (caught) {
+      toast.error(caught instanceof Error ? caught.message : "Không thể ghi nhận khoản thu.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function handleDelete(item: FinanceTransaction) {
     if (
       !window.confirm(
@@ -130,7 +185,7 @@ Số dư quỹ sẽ được tính lại và không thể hoàn tác.`,
       )
     )
       return;
-    setDeletingId(item.id);
+    setBusyId(item.id);
     try {
       await deleteTransaction(item.id);
       setItems((current) => current.filter((tx) => tx.id !== item.id));
@@ -138,7 +193,7 @@ Số dư quỹ sẽ được tính lại và không thể hoàn tác.`,
     } catch (caught) {
       toast.error(caught instanceof Error ? caught.message : "Không thể xóa giao dịch.");
     } finally {
-      setDeletingId(null);
+      setBusyId(null);
     }
   }
 
@@ -147,11 +202,50 @@ Số dư quỹ sẽ được tính lại và không thể hoàn tác.`,
       title="Thu chi câu lạc bộ"
       description="Sổ thu chi thực tế của CLB: số dư quỹ, thu chi trong tháng và chi tiết từng giao dịch."
       action={
-        <ActionButton icon={<Plus className="h-4 w-4" />} onClick={() => setOpen(true)}>
-          Thêm giao dịch
-        </ActionButton>
+        <div className="flex flex-wrap items-center gap-2">
+          <a
+            href="/mau-thu-chi.csv"
+            download
+            className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-[#18181B] transition hover:bg-slate-100"
+          >
+            <Download className="h-4 w-4" aria-hidden />
+            File mẫu
+          </a>
+          <input
+            ref={fileInput}
+            type="file"
+            accept=".csv,text/csv"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = ""; // chọn lại cùng file sau khi sửa vẫn kích hoạt onChange
+              if (file) void handleImport(file);
+            }}
+          />
+          <ActionButton variant="outline" icon={<Upload className="h-4 w-4" />} onClick={() => fileInput.current?.click()} disabled={importing}>
+            {importing ? "Đang nhập..." : "Nhập CSV"}
+          </ActionButton>
+          <ActionButton icon={<Plus className="h-4 w-4" />} onClick={() => setOpen(true)}>
+            Thêm giao dịch
+          </ActionButton>
+        </div>
       }
     >
+      {importErrors.length ? (
+        <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <div className="flex items-start justify-between gap-3">
+            <p className="font-semibold">File chưa được nhập: sửa {importErrors.length} lỗi dưới đây rồi chọn lại file.</p>
+            <button type="button" onClick={() => setImportErrors([])} aria-label="Đóng" className="rounded-full p-1 hover:bg-rose-100">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <ul className="mt-2 max-h-48 list-disc space-y-0.5 overflow-y-auto pl-5">
+            {importErrors.map((message) => (
+              <li key={message}>{message}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       {error ? (
         <div role="alert" className="flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
           <span>{error}</span>
@@ -173,6 +267,7 @@ Số dư quỹ sẽ được tính lại và không thể hoàn tác.`,
         >
           <TransactionForm
             events={events}
+            members={members}
             categories={existingCategories}
             defaultType="INCOME"
             onSaved={(saved) => {
@@ -274,7 +369,7 @@ Số dư quỹ sẽ được tính lại và không thể hoàn tác.`,
                       <li key={row.eventId}>
                         <button
                           type="button"
-                          onClick={() => showEvent(row.eventId)}
+                          onClick={() => showFiltered({ eventId: row.eventId })}
                           className="flex w-full items-baseline justify-between gap-3 rounded-md text-left hover:underline"
                         >
                           <span className="truncate text-slate-800">{row.title}</span>
@@ -357,7 +452,7 @@ Số dư quỹ sẽ được tính lại và không thể hoàn tác.`,
                             {row.count ? (
                               <button
                                 type="button"
-                                onClick={() => showEvent(row.eventId)}
+                                onClick={() => showFiltered({ eventId: row.eventId })}
                                 className="whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium text-[#BE123C] hover:bg-rose-50"
                               >
                                 Xem giao dịch
@@ -367,6 +462,62 @@ Số dư quỹ sẽ được tính lại và không thể hoàn tác.`,
                         </tr>
                       );
                     })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Section>
+
+          <Section
+            title="Theo thành viên"
+            subtitle={`Đã đóng: khoản thu từ thành viên (quỹ…). Đã nhận: khoản chi cho thành viên (hoàn ứng, thưởng…). Còn thiếu: khoản chưa thu, chưa tính vào quỹ${
+              totalOwed ? ` (tổng ${money.format(totalOwed)})` : ""
+            }.`}
+          >
+            {memberRows.length === 0 ? (
+              <p className="py-4 text-sm text-[#71717A]">
+                Chưa có giao dịch nào gắn thành viên. Chọn &ldquo;Thành viên liên quan&rdquo; khi thêm giao dịch, hoặc điền email vào cột
+                &ldquo;Thành viên&rdquo; khi nhập CSV.
+              </p>
+            ) : (
+              <div className="relative overflow-x-auto">
+                <table className="w-full min-w-[760px] text-left text-sm tabular-nums">
+                  <thead className="border-b border-slate-200 text-xs text-slate-500">
+                    <tr>
+                      <th scope="col" className="py-2 pr-4 font-semibold">Thành viên</th>
+                      <th scope="col" className="px-4 py-2 text-right font-semibold">Đã đóng</th>
+                      <th scope="col" className="px-4 py-2 text-right font-semibold">Đã nhận</th>
+                      <th scope="col" className="px-4 py-2 text-right font-semibold">Đóng − nhận</th>
+                      <th scope="col" className="px-4 py-2 text-right font-semibold">Còn thiếu</th>
+                      <th scope="col" className="py-2 pl-4"><span className="sr-only">Thao tác</span></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {memberRows.map((row) => (
+                      <tr key={row.memberId}>
+                        <td className="py-3 pr-4">
+                          <span className="font-medium text-[#18181B]">{row.name}</span>
+                          <span className="block text-xs text-slate-500">{row.count} giao dịch</span>
+                        </td>
+                        <td className="px-4 py-3 text-right text-emerald-700">{money.format(row.income)}</td>
+                        <td className="px-4 py-3 text-right text-[#BE123C]">{money.format(row.expense)}</td>
+                        <td className={`px-4 py-3 text-right font-semibold ${row.net < 0 ? "text-[#BE123C]" : "text-emerald-700"}`}>
+                          {signed(row.net)}
+                        </td>
+                        <td className={`px-4 py-3 text-right font-semibold ${row.owed ? "text-amber-700" : "text-slate-400"}`}>
+                          {row.owed ? money.format(row.owed) : "—"}
+                        </td>
+                        <td className="py-3 pl-4 text-right">
+                          <button
+                            type="button"
+                            onClick={() => showFiltered({ memberId: row.memberId })}
+                            className="whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium text-[#BE123C] hover:bg-rose-50"
+                          >
+                            Xem giao dịch
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -420,7 +571,7 @@ Số dư quỹ sẽ được tính lại và không thể hoàn tác.`,
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))_auto]">
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))_auto]">
                     <label className="relative block">
                       <span className="sr-only">Tìm giao dịch</span>
                       <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden />
@@ -428,7 +579,7 @@ Số dư quỹ sẽ được tính lại và không thể hoàn tác.`,
                         type="search"
                         value={filters.query}
                         onChange={(e) => updateFilter("query", e.target.value)}
-                        placeholder="Tìm mô tả, danh mục, sự kiện, người tạo…"
+                        placeholder="Tìm mô tả, danh mục, sự kiện, thành viên…"
                         className={`${inputClass} pl-9`}
                       />
                     </label>
@@ -456,6 +607,17 @@ Số dư quỹ sẽ được tính lại và không thể hoàn tác.`,
                         ))}
                       </select>
                     </label>
+                    <label className="block">
+                      <span className="sr-only">Thành viên</span>
+                      <select value={filters.memberId} onChange={(e) => updateFilter("memberId", e.target.value)} className={inputClass}>
+                        <option value="">Mọi thành viên</option>
+                        {memberRows.map((row) => (
+                          <option key={row.memberId} value={row.memberId}>
+                            {row.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
                     {filtering ? (
                       <ActionButton
                         variant="ghost"
@@ -479,7 +641,7 @@ Số dư quỹ sẽ được tính lại và không thể hoàn tác.`,
                   ) : (
                     <>
                       <div className="relative overflow-x-auto rounded-2xl border border-slate-200/80">
-                        <table className="w-full min-w-[860px] text-left text-sm">
+                        <table className="w-full min-w-[980px] text-left text-sm">
                           <thead className="border-b border-slate-200 bg-slate-50/70 text-xs text-slate-500">
                             <tr>
                               <SortHeader label="Ngày" sortKey="date" sort={sort} onSort={toggleSort} />
@@ -487,6 +649,7 @@ Số dư quỹ sẽ được tính lại và không thể hoàn tác.`,
                               <th scope="col" className="px-4 py-3 font-semibold">Mô tả</th>
                               <th scope="col" className="px-4 py-3 font-semibold">Danh mục</th>
                               <th scope="col" className="px-4 py-3 font-semibold">Sự kiện</th>
+                              <th scope="col" className="px-4 py-3 font-semibold">Thành viên</th>
                               <SortHeader label="Số tiền (VND)" sortKey="amount" sort={sort} onSort={toggleSort} alignRight />
                               <th scope="col" className="px-4 py-3 font-semibold">Người tạo</th>
                               <th scope="col" className="px-4 py-3"><span className="sr-only">Thao tác</span></th>
@@ -500,20 +663,37 @@ Số dư quỹ sẽ được tính lại và không thể hoàn tác.`,
                                   <td className="whitespace-nowrap px-4 py-3 tabular-nums text-slate-600">{formatIsoDate(item.transactionDate)}</td>
                                   <td className="px-4 py-3">
                                     <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${meta.badge}`}>{meta.label}</span>
+                                    {item.paid ? null : (
+                                      <span className="ml-1.5 whitespace-nowrap rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800">
+                                        Chưa thu
+                                      </span>
+                                    )}
                                   </td>
                                   <td className="max-w-xs px-4 py-3 text-slate-900">{item.description}</td>
                                   <td className="px-4 py-3 text-slate-600">{item.category || "—"}</td>
                                   <td className="px-4 py-3 text-slate-600">{item.eventTitle || "—"}</td>
-                                  <td className={`whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums ${meta.text}`}>
+                                  <td className="px-4 py-3 text-slate-600">{item.memberName || "—"}</td>
+                                  <td className={`whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums ${item.paid ? meta.text : "text-amber-700"}`}>
                                     {meta.sign}
                                     {money.format(Number(item.amount))}
                                   </td>
                                   <td className="px-4 py-3 text-slate-600">{item.createdByName || "—"}</td>
-                                  <td className="px-4 py-3 text-right">
+                                  <td className="whitespace-nowrap px-4 py-3 text-right">
+                                    {item.paid ? null : (
+                                      <button
+                                        type="button"
+                                        onClick={() => void handleMarkPaid(item)}
+                                        disabled={busyId === item.id}
+                                        className="mr-1 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-50"
+                                      >
+                                        <CircleCheck className="h-3.5 w-3.5" aria-hidden />
+                                        Đã thu
+                                      </button>
+                                    )}
                                     <button
                                       type="button"
                                       onClick={() => void handleDelete(item)}
-                                      disabled={deletingId === item.id}
+                                      disabled={busyId === item.id}
                                       title="Xóa giao dịch"
                                       aria-label={`Xóa giao dịch ${item.description}`}
                                       className="rounded-full p-1.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50"

@@ -1,7 +1,7 @@
 // Chạy: node --test src/components/dashboard/financeMetrics.test.mjs (Node >= 23.6 tự bỏ kiểu TS).
 import assert from "node:assert/strict";
 import test from "node:test";
-import { NO_CATEGORY, NO_EVENT, budgetUsage, eventBudgetRows, filterTransactions, summarizeByEvent, summarizeTransactions } from "./financeMetrics.ts";
+import { NO_CATEGORY, NO_EVENT, budgetUsage, eventBudgetRows, filterTransactions, summarizeByEvent, summarizeByMember, summarizeTransactions } from "./financeMetrics.ts";
 
 test("summarizeTransactions tính số dư, thu chi tháng và nhóm theo danh mục", () => {
   const summary = summarizeTransactions(
@@ -55,6 +55,30 @@ test("filterTransactions lọc theo loại, tháng, sự kiện và từ khóa",
   assert.equal(filterTransactions(items, { ...all, eventId: NO_EVENT })[0].description, "Văn phòng phẩm");
   assert.equal(filterTransactions(items, { ...all, query: "  VĂN phòng " }).length, 1);
   assert.equal(filterTransactions(items, { ...all, query: "debate open" }).length, 2);
+});
+
+test("summarizeByMember cộng đã đóng / đã nhận theo thành viên và lọc theo thành viên", () => {
+  const items = [
+    tx({ type: "INCOME", amount: 200, memberId: "u1", memberName: "An" }),
+    tx({ type: "INCOME", amount: 300, memberId: "u1", memberName: "An" }),
+    tx({ amount: 50, memberId: "u1", memberName: "An" }),
+    tx({ type: "INCOME", amount: 900, memberId: "u2", memberName: "Bình" }),
+    tx({ type: "INCOME", amount: 1000 }),
+    tx({ type: "INCOME", amount: 150, memberId: "u3", memberName: "Chi", paid: false }),
+  ];
+  assert.deepEqual(
+    summarizeByMember(items).map((r) => [r.memberId, r.income, r.expense, r.owed, r.net, r.count]),
+    [
+      ["u3", 0, 0, 150, 0, 1],
+      ["u2", 900, 0, 0, 900, 1],
+      ["u1", 500, 50, 0, 450, 3],
+    ],
+  );
+  // Khoản chưa thu không vào quỹ.
+  assert.equal(summarizeTransactions(items, "").balance, 200 + 300 - 50 + 900 + 1000);
+  const all = { query: "", type: "", month: "", eventId: "", memberId: "" };
+  assert.equal(filterTransactions(items, { ...all, memberId: "u1" }).length, 3);
+  assert.equal(filterTransactions(items, { ...all, query: "bình" }).length, 1);
 });
 
 test("summarizeByEvent cộng thu chi theo sự kiện, bỏ giao dịch không gắn sự kiện", () => {

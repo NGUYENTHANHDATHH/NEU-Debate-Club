@@ -30,7 +30,7 @@ import {
 } from "@/lib/notifications";
 
 const READ_PAGE_LIMIT = 100;
-const TYPE_FILTERS: (NotificationType | "ALL")[] = ["ALL", "TASK_ASSIGNED", ...MANUAL_NOTIFICATION_TYPES];
+const TYPE_FILTERS: (NotificationType | "ALL")[] = ["ALL", "TASK_ASSIGNED", "FINANCE", ...MANUAL_NOTIFICATION_TYPES];
 
 const inputClass =
   "w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#E11D48]";

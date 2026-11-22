@@ -30,6 +30,20 @@ Compose supplies the backend database URL using the `db` service name and the
 `POSTGRES_*` values. Local `DATABASE_*` variables and package-level `.env` files
 are not used inside the containers. Environment files are excluded from images.
 
+## PayOS (optional)
+
+Members can pay their "Chưa thu" charges by VietQR from **Công cụ → Thu chi của tôi**.
+Create a payment channel at https://my.payos.vn and put its `PAYOS_CLIENT_ID`,
+`PAYOS_API_KEY`, and `PAYOS_CHECKSUM_KEY` in `.env`; leave them empty to disable online
+payment. Set `FRONTEND_URL` to the public website address (PayOS returns members there).
+
+Payments are confirmed two ways: the open QR dialog asks PayOS every 3 seconds (works
+locally with no extra setup), and the webhook confirms payments made after the dialog
+closes. Register the webhook in my.payos.vn as
+`https://<public-domain>/api/public/payos/webhook`; locally it needs a public tunnel
+(for example `cloudflared tunnel --url http://localhost:8080`). Requests with a wrong
+signature get HTTP 400.
+
 ## Build and start
 
 ```powershell

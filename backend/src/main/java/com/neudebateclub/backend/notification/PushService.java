@@ -150,6 +150,7 @@ public class PushService {
 
     // Khớp notificationHref ở frontend (src/lib/notifications.ts).
     private static String url(Notification notification) {
+        if (notification.getType() == NotificationType.FINANCE) return "/dashboard/tools/finance";
         return notification.getType() == NotificationType.TASK_ASSIGNED && notification.getEntityId() != null
                 ? "/dashboard/tasks/todo-list?task=" + notification.getEntityId()
                 : "/dashboard/notifications/read?id=" + notification.getId();

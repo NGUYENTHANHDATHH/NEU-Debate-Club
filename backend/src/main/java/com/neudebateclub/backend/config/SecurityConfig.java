@@ -41,6 +41,8 @@ public class SecurityConfig {
                 // Khách chưa đăng nhập cũng bật được thông báo sự kiện của landing page.
                 .requestMatchers(HttpMethod.GET, "/push/public-key").permitAll()
                 .requestMatchers(HttpMethod.POST, "/push/subscriptions").permitAll()
+                // PayOS gọi về khi có tiền vào; xác thực bằng chữ ký HMAC (MemberPaymentService.handleWebhook).
+                .requestMatchers(HttpMethod.POST, "/public/payos/webhook").permitAll()
                 .requestMatchers(
                     "/v3/api-docs/**",
                     "/swagger-ui/**",

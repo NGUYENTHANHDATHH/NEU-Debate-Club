@@ -10,6 +10,11 @@ export const NOTIFICATION_TYPE_META: Record<
     dot: "bg-sky-500",
     badge: "bg-sky-50 text-sky-700",
   },
+  FINANCE: {
+    label: "Thu chi",
+    dot: "bg-emerald-500",
+    badge: "bg-emerald-50 text-emerald-700",
+  },
   GENERAL: {
     label: "Thông báo chung",
     dot: "bg-slate-400",
@@ -54,6 +59,7 @@ export function notificationHref(notification: AppNotification) {
   if (notification.type === "TASK_ASSIGNED" && notification.entityId) {
     return `${ROUTES.todoList}?task=${encodeURIComponent(notification.entityId)}`;
   }
+  if (notification.type === "FINANCE") return ROUTES.toolFinance;
   return `${ROUTES.readNotification}?id=${encodeURIComponent(notification.id)}`;
 }
 

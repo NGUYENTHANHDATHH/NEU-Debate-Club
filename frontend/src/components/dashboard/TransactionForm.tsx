@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import type { BudgetTone } from "@/components/dashboard/financeMetrics";
 import { localIsoDate } from "@/components/dashboard/PublicationsPage";
 import { ActionButton } from "@/components/ui/Dashboard/ActionButton";
-import { createTransaction, type ClubEvent, type FinanceTransaction, type TransactionType } from "@/lib/api";
+import { createTransaction, type ClubEvent, type FinanceMember, type FinanceTransaction, type TransactionType } from "@/lib/api";
 
 export const money = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 });
 
@@ -33,6 +33,7 @@ type FieldErrors = Partial<Record<"amount" | "description" | "transactionDate", 
  */
 export function TransactionForm({
   events = [],
+  members = [],
   categories = [],
   fixedEvent,
   defaultType = "EXPENSE",
@@ -40,6 +41,8 @@ export function TransactionForm({
   onCancel,
 }: {
   events?: ClubEvent[];
+  /** Rỗng thì ẩn ô "Thành viên liên quan" (vd. trong Quản lý sự kiện). */
+  members?: FinanceMember[];
   categories?: string[];
   fixedEvent?: { id: string; title: string };
   defaultType?: TransactionType;
@@ -53,8 +56,12 @@ export function TransactionForm({
     description: "",
     category: "",
     eventId: fixedEvent?.id ?? "",
+    memberId: "",
+    unpaid: false,
     transactionDate: localIsoDate(new Date()),
   });
+  // Khoản "chưa thu" chỉ áp dụng cho khoản thu gắn thành viên, không gắn sự kiện (backend kiểm tra lại).
+  const unpaid = form.unpaid && form.type === "INCOME" && !!form.memberId && !fixedEvent;
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -82,13 +89,17 @@ export function TransactionForm({
         amount,
         description: form.description.trim(),
         category: form.category.trim() || null,
-        eventId: form.eventId || null,
+        eventId: unpaid ? null : form.eventId || null,
+        memberId: form.memberId || null,
+        paid: !unpaid,
         transactionDate: form.transactionDate,
       });
       toast.success(
-        `Đã ghi khoản ${form.type === "INCOME" ? "thu" : "chi"} ${money.format(amount)}${
-          fixedEvent ? " vào Tài chính" : ""
-        }.`,
+        unpaid
+          ? `Đã ghi khoản cần đóng ${money.format(amount)} và báo cho thành viên.`
+          : `Đã ghi khoản ${form.type === "INCOME" ? "thu" : "chi"} ${money.format(amount)}${
+              fixedEvent ? " vào Tài chính" : ""
+            }.`,
       );
       onSaved(saved);
     } catch (caught) {
@@ -220,7 +231,13 @@ export function TransactionForm({
         {fixedEvent ? null : (
           <label className="space-y-1.5 text-sm font-medium text-slate-700">
             <span>Sự kiện liên quan</span>
-            <select value={form.eventId} onChange={(e) => update("eventId", e.target.value)} className={inputClass}>
+            <select
+              value={unpaid ? "" : form.eventId}
+              onChange={(e) => update("eventId", e.target.value)}
+              disabled={unpaid}
+              title={unpaid ? "Khoản chưa thu không gắn sự kiện" : undefined}
+              className={inputClass}
+            >
               <option value="">Không gắn sự kiện</option>
               {events.map((ev) => (
                 <option key={ev.id} value={ev.id}>
@@ -230,7 +247,38 @@ export function TransactionForm({
             </select>
           </label>
         )}
+        {members.length ? (
+          <label className="space-y-1.5 text-sm font-medium text-slate-700">
+            <span>Thành viên liên quan</span>
+            <select value={form.memberId} onChange={(e) => update("memberId", e.target.value)} className={inputClass}>
+              <option value="">Không gắn thành viên</option>
+              {members.map((member) => (
+                <option key={member.id} value={member.id}>
+                  {member.fullName} ({member.email})
+                </option>
+              ))}
+            </select>
+            <span className="block text-xs font-normal text-slate-500">Thu: thành viên đóng quỹ. Chi: hoàn ứng, thưởng cho thành viên.</span>
+          </label>
+        ) : null}
       </div>
+
+      {form.type === "INCOME" && form.memberId && !fixedEvent ? (
+        <label className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-3 text-sm text-slate-700">
+          <input
+            type="checkbox"
+            checked={form.unpaid}
+            onChange={(e) => update("unpaid", e.target.checked)}
+            className="mt-0.5 h-4 w-4 accent-[#E11D48]"
+          />
+          <span>
+            <span className="font-medium">Chưa thu: thành viên cần đóng khoản này</span>
+            <span className="block text-xs text-slate-500">
+              Hiện là &ldquo;còn thiếu&rdquo; ở trang Thu chi của thành viên và chưa tính vào quỹ. Bấm &ldquo;Đã thu&rdquo; khi nhận tiền.
+            </span>
+          </span>
+        </label>
+      ) : null}
 
       <div className="flex justify-end gap-3">
         <ActionButton variant="outline" onClick={onCancel}>

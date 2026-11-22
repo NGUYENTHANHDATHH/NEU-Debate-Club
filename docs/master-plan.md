@@ -2,7 +2,7 @@
 
 **Baseline:** commit `f3033a5` on `main`, audited 2026-11-13. This plan starts from what the repository verifiably does, not from the product documents. Generating these documents does **not** mean the repository is consistent; the open risks below are real and unresolved.
 
-Evidence: [architecture.md](architecture.md) · [dependency-map.md](dependency-map.md) · modules: [auth](modules/auth.md) · [access-control](modules/access-control.md) · [members](modules/members.md) · [tasks](modules/tasks.md) · [events](modules/events.md) · [landing-cms](modules/landing-cms.md) · [database-migrations](modules/database-migrations.md) · [schema-only](modules/schema-backed-unimplemented.md)
+Evidence: [architecture.md](architecture.md) · [dependency-map.md](dependency-map.md) · modules: [auth](modules/auth.md) · [access-control](modules/access-control.md) · [members](modules/members.md) · [tasks](modules/tasks.md) · [events](modules/events.md) · [landing-cms](modules/landing-cms.md) · [finance](modules/finance.md) · [database-migrations](modules/database-migrations.md) · [schema-only](modules/schema-backed-unimplemented.md)
 
 ## Actual architecture (one paragraph)
 
@@ -20,7 +20,7 @@ A Next.js 16 client-rendered frontend calls a Spring Boot 4.1 / Java 21 REST API
 | Landing sections | `landing_content`, versions | public + CMS | home sections, CmsPage | CMS integration — not run | Working slice |
 | Landing catalog | `projects`, `achievements` | public + CMS | home, list/detail, CmsPage | CMS integration — not run | Working slice |
 | Notifications | `notifications` V4 (+`created_by` V22) | 2 routes + task-create hook | bell, read page, create page | NotificationServiceTest 9 ✔ | Implemented 2026-11-13 (uncommitted); see [notifications.md](modules/notifications.md) |
-| Finance | `transactions` | 3 routes (`/finance/transactions`) | FinancePage | FinanceControllerTest 6 ✔ | Implemented 2026-11-13 (list/add/delete), uncommitted |
+| Finance | `transactions` (+`member_id` V27, `paid` V28, PayOS V29) | 9 routes under `/finance/transactions` + `POST /public/payos/webhook` | FinancePage (CSV import, per-member, "Chưa thu"), tools "Thu chi của tôi" + PayOS QR | FinanceControllerTest 16, MemberPaymentServiceTest 5, PayosClientTest 2 ✔ | Ledger 2026-11-13; member dues + notifications + PayOS 2026-11-20, uncommitted; real PayOS payment and webhook not yet tested — see [finance.md](modules/finance.md) |
 | Publications + library | `media_links`, `events.resource_urls` | 3 routes (`/publications`) | PublicationsPage, LibraryPage (merged links, read-only) | PublicationControllerTest 5 ✔ | Implemented 2026-11-13, uncommitted |
 | Tenure | `seasons`, `season_members` | 6 routes (`/seasons`) | TenurePage | SeasonControllerTest 7 ✔ | Implemented 2026-11-13, uncommitted |
 | Activity log | `activity_logs` | `GET /activity-logs` (BCN) + writes from every write endpoint | ActivityLogPage | ActivityLogControllerTest 3 ✔ | Implemented 2026-11-13, uncommitted |
