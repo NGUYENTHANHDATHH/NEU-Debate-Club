@@ -140,6 +140,29 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build --
 
 Đổi bất kỳ biến `NEXT_PUBLIC_*` nào trong `.env` thì đều phải chạy lại lệnh trên, vì các biến này được nhúng vào frontend lúc build.
 
+### Tự động deploy bằng GitHub Actions
+
+Mỗi lần push lên `main`, [.github/workflows/deploy.yml](.github/workflows/deploy.yml) sẽ:
+1. Chạy test backend. Test lỗi thì dừng, không deploy.
+2. SSH vào server bằng khoá riêng cho CI.
+
+Trên server, khoá này bị giới hạn bằng forced command trong `~/.ssh/authorized_keys`: nó chỉ chạy được `git pull --ff-only` và [scripts/deploy.sh](scripts/deploy.sh), không mở được shell. Nếu build lỗi, các container cũ vẫn chạy tiếp.
+
+- Các commit chỉ sửa `*.md` hoặc `docs/` thì không deploy.
+- Muốn chạy tay: GitHub → Actions → Deploy → Run workflow.
+
+Secrets cần đặt ở GitHub → Settings → Secrets and variables → Actions:
+
+| Secret | Giá trị |
+|---|---|
+| `DEPLOY_SSH_KEY` | Toàn bộ nội dung file khoá riêng `~/.ssh/ndc-deploy` trên máy tạo khoá |
+| `DEPLOY_HOST` | `52.64.239.220` |
+| `DEPLOY_KNOWN_HOSTS` | Kết quả của `ssh-keyscan -t ed25519 52.64.239.220` |
+
+Thu hồi quyền deploy: xoá dòng `github-actions-deploy` trong `~/.ssh/authorized_keys` trên server.
+
+Server không được có thay đổi chưa commit trong `~/ndc`, nếu có thì `git pull --ff-only` sẽ lỗi. Chỉ sửa `.env`, vì file này không nằm trong git.
+
 ## 10. Kiểm tra sau khi deploy
 
 - Đăng nhập Google bằng email BCN thật. Không được gặp lỗi `redirect_uri_mismatch`.
