@@ -290,7 +290,7 @@ sequenceDiagram
 
 ### 6.1. Chạy bằng Docker (khuyến nghị)
 
-Yêu cầu: Docker Desktop + Docker Compose v2. Chi tiết xem [DOCKER.md](DOCKER.md).
+Yêu cầu: Docker Desktop + Docker Compose v2. Chi tiết xem [DOCKER.md](DOCKER.md). Deploy production → [DEPLOY.md](DEPLOY.md).
 
 ```powershell
 if (!(Test-Path .env)) { Copy-Item .env.docker.example .env }
@@ -339,7 +339,7 @@ pnpm dev:fe                                   # http://localhost:3000
 Get-Content -Raw -Encoding UTF8 backend/dev-seed/dashboard-sample-data.sql | docker exec -i ndc_db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
 ```
 
-Không bao giờ chạy lên database dùng chung / production.
+Không bao giờ chạy lên database dùng chung / production. Seed mẫu V18/V20 nằm ở `db/seed` và không chạy khi bật profile `prod`.
 
 ---
 
@@ -384,4 +384,5 @@ Quy ước:
 - [docs/master-plan.md](docs/master-plan.md) — kế hoạch & quyết định của chủ dự án
 - [docs/modules/](docs/modules/) — tài liệu từng module (auth, tasks, events, notifications, CMS, phân quyền, migration)
 - [DOCKER.md](DOCKER.md) — chạy bằng Docker, logs, khôi phục
+- [DEPLOY.md](DEPLOY.md) — deploy production lên AWS Lightsail (Caddy + HTTPS, backup, cập nhật)
 - [USE_CASES_HE_THONG_CLB_NEU.md](USE_CASES_HE_THONG_CLB_NEU.md), [NHU_CAU_VA_GIAI_PHAP_WEBSITE_CLB_NEU.md](NHU_CAU_VA_GIAI_PHAP_WEBSITE_CLB_NEU.md) — nghiệp vụ (một số điểm đã lỗi thời so với code)

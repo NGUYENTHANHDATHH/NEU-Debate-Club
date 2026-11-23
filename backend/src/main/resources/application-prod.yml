@@ -1,0 +1,26 @@
+spring:
+  flyway:
+    locations: classpath:db/migration   # thay hẳn list của application.yml → không chạy seed mẫu V18/V20
+    baseline-on-migrate: false          # DB lạ không bị đánh dấu V12 rồi bỏ qua V1–V12
+
+server:
+  # Chỉ bật ở prod: backend không mở port ra ngoài, chỉ Caddy gọi tới nên tin X-Forwarded-* được.
+  # Nhờ vậy callback Google là https://DOMAIN/api/... và cookie nonce có cờ Secure.
+  forward-headers-strategy: framework
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+logging:
+  level:
+    com.neudebateclub: INFO
+    org.springframework.security: WARN

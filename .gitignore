@@ -6,3 +6,5 @@ agent
 .claude
 .pnpm-store
 frontend/.next
+# Lightsail SSH key
+*.pem

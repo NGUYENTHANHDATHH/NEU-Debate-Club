@@ -36,6 +36,10 @@
 
 Fresh databases created from the current files are not affected (inferred).
 
+## Sample seeds and the `prod` profile (since 2026-11-24)
+
+V18 and V20 (sample members and events) live in `classpath:db/seed`, not `db/migration`. File names and contents are unchanged, so existing dev databases keep the same checksums. `application.yml` loads `db/migration,db/seed`, so dev, Docker and tests behave as before. [application-prod.yml](../../backend/src/main/resources/application-prod.yml) loads only `db/migration` and sets `baseline-on-migrate: false`, so production never gets sample data and never baselines over V1–V12. A prod database therefore shows V18/V20 as missing versions, which is expected.
+
 ## Other observations
 
 - Seed/sample data lives in versioned migrations, so it will be applied to any production database.
