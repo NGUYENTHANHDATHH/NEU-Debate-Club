@@ -1,5 +1,22 @@
 const DASHBOARD = "/dashboard";
 
+// Domain công khai, dùng cho canonical, sitemap, Open Graph.
+export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+export const SITE_NAME = "NEU Debate Club";
+export const SITE_DESCRIPTION =
+  "NEU Debate Club (NDC) là câu lạc bộ tranh biện của Đại học Kinh tế Quốc dân (NEU), nơi sinh viên rèn luyện tư duy phản biện, kỹ năng lập luận và thuyết trình. CLB tổ chức các buổi sinh hoạt, giải đấu debate và dự án học thuật.";
+export const SOCIAL_LINKS = [
+  "https://www.facebook.com/NEUDebateClub",
+  "https://www.tiktok.com/@neudebate.ndc",
+];
+// Slug phòng ban → key trong translations.json (departments.detail.*).
+export const DEPARTMENT_KEYS = {
+  "truyen-thong": "media",
+  "doi-ngoai": "external",
+  "su-kien": "event",
+  "chuyen-mon": "academics",
+} as const;
+
 export const ROUTES = {
   // Public routes
   home: "/",

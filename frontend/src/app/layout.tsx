@@ -6,6 +6,7 @@ import { QueryProvider } from "@/provider/QueryProvider";
 import { LanguageProvider } from "@/provider/LanguageProvider";
 import { Toaster } from "sonner";
 import Script from "next/script";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/constants/routes";
 
 // "vietnamese" là bắt buộc: thiếu nó các chữ có dấu (ă, đ, ơ, ư, ệ…) rơi về font hệ thống.
 const inter = Inter({
@@ -19,8 +20,28 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "NEU Debate Club",
-  description: "Website for the NEU Debate Club",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: `${SITE_NAME} – CLB Tranh biện Đại học Kinh tế Quốc dân`,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  keywords: [
+    "NEU Debate Club",
+    "NDC",
+    "câu lạc bộ tranh biện",
+    "CLB tranh biện NEU",
+    "Đại học Kinh tế Quốc dân",
+    "debate",
+    "tranh biện",
+  ],
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    locale: "vi_VN",
+    images: [{ url: "/vision-bg.jpg", alt: SITE_NAME }],
+  },
+  twitter: { card: "summary_large_image" },
   icons: {
     icon: "/logo.png",
     apple: "/apple-touch-icon.png",
@@ -33,7 +54,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="vi" suppressHydrationWarning>
       <body
         suppressHydrationWarning
         className={`${inter.variable} ${montserrat.variable} antialiased`}

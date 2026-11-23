@@ -62,8 +62,12 @@ services:
       args:
         NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8080/api}
         NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-${GOOGLE_CLIENT_ID:-}}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
     container_name: ndc_frontend
     restart: unless-stopped
+    environment:
+      # Trang public render phía server gọi backend qua mạng Docker, không qua URL công khai.
+      API_INTERNAL_URL: http://backend:8080/api
     depends_on:
       backend:
         condition: service_healthy

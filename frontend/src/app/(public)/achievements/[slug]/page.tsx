@@ -1,25 +1,36 @@
-"use client";
-
 /* eslint-disable @next/next/no-img-element -- catalog images are CMS-configured URLs. */
 
-import { useEffect, useState } from "react";
+import type { Metadata } from "next";
+import { cache } from "react";
 import { ArrowLeft, Tag } from "lucide-react";
 import Link from "next/link";
-import { notFound, useParams } from "next/navigation";
+import { notFound } from "next/navigation";
 import { ROUTES } from "@/constants/routes";
-import { CmsCatalogItem, fetchPublicCatalogItem } from "@/lib/api";
+import { fetchPublicCatalogItem } from "@/lib/api";
 
-export default function AchievementDetailPage() {
-  const params = useParams<{ slug: string }>();
-  const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
-  const [achievement, setAchievement] = useState<CmsCatalogItem | null | undefined>(undefined);
+type Props = { params: Promise<{ slug: string }> };
 
-  useEffect(() => {
-    if (slug) fetchPublicCatalogItem("achievements", slug).then(setAchievement).catch(console.error);
-  }, [slug]);
+// Dùng chung một lần gọi API cho generateMetadata và trang.
+const getAchievement = cache((slug: string) => fetchPublicCatalogItem("achievements", slug));
 
-  if (achievement === null) return notFound();
-  if (!achievement) return null;
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const achievement = await getAchievement((await params).slug);
+  if (!achievement) return {};
+  return {
+    title: achievement.title,
+    description: achievement.description ?? undefined,
+    alternates: { canonical: `${ROUTES.achievements}/${achievement.slug}` },
+    openGraph: {
+      title: achievement.title,
+      description: achievement.description ?? undefined,
+      images: achievement.imageUrl ? [{ url: achievement.imageUrl, alt: achievement.imageAlt || achievement.title }] : undefined,
+    },
+  };
+}
+
+export default async function AchievementDetailPage({ params }: Props) {
+  const achievement = await getAchievement((await params).slug);
+  if (!achievement) notFound();
 
   const detail = typeof achievement.content === "string" ? achievement.content : null;
   return (

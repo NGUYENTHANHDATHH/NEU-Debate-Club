@@ -1,25 +1,36 @@
-"use client";
-
 /* eslint-disable @next/next/no-img-element -- catalog images are CMS-configured URLs. */
 
-import { useEffect, useState } from "react";
+import type { Metadata } from "next";
+import { cache } from "react";
 import { ArrowLeft, Tag } from "lucide-react";
 import Link from "next/link";
-import { notFound, useParams } from "next/navigation";
+import { notFound } from "next/navigation";
 import { ROUTES } from "@/constants/routes";
-import { CmsCatalogItem, fetchPublicCatalogItem } from "@/lib/api";
+import { fetchPublicCatalogItem } from "@/lib/api";
 
-export default function ProjectDetail() {
-  const params = useParams<{ slug: string }>();
-  const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
-  const [project, setProject] = useState<CmsCatalogItem | null | undefined>(undefined);
+type Props = { params: Promise<{ slug: string }> };
 
-  useEffect(() => {
-    if (slug) fetchPublicCatalogItem("projects", slug).then(setProject).catch(console.error);
-  }, [slug]);
+// Dùng chung một lần gọi API cho generateMetadata và trang.
+const getProject = cache((slug: string) => fetchPublicCatalogItem("projects", slug));
 
-  if (project === null) return notFound();
-  if (!project) return null;
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const project = await getProject((await params).slug);
+  if (!project) return {};
+  return {
+    title: project.title,
+    description: project.description ?? undefined,
+    alternates: { canonical: `${ROUTES.projects}/${project.slug}` },
+    openGraph: {
+      title: project.title,
+      description: project.description ?? undefined,
+      images: project.imageUrl ? [{ url: project.imageUrl, alt: project.imageAlt || project.title }] : undefined,
+    },
+  };
+}
+
+export default async function ProjectDetail({ params }: Props) {
+  const project = await getProject((await params).slug);
+  if (!project) notFound();
 
   const detail = typeof project.content === "string" ? project.content : null;
   return (

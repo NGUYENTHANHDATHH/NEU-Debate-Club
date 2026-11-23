@@ -17,5 +17,7 @@ export function DashboardAccessGuard({ children }: { children: React.ReactNode }
     }
   }, [loading, pathname, router, user]);
 
+  // Dashboard chỉ chạy phía client (cần phiên trong localStorage); không render ở server/prerender.
+  if (loading) return null;
   return children;
 }

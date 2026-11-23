@@ -3,6 +3,12 @@ import { cachedGet, refreshApiCache } from "@/lib/requestCache";
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080/api";
 
+// Trang public render phía server (SEO) gọi backend qua mạng Docker nội bộ nếu có; trình duyệt luôn dùng URL công khai.
+const PUBLIC_READ_BASE_URL =
+  (typeof window === "undefined" && process.env.API_INTERNAL_URL) || API_BASE_URL;
+// Cache 5 phút cho fetch phía server; trình duyệt bỏ qua option này.
+const PUBLIC_READ_INIT = { next: { revalidate: 300 } } as RequestInit;
+
 export async function fetchLandingSection<T>(section: string): Promise<T> {
   const response = await fetch(`${API_BASE_URL}/public/landing/${section}`);
   if (!response.ok) throw new Error(`Không thể tải section ${section}.`);
@@ -119,7 +125,7 @@ export type CmsCatalogItem = {
 export async function fetchPublicCatalog(
   type: "projects" | "achievements",
 ): Promise<CmsCatalogItem[]> {
-  const response = await fetch(`${API_BASE_URL}/public/${type}`);
+  const response = await fetch(`${PUBLIC_READ_BASE_URL}/public/${type}`, PUBLIC_READ_INIT);
   if (!response.ok) throw new Error(`Unable to load ${type}.`);
   return response.json();
 }
@@ -468,7 +474,10 @@ export async function fetchPublicCatalogItem(
   type: "projects" | "achievements",
   slug: string,
 ): Promise<CmsCatalogItem | null> {
-  const response = await fetch(`${API_BASE_URL}/public/${type}/${slug}`);
+  const response = await fetch(
+    `${PUBLIC_READ_BASE_URL}/public/${type}/${encodeURIComponent(slug)}`,
+    PUBLIC_READ_INIT,
+  );
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`Unable to load ${type} item.`);
   return response.json();

@@ -20,15 +20,14 @@ export const LanguageProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
+  // Server và lần render đầu luôn là "vi" để HTML có nội dung cho bot tìm kiếm; ngôn ngữ đã lưu áp sau khi mount.
   const [language, setLanguage] = useState<Language>("vi");
-  const [mounted, setMounted] = useState(false);
 
   React.useEffect(() => {
     const saved = localStorage.getItem("language") as Language | null;
     if (saved) {
       setLanguage(saved);
     }
-    setMounted(true);
   }, []);
 
   const handleSetLanguage = (lang: Language) => {
@@ -45,11 +44,6 @@ export const LanguageProvider = ({
     }
     return result as string;
   };
-
-  // Prevent rendering children until language is loaded from local storage to avoid flash
-  if (!mounted) {
-    return <div className="min-h-screen bg-white dark:bg-black" />; // Return an empty layout placeholder
-  }
 
   return (
     <LanguageContext.Provider
