@@ -9,7 +9,8 @@ async function catalogEntries(type: "projects" | "achievements"): Promise<Metada
     const items = await fetchPublicCatalog(type);
     return items.map((item) => ({
       url: `${SITE_URL}/${type}/${item.slug}`,
-      lastModified: item.updatedAt,
+      // Backend trả LocalDateTime không có múi giờ (container chạy UTC); sitemap bắt buộc có múi giờ → Date ISO có "Z".
+      lastModified: new Date(item.updatedAt),
     }));
   } catch {
     return []; // Backend tắt lúc build: vẫn trả sitemap với các trang tĩnh.
