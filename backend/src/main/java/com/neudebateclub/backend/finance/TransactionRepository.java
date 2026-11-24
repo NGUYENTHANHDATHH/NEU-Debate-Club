@@ -22,6 +22,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     @EntityGraph(attributePaths = {"createdBy", "member"})
     Optional<Transaction> findByPayosOrderCode(Long payosOrderCode);
 
+    List<Transaction> findAllByPaidFalseAndPayosOrderCodeIsNotNull();
+
     @Query(value = "SELECT nextval('payos_order_code_seq')", nativeQuery = true)
     long nextPayosOrderCode();
 }

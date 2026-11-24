@@ -35,9 +35,16 @@ public class PayosClient {
     private static final String PAYMENT_REQUESTS = "https://api-merchant.payos.vn/v2/payment-requests";
 
     private final ObjectMapper objectMapper;
-    private final String clientId;
-    private final String apiKey;
-    private final String checksumKey;
+    private record Keys(String clientId, String apiKey, String checksumKey) {
+        Keys {
+            clientId = clientId.trim();
+            apiKey = apiKey.trim();
+            checksumKey = checksumKey.trim();
+        }
+    }
+
+    /** Đọc một lần mỗi lệnh gọi; BCN đổi tài khoản lúc đang chạy qua {@link #use}. */
+    private volatile Keys keys;
     private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
 
     public PayosClient(ObjectMapper objectMapper,
@@ -45,16 +52,24 @@ public class PayosClient {
                        @Value("${app.payos.api-key:}") String apiKey,
                        @Value("${app.payos.checksum-key:}") String checksumKey) {
         this.objectMapper = objectMapper;
-        this.clientId = clientId.trim();
-        this.apiKey = apiKey.trim();
-        this.checksumKey = checksumKey.trim();
+        this.keys = new Keys(clientId, apiKey, checksumKey);
         if (!enabled()) {
             log.info("Thanh toán PayOS đang tắt: chưa cấu hình PAYOS_CLIENT_ID / PAYOS_API_KEY / PAYOS_CHECKSUM_KEY");
         }
     }
 
     public boolean enabled() {
-        return !clientId.isEmpty() && !apiKey.isEmpty() && !checksumKey.isEmpty();
+        Keys current = keys;
+        return !current.clientId().isEmpty() && !current.apiKey().isEmpty() && !current.checksumKey().isEmpty();
+    }
+
+    /** Chuyển sang tài khoản PayOS khác (PayosSettingsService). */
+    public void use(String clientId, String apiKey, String checksumKey) {
+        keys = new Keys(clientId, apiKey, checksumKey);
+    }
+
+    public String clientId() {
+        return keys.clientId();
     }
 
     /** Tạo link thanh toán; trả `data` của PayOS (qrCode, checkoutUrl, status...). */
@@ -114,7 +129,7 @@ public class PayosClient {
     private String hmac(String data) {
         try {
             Mac mac = Mac.getInstance("HmacSHA256");
-            mac.init(new SecretKeySpec(checksumKey.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            mac.init(new SecretKeySpec(keys.checksumKey().getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
             return HexFormat.of().formatHex(mac.doFinal(data.getBytes(StandardCharsets.UTF_8)));
         } catch (GeneralSecurityException exception) {
             throw new IllegalStateException("Không tạo được chữ ký PayOS", exception);
@@ -125,10 +140,11 @@ public class PayosClient {
         if (!enabled()) {
             throw new ValidationException("CLB chưa cấu hình PayOS nên chưa thanh toán online được");
         }
+        Keys current = keys;
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
                 .timeout(Duration.ofSeconds(20))
-                .header("x-client-id", clientId)
-                .header("x-api-key", apiKey)
+                .header("x-client-id", current.clientId())
+                .header("x-api-key", current.apiKey())
                 .header("Content-Type", "application/json")
                 .method(method, body == null ? HttpRequest.BodyPublishers.noBody()
                         : HttpRequest.BodyPublishers.ofByteArray(objectMapper.writeValueAsBytes(body)))
