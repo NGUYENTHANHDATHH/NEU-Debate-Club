@@ -650,7 +650,18 @@ export function markTransactionPaid(id: string) {
   return apiRequest<FinanceTransaction>(`/finance/transactions/${id}/paid`, { method: "POST" }, "Không thể ghi nhận khoản thu.");
 }
 
-export type PayosLink = { transactionId: string; amount: number; qrCode: string | null; checkoutUrl: string | null; paid: boolean };
+export type PayosAccount = { enabled: boolean; clientId: string };
+
+/** Tài khoản PayOS đang nhận tiền QR (chỉ BCN). Backend không bao giờ trả khoá bí mật. */
+export function fetchPayosAccount() {
+  return apiRequest<PayosAccount>("/finance/payos-account", undefined, "Không tải được tài khoản PayOS.");
+}
+
+export function updatePayosAccount(input: { clientId: string; apiKey: string; checksumKey: string }) {
+  return apiRequest<PayosAccount>("/finance/payos-account", jsonBody("PUT", input), "Không đổi được tài khoản PayOS.");
+}
+
+export type PayosLink ={ transactionId: string; amount: number; qrCode: string | null; checkoutUrl: string | null; paid: boolean };
 
 /** QR PayOS cho khoản chưa thu của chính mình (tạo mới hoặc dùng lại link còn hiệu lực). */
 export function createPayosLink(id: string) {

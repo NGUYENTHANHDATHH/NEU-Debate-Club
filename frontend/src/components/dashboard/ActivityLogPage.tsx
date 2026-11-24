@@ -23,6 +23,7 @@ const ACTION_LABELS: Record<string, string> = {
 
 const MODULE_LABELS: Record<string, string> = {
   TASK: "Nhiệm vụ",
+  PAYOS_ACCOUNT: "Tài khoản PayOS",
   MEMBER: "Thành viên",
   EVENT: "Sự kiện",
   NOTIFICATION: "Thông báo",

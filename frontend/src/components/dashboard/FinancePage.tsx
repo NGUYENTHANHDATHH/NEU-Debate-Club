@@ -28,6 +28,8 @@ import {
   summarizeTransactions,
   type TransactionFilters,
 } from "@/components/dashboard/financeMetrics";
+import { PayosAccountSection } from "@/components/dashboard/PayosAccountSection";
+import { useUserContext } from "@/context/userContext";
 import { parseTransactionsCsv } from "@/components/dashboard/financeImport";
 import { formatIsoDate, localIsoDate } from "@/components/dashboard/PublicationsPage";
 import { BUDGET_TONE, TYPE_META, TransactionForm, inputClass, money } from "@/components/dashboard/TransactionForm";
@@ -57,6 +59,7 @@ function signed(value: number) {
 export function FinancePage() {
   const [today] = useState(() => localIsoDate(new Date()));
   const [items, setItems] = useState<FinanceTransaction[]>([]);
+  const { user } = useUserContext();
   const [events, setEvents] = useState<ClubEvent[]>([]);
   const [members, setMembers] = useState<FinanceMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -254,6 +257,8 @@ Số dư quỹ sẽ được tính lại và không thể hoàn tác.`,
           </ActionButton>
         </div>
       ) : null}
+
+      {user?.role?.toUpperCase() === "BCN" ? <PayosAccountSection /> : null}
 
       {open ? (
         <Section

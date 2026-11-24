@@ -62,6 +62,7 @@ Files: [PayosClient.java](../../backend/src/main/java/com/neudebateclub/backend/
 - **Confirmation has two paths:** the open dialog polls `/refresh` every 3 s (works locally, no webhook needed); the webhook covers payments made after the dialog closed. `returnUrl` = `FRONTEND_URL/dashboard/tools/finance?pay=<txId>`, and the page calls refresh on load.
 - `description` is fixed to `NDCQUY`: PayOS limits it to 9 chars for non-linked accounts. Matching uses `orderCode`, never the description.
 - **Config:** `PAYOS_CLIENT_ID`, `PAYOS_API_KEY`, `PAYOS_CHECKSUM_KEY` (empty = feature off, logged at startup), `FRONTEND_URL`. Wired through `application.yml` (`app.payos.*`, `app.frontend-url`), `docker-compose.yml`, `.env.docker.example`. Values are `trim()`med (the owner's `.env` had leading spaces).
+- **Runtime account switch (V30):** BCN can replace the PayOS account on /dashboard/finance (`GET/PUT /finance/payos-account`, BCN only, secrets never returned). Stored in single-row `payos_settings` (api/checksum keys AES-GCM, key = SHA-256 of `JWT_SECRET`) and overrides env from the next request; loaded at startup. Switching cancels and clears every open unpaid link of the old account. Changing `JWT_SECRET` makes the stored keys unreadable → falls back to env (warning logged).
 - **No sandbox:** PayOS has no test environment; tests are real transfers. Use small amounts.
 
 ## Frontend
