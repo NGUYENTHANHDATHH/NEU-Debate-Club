@@ -29,7 +29,7 @@ export const Achievements = () => {
     fetchLandingSection<{ stats?: Stat[] }>("achievements")
       .then((data) => setStats(data.stats ?? []))
       .catch(console.error);
-    fetchPublicCatalog("achievements").then(setAchievements).catch(console.error);
+    fetchPublicCatalog("achievements", 3).then(setAchievements).catch(console.error);
   }, []);
 
   return (

@@ -8,6 +8,7 @@ import java.util.UUID;
 
 public interface LandingAchievementRepository extends JpaRepository<LandingAchievement, UUID> {
     List<LandingAchievement> findByVisibleTrueOrderByDisplayOrderAscUpdatedAtDesc();
+    List<LandingAchievement> findByVisibleTrueOrderByDisplayOrderAscUpdatedAtDesc(org.springframework.data.domain.Pageable pageable);
     List<LandingAchievement> findAllByOrderByDisplayOrderAscUpdatedAtDesc();
     Optional<LandingAchievement> findBySlugAndVisibleTrue(String slug);
     boolean existsBySlug(String slug);

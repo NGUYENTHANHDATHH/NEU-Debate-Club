@@ -11,7 +11,7 @@ export const Projects = () => {
   const [projects, setProjects] = useState<CmsCatalogItem[]>([]);
 
   useEffect(() => {
-    fetchPublicCatalog("projects")
+    fetchPublicCatalog("projects", 3)
       .then(setProjects)
       .catch(console.error);
   }, []);

@@ -1,5 +1,7 @@
 # Deploy production lên AWS Lightsail
 
+Dựng server từ đầu (làm một lần). Vận hành hằng ngày, xử lý sự cố: xem [OPS.md](OPS.md).
+
 Một máy Lightsail chạy lại `docker-compose.yml` cùng `docker-compose.prod.yml`. Caddy nhận HTTPS cho `neudebateclub.id.vn`, chuyển `/api/*` sang backend, mọi request khác sang frontend. Lý do và các thay đổi code nằm ở [docs/deploy-plan.md](docs/deploy-plan.md).
 
 | Thông số | Giá trị |
@@ -118,11 +120,31 @@ Không xoá được tài khoản `…0001`, vì nội dung landing thật đang
 
 Snapshot ở bước 1 sao lưu cả máy. Ngoài ra nên có thêm bản dump database hằng ngày, để khôi phục riêng database mà không phải khôi phục cả máy:
 
+Đã cài trên server ngày 2026-11-24. Script `~/ndc-backup.sh` có nội dung:
+
 ```sh
-mkdir -p ~/backups
-crontab -e
-# thêm dòng:
-0 20 * * * docker exec ndc_db sh -c 'pg_dump -Fc -U "$POSTGRES_USER" "$POSTGRES_DB"' > ~/backups/ndc-$(date +\%F).dump && find ~/backups -mtime +7 -delete
+#!/bin/sh
+set -eu
+DIR="$HOME/backups"
+OUT="$DIR/ndc-$(date +%F).dump"
+mkdir -p "$DIR"
+docker exec ndc_db sh -c 'pg_dump -Fc -U "$POSTGRES_USER" "$POSTGRES_DB"' > "$OUT.tmp"
+mv "$OUT.tmp" "$OUT"   # chỉ giữ file khi dump thành công
+find "$DIR" -name 'ndc-*.dump' -mtime +7 -delete
+```
+
+Crontab, chạy lúc 20:00 UTC, tức 3h sáng giờ Việt Nam:
+
+```
+0 20 * * * /home/ubuntu/ndc-backup.sh >> /home/ubuntu/backups/backup.log 2>&1
+```
+
+Nếu có lỗi, xem trong `~/backups/backup.log`.
+
+Tải một bản dump về máy, để có bản sao nằm ngoài AWS:
+
+```sh
+scp -i ~/.ssh/ndc-prod.pem ubuntu@52.64.239.220:backups/ndc-YYYY-MM-DD.dump .
 ```
 
 Khôi phục từ một bản dump:
