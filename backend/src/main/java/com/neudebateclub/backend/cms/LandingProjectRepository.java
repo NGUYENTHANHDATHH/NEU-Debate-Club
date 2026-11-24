@@ -8,6 +8,7 @@ import java.util.UUID;
 
 public interface LandingProjectRepository extends JpaRepository<LandingProject, UUID> {
     List<LandingProject> findByVisibleTrueOrderByDisplayOrderAscUpdatedAtDesc();
+    List<LandingProject> findByVisibleTrueOrderByDisplayOrderAscUpdatedAtDesc(org.springframework.data.domain.Pageable pageable);
     List<LandingProject> findAllByOrderByDisplayOrderAscUpdatedAtDesc();
     Optional<LandingProject> findBySlugAndVisibleTrue(String slug);
     boolean existsBySlug(String slug);

@@ -14,6 +14,17 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine # cùng image với docker-compose.yml
+        env:
+          POSTGRES_DB: neu_debate_club
+          POSTGRES_USER: ndc_user
+          POSTGRES_PASSWORD: ci-only
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U ndc_user -d neu_debate_club"
+          --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -24,6 +35,32 @@ jobs:
       - name: Backend tests
         working-directory: backend
         run: sh mvnw -q -B test "-Dtest=*ControllerTest,*ServiceTest,RoleGuardTest" -Dsurefire.failIfNoSpecifiedTests=false
+      # Khởi động backend profile prod trên DB trống: Flyway chạy mọi migration như prod,
+      # Hibernate validate entity khớp schema. Lỗi ở đây thì không deploy.
+      - name: Migration check (profile prod, DB trống)
+        working-directory: backend
+        env:
+          SPRING_PROFILES_ACTIVE: prod
+          DATABASE_URL: jdbc:postgresql://localhost:5432/neu_debate_club
+          DATABASE_USERNAME: ndc_user
+          DATABASE_PASSWORD: ci-only
+          JWT_SECRET: ci-only-not-a-real-secret-0123456789abcdef0123456789abcdef
+          GOOGLE_CLIENT_ID: ci-dummy
+        run: |
+          sh mvnw -q -B -DskipTests package
+          java -jar "$(ls target/*.jar | head -1)" > app.log 2>&1 &
+          PID=$!
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8080/api/actuator/health 2>/dev/null | grep -q '"UP"'; then
+              grep -hE "Successfully applied|Current version|up to date" app.log || true
+              kill $PID; exit 0
+            fi
+            kill -0 $PID 2>/dev/null || break
+            sleep 2
+          done
+          echo "Backend không khởi động được với migration hiện tại:"
+          grep -E "Migrat|ERROR|Caused by|Schema-validation" app.log | tail -40
+          exit 1
 
   deploy:
     needs: test

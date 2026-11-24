@@ -124,8 +124,10 @@ export type CmsCatalogItem = {
 
 export async function fetchPublicCatalog(
   type: "projects" | "achievements",
+  limit?: number,
 ): Promise<CmsCatalogItem[]> {
-  const response = await fetch(`${PUBLIC_READ_BASE_URL}/public/${type}`, PUBLIC_READ_INIT);
+  const query = limit ? `?limit=${limit}` : "";
+  const response = await fetch(`${PUBLIC_READ_BASE_URL}/public/${type}${query}`, PUBLIC_READ_INIT);
   if (!response.ok) throw new Error(`Unable to load ${type}.`);
   return response.json();
 }

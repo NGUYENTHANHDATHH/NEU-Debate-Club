@@ -385,4 +385,5 @@ Quy ước:
 - [docs/modules/](docs/modules/) — tài liệu từng module (auth, tasks, events, notifications, CMS, phân quyền, migration)
 - [DOCKER.md](DOCKER.md) — chạy bằng Docker, logs, khôi phục
 - [DEPLOY.md](DEPLOY.md) — deploy production lên AWS Lightsail (Caddy + HTTPS, backup, cập nhật)
+- [OPS.md](OPS.md) — vận hành server: SSH, log, deploy/rollback, backup/khôi phục, bảo trì, xử lý sự cố
 - [USE_CASES_HE_THONG_CLB_NEU.md](USE_CASES_HE_THONG_CLB_NEU.md), [NHU_CAU_VA_GIAI_PHAP_WEBSITE_CLB_NEU.md](NHU_CAU_VA_GIAI_PHAP_WEBSITE_CLB_NEU.md) — nghiệp vụ (một số điểm đã lỗi thời so với code)

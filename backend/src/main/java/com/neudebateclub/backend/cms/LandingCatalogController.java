@@ -10,6 +10,7 @@ import com.neudebateclub.backend.user.UserRepository;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -33,8 +34,10 @@ public class LandingCatalogController {
     private final ActivityLogService activityLogService;
 
     @GetMapping("/projects")
-    public ResponseEntity<List<LandingProject>> projects() {
-        return ResponseEntity.ok(projectRepository.findByVisibleTrueOrderByDisplayOrderAscUpdatedAtDesc());
+    public ResponseEntity<List<LandingProject>> projects(@RequestParam(required = false) Integer limit) {
+        return ResponseEntity.ok(limit == null
+                ? projectRepository.findByVisibleTrueOrderByDisplayOrderAscUpdatedAtDesc()
+                : projectRepository.findByVisibleTrueOrderByDisplayOrderAscUpdatedAtDesc(firstRows(limit)));
     }
 
     @GetMapping("/projects/{slug}")
@@ -45,8 +48,15 @@ public class LandingCatalogController {
     }
 
     @GetMapping("/achievements")
-    public ResponseEntity<List<LandingAchievement>> achievements() {
-        return ResponseEntity.ok(achievementRepository.findByVisibleTrueOrderByDisplayOrderAscUpdatedAtDesc());
+    public ResponseEntity<List<LandingAchievement>> achievements(@RequestParam(required = false) Integer limit) {
+        return ResponseEntity.ok(limit == null
+                ? achievementRepository.findByVisibleTrueOrderByDisplayOrderAscUpdatedAtDesc()
+                : achievementRepository.findByVisibleTrueOrderByDisplayOrderAscUpdatedAtDesc(firstRows(limit)));
+    }
+
+    // Public endpoint: clamp so a caller cannot ask for an unbounded page.
+    private PageRequest firstRows(int limit) {
+        return PageRequest.of(0, Math.clamp(limit, 1, 50));
     }
 
     @GetMapping("/achievements/{slug}")
