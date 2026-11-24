@@ -4,6 +4,7 @@ import {
   CalendarDays,
   ChartColumn,
   ClipboardList,
+  Handshake,
   HeartPulse,
   History,
   LayoutDashboard,
@@ -40,6 +41,7 @@ export const ADMIN_MODULE_KEYS = [
   "CROSS_DEPARTMENT_TASKS",
   "ACTIVITY_LOG",
   "HEALTH_DASHBOARD",
+  "SPONSORS",
 ] as const;
 
 export type AdminModuleKey = (typeof ADMIN_MODULE_KEYS)[number];
@@ -98,6 +100,7 @@ export const DASHBOARD_NAV_GROUPS: { title: string; items: DashboardNavItem[] }[
     title: "Tài chính & sự kiện",
     items: [
       { name: "Tài chính", path: ROUTES.finance, icon: Wallet, module: "FINANCE" },
+      { name: "Nhà tài trợ", path: ROUTES.sponsors, icon: Handshake, module: "SPONSORS" },
       { name: "Quản lý sự kiện", path: ROUTES.events, icon: CalendarDays, module: "EVENT_MANAGEMENT" },
     ],
   },

@@ -101,7 +101,7 @@ export function RolesPage() {
   return (
     <PageFrame
       title="Phân quyền"
-      description="Tick chức năng cho từng ban: Trưởng/Phó ban của ban được tick sẽ dùng được chức năng đó; thành viên thường không. Chỉ BCN được sửa; đổi vai trò hoặc ban ở trang Quản lý thành viên."
+      description="Tick chức năng cho từng ban: Trưởng/Phó ban của ban được tick sẽ dùng được chức năng đó; thành viên thường không, trừ Nhà tài trợ (cả ban được dùng). Chỉ BCN được sửa; đổi vai trò hoặc ban ở trang Quản lý thành viên."
       action={
         <ActionButton icon={<Users className="h-4 w-4" />} onClick={() => router.push(ROUTES.members)}>
           Đổi vai trò thành viên
@@ -205,7 +205,7 @@ export function RolesPage() {
             </table>
           </div>
           <p className="mt-3 text-xs text-[#71717A]">
-            Ô được tick = Trưởng/Phó ban của ban đó dùng được chức năng; thành viên thường không. BCN luôn có tất cả.
+            Ô được tick = Trưởng/Phó ban của ban đó dùng được chức năng; thành viên thường không, trừ "Nhà tài trợ" (cả ban được dùng). BCN luôn có tất cả.
           </p>
         </Section>
       </div>

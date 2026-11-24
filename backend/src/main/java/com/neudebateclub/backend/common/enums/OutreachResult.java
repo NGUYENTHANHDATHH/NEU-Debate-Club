@@ -1,9 +1,8 @@
 package com.neudebateclub.backend.common.enums;
 
+/** Khớp outreach_result_enum (V1). */
 public enum OutreachResult {
-    NO_RESPONSE,
-    INTERESTED,
-    DECLINED,
-    FOLLOW_UP,
-    PARTNERED
+    CHO_PHAN_HOI,
+    DONG_Y,
+    TU_CHOI
 }

@@ -32,13 +32,21 @@ public class RoleGuard {
     public void requireMemberOrAbove(UserPrincipal user)      { requireRole(user, Role.MEMBER); }
     public void requireCmsEditor(UserPrincipal user)          { requireTruongBanOrAbove(user); }
 
-    /** BCN: mọi module. Trưởng/Phó ban: các module ban mình được tick ở trang Phân quyền. Thành viên: không có. */
+    /** Module mà tick cho một ban cấp cho cả thành viên thường của ban (owner 2026-11-25: Đối ngoại dùng Nhà tài trợ). */
+    static final Set<AdminModule> MEMBER_MODULES = EnumSet.of(AdminModule.SPONSORS);
+
+    /**
+     * BCN: mọi module. Trưởng/Phó ban: các module ban mình được tick ở trang Phân quyền.
+     * Thành viên: chỉ các module trong MEMBER_MODULES mà ban mình được tick.
+     */
     public Set<AdminModule> modulesOf(UserPrincipal user) {
         if (user == null || !user.isActive()) return EnumSet.noneOf(AdminModule.class);
         if (user.getRole() == Role.BCN) return EnumSet.allOf(AdminModule.class);
-        if (user.getRole() != Role.TRUONG_BAN || user.getDepartment() == null) return EnumSet.noneOf(AdminModule.class);
+        boolean lead = user.getRole() == Role.TRUONG_BAN;
+        if (!(lead || user.getRole() == Role.MEMBER) || user.getDepartment() == null) return EnumSet.noneOf(AdminModule.class);
         return modulePermissionRepository.findByDepartment(user.getDepartment()).stream()
                 .map(ModulePermission::getModule)
+                .filter(module -> lead || MEMBER_MODULES.contains(module))
                 .collect(Collectors.toCollection(() -> EnumSet.noneOf(AdminModule.class)));
     }
 

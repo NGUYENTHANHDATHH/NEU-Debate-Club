@@ -11,13 +11,14 @@
 
 ## Registry (verified, keys match on both sides)
 
-[AdminModule.java](../../backend/src/main/java/com/neudebateclub/backend/common/enums/AdminModule.java) ↔ `ADMIN_MODULE_KEYS` in [dashboard-modules.ts](../../frontend/src/constants/dashboard-modules.ts) — 14 identical keys, maintained by hand. Which department holds which key lives only in `module_permissions`.
+[AdminModule.java](../../backend/src/main/java/com/neudebateclub/backend/common/enums/AdminModule.java) ↔ `ADMIN_MODULE_KEYS` in [dashboard-modules.ts](../../frontend/src/constants/dashboard-modules.ts) — 15 identical keys, maintained by hand. Which department holds which key lives only in `module_permissions`.
 
 | Module | Dashboard route(s) |
 |---|---|
 | `TASK_ASSIGNMENT`, `NOTIFICATION_MANAGEMENT`, `DEPARTMENT_OPERATIONS`, `ANALYTICS` | assign, notifications/create, department-operations, charts |
 | `PUBLICATIONS`, `ASSET_LIBRARY`, `LANDING_CMS` | publications, library, cms |
-| `FINANCE`, `EVENT_MANAGEMENT` | finance, events |
+| `FINANCE`, `EVENT_MANAGEMENT`, `SPONSORS` | finance, events, sponsors (`/partners` API) |
+| `SPONSORS` exception | a tick also grants ordinary MEMBERs of that department (`RoleGuard.MEMBER_MODULES`, owner 2026-11-25) |
 | `MEMBERSHIP`, `TENURE` | members, **roles** (read-only matrix for non-BCN), tenure |
 | `CROSS_DEPARTMENT_TASKS`, `ACTIVITY_LOG`, `HEALTH_DASHBOARD` | assign-all, activity-log, health-dashboard |
 

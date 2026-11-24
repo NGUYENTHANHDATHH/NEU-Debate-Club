@@ -311,4 +311,91 @@ FROM seed_ref r,
 WHERE n.first_id IS NOT NULL
 ON CONFLICT (id) DO NOTHING;
 
+-- ---------------------------------------------------------------------------
+-- Nhà tài trợ (module SPONSORS): 10 doanh nghiệp HƯ CẤU, mỗi nhà một tình huống để thử:
+--  01 thân thiết, 3 lần đã ký, tài trợ gần đây → đứng đầu tab Tiềm năng
+--  02 tổng tiền lớn nhất (quy mô 25), có 1 lần từ chối
+--  03 tài trợ hiện vật, hợp đồng đã thanh lý
+--  04 chỉ có hợp đồng "đang đàm phán" → KHÔNG tính vào tổng; hẹn liên hệ lại đã đến hạn
+--  05 chưa hợp tác, hẹn liên hệ lại đã đến hạn
+--  06 không phản hồi, có lần từ chối
+--  07 tài trợ đã lâu (2022) → điểm "gần đây" = 0
+--  08 hẹn liên hệ lại ở tương lai → KHÔNG hiện trong "Cần liên hệ lại"
+--  09 không có dữ liệu nào → 12 điểm (tỉ lệ đồng ý trung tính)
+--  10 lần cũ có hẹn đã qua nhưng lần mới nhất không hẹn → KHÔNG hiện nhắc
+-- Sự kiện gắn theo id cố định của V20 (không có thì NULL). Người ghi: trưởng ban Đối ngoại / 1 thành viên Đối ngoại.
+-- ---------------------------------------------------------------------------
+INSERT INTO partners (id, company_name, field, status, notes, created_by, created_at, updated_at)
+SELECT v.id::uuid, v.name, v.field, v.status::partner_status_enum, v.notes, r.lead_dn, v.at::timestamptz, v.at::timestamptz
+FROM seed_ref r, (VALUES
+  ('d7000000-0000-4000-8000-000000000001', 'Công ty CP Giáo dục Ánh Dương', 'Giáo dục', 'than_thiet', 'Đối tác lâu năm, ưu tiên mời cho giải Open.', '2024-09-01 09:00+07'),
+  ('d7000000-0000-4000-8000-000000000002', 'Ngân hàng TMCP Hưng Thịnh', 'Ngân hàng', 'da_hop_tac', 'Ngân sách tài trợ chốt vào quý III hằng năm.', '2025-06-01 09:00+07'),
+  ('d7000000-0000-4000-8000-000000000003', 'Trà sữa Mây', 'F&B', 'da_hop_tac', 'Tài trợ đồ uống cho sự kiện ngoài trời.', '2025-06-15 09:00+07'),
+  ('d7000000-0000-4000-8000-000000000004', 'Trung tâm Anh ngữ Lexa', 'Giáo dục', 'dang_lien_he', NULL, '2026-10-01 09:00+07'),
+  ('d7000000-0000-4000-8000-000000000005', 'TechNova Solutions', 'Công nghệ', 'dang_lien_he', 'Quan tâm tuyển thực tập sinh từ CLB.', '2026-10-20 09:00+07'),
+  ('d7000000-0000-4000-8000-000000000006', 'Bảo hiểm An Phúc', 'Bảo hiểm', 'khong_phan_hoi', NULL, '2025-12-01 09:00+07'),
+  ('d7000000-0000-4000-8000-000000000007', 'Nhà sách Tri Thức', 'Xuất bản', 'da_hop_tac', 'Từng tặng sách làm giải thưởng.', '2022-02-01 09:00+07'),
+  ('d7000000-0000-4000-8000-000000000008', 'Không gian làm việc The Hive', 'Không gian làm việc', 'dang_lien_he', 'Có thể tài trợ địa điểm tập huấn.', '2026-11-10 09:00+07'),
+  ('d7000000-0000-4000-8000-000000000009', 'Vận tải Sao Việt', 'Logistics', 'dang_lien_he', NULL, '2026-11-20 09:00+07'),
+  ('d7000000-0000-4000-8000-000000000010', 'Văn phòng Luật Minh Chính', 'Luật', 'da_hop_tac', NULL, '2025-01-15 09:00+07')
+) AS v(id, name, field, status, notes, at)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO partner_contacts (id, partner_id, full_name, position, phone, email, is_primary, created_at)
+SELECT v.id::uuid, v.partner_id::uuid, v.full_name, v.position, v.phone, v.email, v.is_primary, '2026-11-01 09:00+07'
+FROM (VALUES
+  ('d8000000-0000-4000-8000-000000000001', 'd7000000-0000-4000-8000-000000000001', 'Nguyễn Thu Hà', 'Trưởng phòng Marketing', '0901000001', 'ha.nguyen@anhduong.example', true),
+  ('d8000000-0000-4000-8000-000000000002', 'd7000000-0000-4000-8000-000000000001', 'Trần Minh Quân', 'Chuyên viên truyền thông', '0901000002', 'quan.tran@anhduong.example', false),
+  ('d8000000-0000-4000-8000-000000000003', 'd7000000-0000-4000-8000-000000000002', 'Lê Hoàng Phúc', 'Giám đốc Khối khách hàng cá nhân', '0901000003', 'phuc.le@hungthinh.example', true),
+  ('d8000000-0000-4000-8000-000000000004', 'd7000000-0000-4000-8000-000000000003', 'Phạm Ngọc Mai', 'Chủ cửa hàng', '0901000004', NULL, true),
+  ('d8000000-0000-4000-8000-000000000005', 'd7000000-0000-4000-8000-000000000004', 'Đỗ Khánh Linh', 'Điều phối đối tác', '0901000005', 'linh.do@lexa.example', true),
+  ('d8000000-0000-4000-8000-000000000006', 'd7000000-0000-4000-8000-000000000005', 'Vũ Đức Anh', 'HR Manager', NULL, 'anh.vu@technova.example', true),
+  ('d8000000-0000-4000-8000-000000000007', 'd7000000-0000-4000-8000-000000000008', 'Bùi Thanh Tâm', 'Community Lead', '0901000007', 'tam.bui@thehive.example', true),
+  ('d8000000-0000-4000-8000-000000000008', 'd7000000-0000-4000-8000-000000000010', 'Hoàng Gia Bảo', 'Luật sư thành viên', '0901000008', 'bao.hoang@minhchinh.example', true)
+) AS v(id, partner_id, full_name, position, phone, email, is_primary)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO collaborations (id, partner_id, event_id, description, sponsored_amount, mou_link, collaboration_date,
+                            tier, contract_status, benefits_committed, created_by, created_at)
+SELECT v.id::uuid, v.partner_id::uuid, (SELECT id FROM events WHERE id = v.event_id::uuid), v.description, v.amount,
+       v.link, v.on_date::date, v.tier, v.contract_status, v.benefits, r.lead_dn, (v.on_date || ' 10:00+07')::timestamptz
+FROM seed_ref r, (VALUES
+  ('d9000000-0000-4000-8000-000000000001', 'd7000000-0000-4000-8000-000000000001', 'e0000000-0000-0000-0000-000000000009', 'Tài trợ Giải Tranh biện Tiếng Anh NEU IV', 15000000, 'https://drive.google.com/file/d/sample-anhduong-2024/view', '2024-11-01', 'bac', 'da_thanh_ly', 'Logo trên backdrop, 1 bài PR.'),
+  ('d9000000-0000-4000-8000-000000000002', 'd7000000-0000-4000-8000-000000000001', 'e0000000-0000-0000-0000-000000000001', 'Nhà tài trợ Vàng NEU Debate Open 2025', 30000000, 'https://drive.google.com/file/d/sample-anhduong-2025/view', '2025-10-20', 'vang', 'da_thanh_ly', 'Logo backdrop + áo BTC, gian hàng tại sự kiện, 3 bài PR.'),
+  ('d9000000-0000-4000-8000-000000000003', 'd7000000-0000-4000-8000-000000000001', NULL, 'Tài trợ mùa giải 2026', 40000000, 'https://drive.google.com/file/d/sample-anhduong-2026/view', '2026-09-15', 'vang', 'da_ky', 'Logo trên mọi ấn phẩm mùa giải 2026.'),
+  ('d9000000-0000-4000-8000-000000000004', 'd7000000-0000-4000-8000-000000000002', 'e0000000-0000-0000-0000-000000000002', 'Nhà tài trợ Kim cương Freshers Debate Cup 2025', 50000000, 'https://drive.google.com/file/d/sample-hungthinh-2025/view', '2025-09-10', 'kim_cuong', 'da_thanh_ly', 'Gọi tên nhà tài trợ, mở tài khoản cho tân sinh viên tại sự kiện.'),
+  ('d9000000-0000-4000-8000-000000000005', 'd7000000-0000-4000-8000-000000000002', 'e0000000-0000-0000-0000-000000000006', 'Đồng tổ chức Talkshow đàm phán', 50000000, 'https://drive.google.com/file/d/sample-hungthinh-talkshow/view', '2025-04-01', 'vang', 'da_thanh_ly', 'Diễn giả từ ngân hàng.'),
+  ('d9000000-0000-4000-8000-000000000006', 'd7000000-0000-4000-8000-000000000003', 'e0000000-0000-0000-0000-000000000005', '200 ly trà sữa cho Summer Camp', 5000000, NULL, '2025-07-10', 'hien_vat', 'da_thanh_ly', 'Đăng ảnh check-in tại quầy.'),
+  ('d9000000-0000-4000-8000-000000000007', 'd7000000-0000-4000-8000-000000000004', NULL, 'Đề xuất tài trợ giải Open 2026 (đang thương lượng)', 20000000, 'https://drive.google.com/file/d/sample-lexa-draft/view', '2026-11-10', 'bac', 'dang_dam_phan', NULL),
+  ('d9000000-0000-4000-8000-000000000008', 'd7000000-0000-4000-8000-000000000007', NULL, 'Tặng sách làm giải thưởng', 8000000, NULL, '2022-03-20', 'hien_vat', 'da_thanh_ly', NULL),
+  ('d9000000-0000-4000-8000-000000000009', 'd7000000-0000-4000-8000-000000000010', 'e0000000-0000-0000-0000-000000000007', 'Tài trợ Giao lưu Tứ hùng', 12000000, 'https://drive.google.com/file/d/sample-minhchinh-2025/view', '2025-03-01', 'bac', 'da_thanh_ly', 'Luật sư làm giám khảo khách mời.')
+) AS v(id, partner_id, event_id, description, amount, link, on_date, tier, contract_status, benefits)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO outreach_logs (id, partner_id, contact_date, method, content, result, follow_up_date, created_by, created_at)
+SELECT v.id::uuid, v.partner_id::uuid, v.contact_date::date, v.method, v.content, v.result::outreach_result_enum,
+       v.follow_up::date, CASE WHEN v.by_member THEN m.mem_dn ELSE r.lead_dn END, (v.contact_date || ' 15:00+07')::timestamptz
+FROM seed_ref r
+CROSS JOIN LATERAL (SELECT COALESCE((SELECT id FROM users WHERE role = 'member' AND department = 'doi_ngoai' AND is_active
+                                     ORDER BY email LIMIT 1), r.lead_dn) AS mem_dn) m,
+(VALUES
+  ('da000000-0000-4000-8000-000000000001', 'd7000000-0000-4000-8000-000000000001', '2025-09-25', 'Gặp mặt', 'Gửi proposal giải Open 2025, đối tác đồng ý gói Vàng.', 'dong_y', NULL, false),
+  ('da000000-0000-4000-8000-000000000002', 'd7000000-0000-4000-8000-000000000001', '2026-08-30', 'Email', 'Đề xuất tài trợ cả mùa giải 2026, đối tác đồng ý.', 'dong_y', NULL, true),
+  ('da000000-0000-4000-8000-000000000003', 'd7000000-0000-4000-8000-000000000002', '2025-08-20', 'Gặp mặt', 'Trình bày gói Kim cương Freshers Cup.', 'dong_y', NULL, false),
+  ('da000000-0000-4000-8000-000000000004', 'd7000000-0000-4000-8000-000000000002', '2026-10-05', 'Email', 'Mời tài trợ Debate 2026, ngân hàng đã hết ngân sách năm nay.', 'tu_choi', NULL, true),
+  ('da000000-0000-4000-8000-000000000005', 'd7000000-0000-4000-8000-000000000003', '2025-06-20', 'Nhắn tin', 'Xin tài trợ đồ uống Summer Camp.', 'dong_y', NULL, true),
+  ('da000000-0000-4000-8000-000000000006', 'd7000000-0000-4000-8000-000000000004', '2026-11-12', 'Gọi điện', 'Đã gửi bản dự thảo hợp đồng, chờ ban giám đốc duyệt.', 'cho_phan_hoi', '2026-11-20', false),
+  ('da000000-0000-4000-8000-000000000007', 'd7000000-0000-4000-8000-000000000005', '2026-11-05', 'Email', 'Gửi hồ sơ năng lực CLB và đề xuất hợp tác tuyển dụng.', 'cho_phan_hoi', '2026-11-15', true),
+  ('da000000-0000-4000-8000-000000000008', 'd7000000-0000-4000-8000-000000000006', '2025-12-10', 'Email', 'Gửi proposal lần 1, không có phản hồi.', 'cho_phan_hoi', NULL, true),
+  ('da000000-0000-4000-8000-000000000009', 'd7000000-0000-4000-8000-000000000006', '2026-01-15', 'Gọi điện', 'Đối tác từ chối vì không có ngân sách cho sinh viên.', 'tu_choi', NULL, false),
+  ('da000000-0000-4000-8000-000000000010', 'd7000000-0000-4000-8000-000000000008', '2026-11-18', 'Gặp mặt', 'Đồng ý cho mượn phòng tập huấn, hẹn ký thoả thuận đầu tháng 12.', 'dong_y', '2026-12-05', true),
+  ('da000000-0000-4000-8000-000000000011', 'd7000000-0000-4000-8000-000000000010', '2026-09-01', 'Email', 'Hỏi lịch giám khảo cho giải Open 2026.', 'cho_phan_hoi', '2026-09-15', true),
+  ('da000000-0000-4000-8000-000000000012', 'd7000000-0000-4000-8000-000000000010', '2026-09-16', 'Gọi điện', 'Đã gọi lại, luật sư nhận lời làm giám khảo.', 'dong_y', NULL, false)
+) AS v(id, partner_id, contact_date, method, content, result, follow_up, by_member)
+ON CONFLICT (id) DO NOTHING;
+
+-- Bật module Nhà tài trợ cho Ban Đối ngoại (cả thành viên thường) để thử ngay; trên môi trường thật BCN tự tick.
+INSERT INTO module_permissions (module, department) VALUES ('SPONSORS', 'DOI_NGOAI')
+ON CONFLICT (module, department) DO NOTHING;
+
 COMMIT;

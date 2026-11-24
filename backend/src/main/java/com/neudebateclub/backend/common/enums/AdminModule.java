@@ -15,5 +15,6 @@ public enum AdminModule {
     TENURE,
     CROSS_DEPARTMENT_TASKS,
     ACTIVITY_LOG,
-    HEALTH_DASHBOARD
+    HEALTH_DASHBOARD,
+    SPONSORS
 }

@@ -42,6 +42,17 @@ class RoleGuardTest {
     }
 
     @Test
+    void sponsorsTickAlsoReachesOrdinaryMembersOfThatDepartmentOnly() {
+        RoleGuard guard = TestRoleGuards.withMatrix(Map.of(
+                AdminModule.SPONSORS, Set.of(Department.DOI_NGOAI),
+                AdminModule.FINANCE, Set.of(Department.DOI_NGOAI)));
+
+        assertEquals(EnumSet.of(AdminModule.SPONSORS), guard.modulesOf(principal(Role.MEMBER, Department.DOI_NGOAI)));
+        assertTrue(guard.modulesOf(principal(Role.MEMBER, Department.SU_KIEN)).isEmpty());
+        assertTrue(guard.modulesOf(principal(Role.GUEST, Department.DOI_NGOAI)).isEmpty());
+    }
+
+    @Test
     void untickedDepartmentGuestAndInactiveGetNothing() {
         assertThrows(ForbiddenException.class, () -> roleGuard.requireModuleManager(
                 principal(Role.TRUONG_BAN, Department.DOI_NGOAI), AdminModule.LANDING_CMS));

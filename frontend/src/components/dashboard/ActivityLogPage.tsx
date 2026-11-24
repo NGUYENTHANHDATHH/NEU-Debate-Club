@@ -19,6 +19,12 @@ const ACTION_LABELS: Record<string, string> = {
   PUBLISH: "Xuất bản",
   ADD_MEMBER: "Thêm thành viên",
   REMOVE_MEMBER: "Xóa thành viên",
+  ADD_CONTACT: "Thêm người liên hệ",
+  DELETE_CONTACT: "Xóa người liên hệ",
+  ADD_COLLABORATION: "Thêm lần tài trợ",
+  DELETE_COLLABORATION: "Xóa lần tài trợ",
+  ADD_OUTREACH: "Ghi lần liên hệ",
+  DELETE_OUTREACH: "Xóa lần liên hệ",
 };
 
 const MODULE_LABELS: Record<string, string> = {
@@ -30,6 +36,7 @@ const MODULE_LABELS: Record<string, string> = {
   LANDING_SECTION: "Trang chủ",
   LANDING_CATALOG: "Dự án / Thành tích",
   TRANSACTION: "Tài chính",
+  PARTNER: "Nhà tài trợ",
   PUBLICATION: "Ấn phẩm",
   SEASON: "Nhiệm kỳ",
 };

@@ -28,6 +28,7 @@ public final class TestRoleGuards {
             Map.entry(AdminModule.ASSET_LIBRARY, EnumSet.of(Department.KY_THUAT)),
             Map.entry(AdminModule.LANDING_CMS, EnumSet.of(Department.TRUYEN_THONG)),
             Map.entry(AdminModule.FINANCE, EnumSet.of(Department.DOI_NGOAI)),
+            Map.entry(AdminModule.SPONSORS, EnumSet.of(Department.DOI_NGOAI)),
             Map.entry(AdminModule.EVENT_MANAGEMENT, EnumSet.of(Department.SU_KIEN)),
             Map.entry(AdminModule.MEMBERSHIP, EnumSet.of(Department.NHAN_SU)),
             Map.entry(AdminModule.TENURE, EnumSet.of(Department.NHAN_SU)));

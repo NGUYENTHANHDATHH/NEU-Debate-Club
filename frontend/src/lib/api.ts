@@ -805,3 +805,90 @@ export type ActivityLogEntry = {
 export function fetchActivityLogs(limit?: number) {
   return apiRequest<ActivityLogEntry[]>(`/activity-logs${limit ? `?limit=${limit}` : ""}`, undefined, "Không thể tải activity log.");
 }
+
+// ---- Nhà tài trợ (module SPONSORS) ----------------------------------------
+
+export type PartnerStatus = "DANG_LIEN_HE" | "DA_HOP_TAC" | "THAN_THIET" | "KHONG_PHAN_HOI";
+export type OutreachResult = "CHO_PHAN_HOI" | "DONG_Y" | "TU_CHOI";
+export type SponsorTier = "kim_cuong" | "vang" | "bac" | "dong" | "hien_vat";
+export type ContractStatus = "dang_dam_phan" | "da_ky" | "da_thanh_ly";
+
+/** Điểm tiềm năng 0–100 và từng phần (gần đây 30, quy mô 25, tỉ lệ đồng ý 25, gắn bó 20). */
+export type PartnerScore = { total: number; recency: number; scale: number; acceptance: number; loyalty: number };
+
+export type PartnerSummary = {
+  id: string;
+  companyName: string;
+  field: string | null;
+  logoUrl: string | null;
+  status: PartnerStatus;
+  notes: string | null;
+  /** Chỉ tính hợp đồng đã ký/đã thanh lý. */
+  signedCount: number;
+  signedTotal: number;
+  lastSignedDate: string | null;
+  lastContactDate: string | null;
+  score: PartnerScore;
+};
+
+export type PartnerContact = { id: string; fullName: string; position: string | null; phone: string | null; email: string | null; primary: boolean };
+
+export type Collaboration = {
+  id: string;
+  eventId: string | null;
+  eventTitle: string | null;
+  description: string;
+  sponsoredAmount: number;
+  /** Link Google Drive tới hợp đồng. */
+  mouLink: string | null;
+  collaborationDate: string;
+  tier: SponsorTier | null;
+  contractStatus: ContractStatus;
+  benefitsCommitted: string | null;
+};
+
+export type OutreachEntry = {
+  id: string;
+  contactDate: string;
+  method: string;
+  content: string;
+  result: OutreachResult;
+  followUpDate: string | null;
+  createdByName: string | null;
+};
+
+export type PartnerDetail = Omit<PartnerSummary, "signedCount" | "signedTotal" | "lastSignedDate" | "lastContactDate" | "score"> & {
+  contacts: PartnerContact[];
+  collaborations: Collaboration[];
+  outreach: OutreachEntry[];
+};
+
+export type FollowUp = { partnerId: string; companyName: string; followUpDate: string; content: string; createdByName: string | null };
+
+export type SavePartnerInput = { companyName: string; field: string | null; logoUrl: string | null; status: PartnerStatus; notes: string | null };
+export type SaveContactInput = Omit<PartnerContact, "id">;
+export type SaveCollaborationInput = Omit<Collaboration, "id" | "eventTitle">;
+export type SaveOutreachInput = Omit<OutreachEntry, "id" | "createdByName">;
+
+function partnerRequest<T>(path = "", init?: RequestInit): Promise<T> {
+  return apiRequest<T>(`/partners${path}`, init, "Không thể xử lý yêu cầu nhà tài trợ.");
+}
+
+export const fetchPartners = () => partnerRequest<PartnerSummary[]>();
+export const fetchPartnerFollowUps = () => partnerRequest<FollowUp[]>("/follow-ups");
+export const fetchPartner = (id: string) => partnerRequest<PartnerDetail>(`/${id}`);
+export const createPartner = (input: SavePartnerInput) => partnerRequest<string>("", jsonBody("POST", input));
+export const updatePartner = (id: string, input: SavePartnerInput) => partnerRequest<void>(`/${id}`, jsonBody("PUT", input));
+export const deletePartner = (id: string) => partnerRequest<void>(`/${id}`, { method: "DELETE" });
+
+/** kind: contacts | collaborations | outreach — thêm/xoá một dòng con của nhà tài trợ. */
+export function addPartnerItem(id: string, kind: "contacts", input: SaveContactInput): Promise<void>;
+export function addPartnerItem(id: string, kind: "collaborations", input: SaveCollaborationInput): Promise<void>;
+export function addPartnerItem(id: string, kind: "outreach", input: SaveOutreachInput): Promise<void>;
+export function addPartnerItem(id: string, kind: string, input: unknown) {
+  return partnerRequest<void>(`/${id}/${kind}`, jsonBody("POST", input));
+}
+
+export function deletePartnerItem(id: string, kind: "contacts" | "collaborations" | "outreach", itemId: string) {
+  return partnerRequest<void>(`/${id}/${kind}/${itemId}`, { method: "DELETE" });
+}
