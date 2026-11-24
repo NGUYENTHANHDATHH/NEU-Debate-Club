@@ -1,6 +1,7 @@
 "use client";
-import React from "react";
-import { Moon, Sun, ChevronDown } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { Moon, Sun, ChevronDown, LayoutDashboard } from "lucide-react";
+import { ROUTES } from "@/constants/routes";
 import Image from "next/image";
 import Link from "next/link";
 import clubLogo from "@/../public/logo.png";
@@ -14,6 +15,18 @@ export const Header = () => {
   const { theme, setTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
   const { user, logout } = useUserContext();
+  const [accountOpen, setAccountOpen] = useState(false);
+  const accountRef = useRef<HTMLDivElement | null>(null);
+
+  // Close the account menu on any click outside it (same as LanguageDropdown).
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (accountRef.current && !accountRef.current.contains(e.target as Node)) setAccountOpen(false);
+    };
+    document.addEventListener("click", onDoc);
+    return () => document.removeEventListener("click", onDoc);
+  }, []);
+
   return (
     <header className="fixed top-0 left-0 w-full z-50 border-b border-gray-200 dark:border-[#222] bg-white/80 dark:bg-black/80 backdrop-blur-md transition-colors duration-500">
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
@@ -99,16 +112,47 @@ export const Header = () => {
 
           {user ? (
             <div className="flex items-center gap-4">
-              <div
-                className="flex items-center gap-3 text-sm font-montserrat font-medium text-black dark:text-white cursor-pointer group"
-                onClick={logout}
-                title={t("auth.logout")}
-              >
-                <span className="hidden sm:inline">
-                  {t("auth.hello")}, {user.name}
-                </span>
-                <div className="w-8 h-8 rounded-full bg-[#8A151B] text-white flex items-center justify-center font-bold">
-                  {user.name.charAt(0)}
+              {/* Guests (Google accounts outside the club) must not learn the dashboard exists. */}
+              {user.role && user.role !== "guest" && (
+                <Link
+                  href={ROUTES.dashboard}
+                  aria-label={t("nav.dashboard")}
+                  className="flex items-center gap-2 font-montserrat text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-[#8A151B] dark:hover:text-[#8A151B] transition-colors"
+                >
+                  <LayoutDashboard className="w-5 h-5" />
+                  <span className="hidden sm:inline">{t("nav.dashboard")}</span>
+                </Link>
+              )}
+              <div ref={accountRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setAccountOpen((v) => !v)}
+                  aria-haspopup
+                  aria-expanded={accountOpen}
+                  className="flex items-center gap-3 text-sm font-montserrat font-medium text-black dark:text-white"
+                >
+                  <span className="hidden sm:inline">
+                    {t("auth.hello")}, {user.name}
+                  </span>
+                  <span className="w-8 h-8 rounded-full bg-[#8A151B] text-white flex items-center justify-center font-bold">
+                    {user.name.charAt(0)}
+                  </span>
+                </button>
+                <div
+                  className={`absolute top-full right-0 mt-2 w-36 z-60 transition-all duration-150 ${accountOpen ? "opacity-100 visible" : "opacity-0 invisible"}`}
+                >
+                  <div className="bg-white dark:bg-[#0A0A0A] border border-gray-100 dark:border-[#222] rounded-xl shadow-xl flex flex-col py-1 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAccountOpen(false);
+                        logout();
+                      }}
+                      className="px-4 py-2 text-sm text-left text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#111] hover:text-[#8A151B] dark:hover:text-[#8A151B] transition-colors"
+                    >
+                      {t("auth.logout")}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
