@@ -103,6 +103,58 @@ class NotificationServiceTest {
     }
 
     @Test
+    void reminderDaysDoubleFromAssignment() {
+        List<Long> days = java.util.stream.LongStream.rangeClosed(0, 40)
+                .filter(NotificationService::isReminderDay).boxed().toList();
+        assertEquals(List.of(1L, 2L, 4L, 8L, 16L, 32L), days);
+    }
+
+    @Test
+    void remindsOnlyActiveAssigneesOnReminderDays() {
+        Instant now = Instant.parse("2026-11-25T01:00:00Z");
+        Instant fourDaysAgo = Instant.parse("2026-11-21T03:00:00Z");
+        Instant threeDaysAgo = Instant.parse("2026-11-22T03:00:00Z");
+        Task due = Task.builder().id(UUID.randomUUID()).title("Poster").progress(40)
+                .assignedTo(memberTt).assignedBy(leadTt).createdAt(fourDaysAgo).build();
+        Task notDue = Task.builder().id(UUID.randomUUID()).title("x")
+                .assignedTo(memberTt).assignedBy(leadTt).createdAt(threeDaysAgo).build();
+        Task inactive = Task.builder().id(UUID.randomUUID()).title("x")
+                .assignedTo(inactiveTt).assignedBy(leadTt).createdAt(fourDaysAgo).build();
+        Task self = Task.builder().id(UUID.randomUUID()).title("x")
+                .assignedTo(bcn).assignedBy(bcn).createdAt(fourDaysAgo).build();
+
+        assertEquals(1, service.remindUnfinishedTasks(List.of(due, notDue, inactive, self), now));
+
+        ArgumentCaptor<Notification> captor = ArgumentCaptor.forClass(Notification.class);
+        verify(notificationRepository).save(captor.capture());
+        Notification saved = captor.getValue();
+        verify(pushService).push(List.of(saved));
+        assertEquals(memberTt, saved.getUser());
+        assertEquals(NotificationType.TASK_REMINDER, saved.getType());
+        assertEquals(due.getId(), saved.getEntityId());
+        assertTrue(saved.getBody().contains("Đã giao 4 ngày, tiến độ 40%"), saved.getBody());
+    }
+
+    @Test
+    void deadlineWithin24HoursRemindsOnceOutsideSpacedDays() {
+        Instant now = Instant.parse("2026-11-25T01:00:00Z");
+        Instant threeDaysAgo = Instant.parse("2026-11-22T03:00:00Z");
+        Task dueSoon = Task.builder().id(UUID.randomUUID()).title("Poster").assignedTo(memberTt).assignedBy(leadTt)
+                .createdAt(threeDaysAgo).deadline(now.plusSeconds(23 * 3600)).build();
+        Task dueLater = Task.builder().id(UUID.randomUUID()).title("x").assignedTo(memberTt).assignedBy(leadTt)
+                .createdAt(threeDaysAgo).deadline(now.plusSeconds(25 * 3600)).build();
+        Task overdue = Task.builder().id(UUID.randomUUID()).title("x").assignedTo(memberTt).assignedBy(leadTt)
+                .createdAt(threeDaysAgo).deadline(now.minusSeconds(3600)).build();
+
+        assertEquals(1, service.remindUnfinishedTasks(List.of(dueSoon, dueLater, overdue), now));
+
+        ArgumentCaptor<Notification> captor = ArgumentCaptor.forClass(Notification.class);
+        verify(notificationRepository).save(captor.capture());
+        assertEquals(dueSoon.getId(), captor.getValue().getEntityId());
+        assertTrue(captor.getValue().getTitle().startsWith("Sắp đến hạn"));
+    }
+
+    @Test
     void selfAssignedTaskDoesNotNotify() {
         Task task = Task.builder().id(UUID.randomUUID()).title("x").department(Department.SU_KIEN)
                 .assignedTo(bcn).assignedBy(bcn).build();

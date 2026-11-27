@@ -106,7 +106,7 @@ The API accepts the extra values, so a client can send `BLOCKED` and get back `T
 - `application.yml` imports `optional:file:.env[.properties]` relative to the working directory, so `mvnw` from `backend/` picks up `backend/.env` if present.
 - `ALLOWED_DOMAIN` appears in both env templates but **no Java code reads it**; Compose does not pass it. The membership suffix rule described in the use-case document is not enforced (and [AuthServiceTest](../backend/src/test/java/com/neudebateclub/backend/auth/AuthServiceTest.java) asserts it is not required).
 - `NEXT_PUBLIC_API_BASE_URL` (default `http://localhost:8080/api`) is baked into the frontend at build time.
-- `next.config.ts` allows remote images from one Supabase storage host.
+- CMS images live in MinIO (bucket `media`), uploaded via `POST /api/cms/images` and served at `/media/*` (Caddy in prod, a `next.config.ts` rewrite in dev).
 - `frontend/package.json` does **not** declare `react` or `react-dom`; they are resolved through pnpm peer auto-install. ESLint warns that `react` is not installed for its version detection.
 - `pom.xml` includes `com.h2database:h2` (runtime) though no profile uses H2.
 

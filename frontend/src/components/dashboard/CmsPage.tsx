@@ -13,7 +13,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ActionButton } from "@/components/ui/Dashboard/ActionButton";
 import { PageFrame } from "@/components/ui/Dashboard/PageFrame";
 import { Section } from "@/components/ui/Dashboard/Section";
@@ -30,6 +30,7 @@ import {
   publishCmsSection,
   pushAnnouncement,
   saveCmsDraft,
+  uploadCmsImage,
 } from "@/lib/api";
 
 const sectionLabels: Record<string, string> = {
@@ -133,7 +134,8 @@ export function CmsPage() {
   const [content, setContent] = useState<ContentItem>({});
   const [activeItem, setActiveItem] = useState<number | null>(null);
   const [page, setPage] = useState(1);
-  const [busy, setBusy] = useState<"loading" | "saving" | "publishing" | "pushing" | null>(
+  const imageInput = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState<"loading" | "saving" | "publishing" | "pushing" | "uploading" | null>(
     "loading",
   );
   const [message, setMessage] = useState<{
@@ -279,6 +281,22 @@ export function CmsPage() {
       stats[index] = { ...stats[index], [key]: value };
       return { ...current, stats };
     });
+  }
+
+  async function uploadImage(file: File | undefined) {
+    if (!file || activeItem === null) return;
+    const index = activeItem;
+    setBusy("uploading");
+    setMessage(null);
+    try {
+      const { url } = await uploadCmsImage(file);
+      updateItem(index, "imageUrl", url);
+    } catch (error) {
+      setMessage({ type: "error", text: (error as Error).message });
+    } finally {
+      setBusy(null);
+      if (imageInput.current) imageInput.current.value = "";
+    }
   }
 
   async function generateAndCheckSlug() {
@@ -898,6 +916,27 @@ export function CmsPage() {
                                 updateItem(activeItem, "imageUrl", value)
                               }
                             />
+                            <div className="flex items-end">
+                              <input
+                                ref={imageInput}
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp,image/gif"
+                                hidden
+                                onChange={(event) =>
+                                  uploadImage(event.target.files?.[0])
+                                }
+                              />
+                              <ActionButton
+                                variant="outline"
+                                icon={<Upload className="h-4 w-4" />}
+                                onClick={() => imageInput.current?.click()}
+                                disabled={busy !== null}
+                              >
+                                {busy === "uploading"
+                                  ? "Đang tải ảnh..."
+                                  : "Tải ảnh lên (tối đa 5MB)"}
+                              </ActionButton>
+                            </div>
                           </div>
                           <label className="space-y-1 text-xs font-medium text-slate-700">
                             <span>Category</span>

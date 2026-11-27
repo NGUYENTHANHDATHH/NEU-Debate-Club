@@ -20,8 +20,11 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -41,8 +44,9 @@ public class NotificationService {
     static final int DEFAULT_LIMIT = 50;
     static final int MAX_LIMIT = 100;
 
+    private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     private static final DateTimeFormatter DEADLINE_FORMAT =
-            DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy").withZone(ZoneId.of("Asia/Ho_Chi_Minh"));
+            DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy").withZone(VN_ZONE);
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
@@ -82,6 +86,55 @@ public class NotificationService {
                 .entityId(task.getId())
                 .createdBy(assigner)
                 .build())));
+    }
+
+    /**
+     * Nhắc người được giao các task chưa xong vào ngày thứ 1, 2, 4, 8, 16… kể từ ngày giao (spaced repetition).
+     * Thêm một lần nhắc khi hạn chót rơi vào 24 giờ tới: job chạy mỗi 24 giờ nên mỗi hạn chót chỉ lọt vào đúng một lượt.
+     * Trùng ngày thì gộp thành một thông báo. Bỏ qua task tự giao cho chính mình và người đã ngừng hoạt động,
+     * giống {@link #notifyTaskAssigned}.
+     *
+     * @return số thông báo đã gửi
+     */
+    public int remindUnfinishedTasks(List<Task> tasks, Instant now) {
+        LocalDate today = LocalDate.ofInstant(now, VN_ZONE);
+        Instant in24h = now.plus(24, ChronoUnit.HOURS);
+        List<Notification> saved = new ArrayList<>();
+        for (Task task : tasks) {
+            User assignee = task.getAssignedTo();
+            User assigner = task.getAssignedBy();
+            if (assignee == null || !assignee.isActive()
+                    || (assigner != null && assignee.getId().equals(assigner.getId()))) {
+                continue;
+            }
+            long days = ChronoUnit.DAYS.between(LocalDate.ofInstant(task.getCreatedAt(), VN_ZONE), today);
+            boolean dueSoon = task.getDeadline() != null
+                    && task.getDeadline().isAfter(now) && !task.getDeadline().isAfter(in24h);
+            if (!dueSoon && !isReminderDay(days)) {
+                continue;
+            }
+
+            StringBuilder body = new StringBuilder("Nhiệm vụ: ").append(task.getTitle())
+                    .append("\nĐã giao ").append(days).append(" ngày, tiến độ ").append(task.getProgress()).append('%');
+            if (task.getDeadline() != null) {
+                body.append(task.getDeadline().isBefore(now) ? "\nĐã quá hạn: " : "\nHạn chót: ")
+                        .append(DEADLINE_FORMAT.format(task.getDeadline()));
+            }
+            saved.add(notificationRepository.save(Notification.builder()
+                    .user(assignee)
+                    .title(dueSoon ? "Sắp đến hạn: còn dưới 24 giờ" : "Nhắc việc: task chưa hoàn thành")
+                    .body(body.toString())
+                    .type(NotificationType.TASK_REMINDER)
+                    .entityId(task.getId())
+                    .build()));
+        }
+        pushService.push(saved);
+        return saved.size();
+    }
+
+    /** Ngày nhắc là lũy thừa của 2: 1, 2, 4, 8, 16, 32… */
+    static boolean isReminderDay(long daysSinceAssigned) {
+        return daysSinceAssigned > 0 && Long.bitCount(daysSinceAssigned) == 1;
     }
 
     /**

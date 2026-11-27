@@ -123,6 +123,13 @@
     <scope>runtime</scope>
   </dependency>
 
+  <!-- MinIO: lưu ảnh CMS trên server -->
+  <dependency>
+    <groupId>io.minio</groupId>
+    <artifactId>minio</artifactId>
+    <version>8.5.17</version>
+  </dependency>
+
   <!-- Test -->
   <dependency>
     <groupId>org.springframework.boot</groupId>

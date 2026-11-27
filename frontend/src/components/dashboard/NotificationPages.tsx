@@ -26,11 +26,12 @@ import {
   NOTIFICATION_TYPE_META,
   formatDateTime,
   formatRelativeTime,
+  isTaskNotification,
   notificationHref,
 } from "@/lib/notifications";
 
 const READ_PAGE_LIMIT = 100;
-const TYPE_FILTERS: (NotificationType | "ALL")[] = ["ALL", "TASK_ASSIGNED", "FINANCE", ...MANUAL_NOTIFICATION_TYPES];
+const TYPE_FILTERS: (NotificationType | "ALL")[] = ["ALL", "TASK_ASSIGNED", "TASK_REMINDER", "FINANCE", ...MANUAL_NOTIFICATION_TYPES];
 
 const inputClass =
   "w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#E11D48]";
@@ -194,7 +195,7 @@ export function ReadNotificationPage() {
 
 function NotificationDetail({ notification }: { notification: AppNotification }) {
   const meta = typeMeta(notification.type);
-  const isTask = notification.type === "TASK_ASSIGNED" && notification.entityId;
+  const isTask = isTaskNotification(notification);
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">

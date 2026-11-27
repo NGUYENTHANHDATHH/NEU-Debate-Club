@@ -4,6 +4,9 @@ services:
   db:
     ports: !reset []
 
+  minio:
+    ports: !reset []
+
   backend:
     ports: !reset []
 
@@ -32,6 +35,8 @@ volumes:
   # Tên riêng để profile prod không bao giờ chạy nhầm lên volume dev (dev đã ghi nhận seed V18/V20).
   postgres_data:
     name: ndc_prod_postgres_data
+  minio_data:
+    name: ndc_prod_minio_data
   caddy_data:
     name: ndc_caddy_data
   caddy_config:

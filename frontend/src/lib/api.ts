@@ -395,13 +395,14 @@ export function deleteTask(id: string) {
 
 export type NotificationType =
   | "TASK_ASSIGNED"
+  | "TASK_REMINDER"
   | "FINANCE"
   | "GENERAL"
   | "TASK_UPDATE"
   | "REWARD"
   | "URGENT";
 
-export type ManualNotificationType = Exclude<NotificationType, "TASK_ASSIGNED" | "FINANCE">;
+export type ManualNotificationType = Exclude<NotificationType, "TASK_ASSIGNED" | "TASK_REMINDER" | "FINANCE">;
 
 export type NotificationAudience = "ALL" | "DEPARTMENTS" | "MEMBERS";
 
@@ -522,6 +523,13 @@ export function publishCmsCatalog(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ items }),
   });
+}
+
+/** Tải ảnh lên MinIO trên server; trả về URL công khai dạng /media/<key>. */
+export function uploadCmsImage(file: File) {
+  const body = new FormData();
+  body.append("file", file);
+  return cmsRequest<{ url: string }>("/cms/images", { method: "POST", body });
 }
 
 export function saveCmsDraft(

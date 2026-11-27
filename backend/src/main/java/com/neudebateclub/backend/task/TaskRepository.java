@@ -20,6 +20,9 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
 
     List<Task> findByAssignedToIdOrderByCreatedAtDesc(UUID assignedToId);
 
+    @Query(value = "SELECT * FROM tasks WHERE status::text <> 'done'", nativeQuery = true)
+    List<Task> findUnfinished();
+
     @Query(value = """
             SELECT * FROM tasks
             WHERE (CAST(:#{#department?.name()} AS text) IS NULL OR department::text = LOWER(CAST(:#{#department?.name()} AS text)))

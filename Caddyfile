@@ -4,6 +4,11 @@
 	handle /api/* {
 		reverse_proxy backend:8080
 	}
+	# Ảnh CMS trong MinIO, bucket "media" (bucket = path nên không cắt path)
+	handle /media/* {
+		header X-Content-Type-Options nosniff
+		reverse_proxy minio:9000
+	}
 	handle {
 		reverse_proxy frontend:3000
 	}

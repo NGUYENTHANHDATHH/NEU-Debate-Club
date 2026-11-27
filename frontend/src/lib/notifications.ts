@@ -10,6 +10,11 @@ export const NOTIFICATION_TYPE_META: Record<
     dot: "bg-sky-500",
     badge: "bg-sky-50 text-sky-700",
   },
+  TASK_REMINDER: {
+    label: "Nhắc việc",
+    dot: "bg-orange-500",
+    badge: "bg-orange-50 text-orange-700",
+  },
   FINANCE: {
     label: "Thu chi",
     dot: "bg-emerald-500",
@@ -54,9 +59,13 @@ export const DEPARTMENT_NAMES: Record<string, string> = {
   NHAN_SU: "Ban Nhân sự",
 };
 
-/** Thông báo giao task mở thẳng task trong todo-list; các loại khác mở trang đọc thông báo. */
+export function isTaskNotification(notification: AppNotification) {
+  return (notification.type === "TASK_ASSIGNED" || notification.type === "TASK_REMINDER") && !!notification.entityId;
+}
+
+/** Thông báo giao/nhắc task mở thẳng task trong todo-list; các loại khác mở trang đọc thông báo. */
 export function notificationHref(notification: AppNotification) {
-  if (notification.type === "TASK_ASSIGNED" && notification.entityId) {
+  if (isTaskNotification(notification) && notification.entityId) {
     return `${ROUTES.todoList}?task=${encodeURIComponent(notification.entityId)}`;
   }
   if (notification.type === "FINANCE") return ROUTES.toolFinance;

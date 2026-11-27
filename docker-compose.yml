@@ -17,6 +17,25 @@ services:
       timeout: 5s
       retries: 10
 
+  # Lưu ảnh CMS (bucket "media"). MinIO đã gỡ image Docker chính thức; dùng bản build của Pigsty, ghim phiên bản.
+  minio:
+    image: pgsty/minio:RELEASE.2026-08-04T00-00-00Z
+    container_name: ndc_minio
+    restart: unless-stopped
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER in the root .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD (8+ chars) in the root .env}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   backend:
     build:
       context: ./backend
@@ -25,7 +44,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      minio:
+        condition: service_healthy
     environment:
+      MINIO_URL: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       DATABASE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-neu_debate_club}
       DATABASE_USERNAME: ${POSTGRES_USER:-ndc_user}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the root .env}
@@ -89,3 +113,5 @@ services:
 volumes:
   postgres_data:
     name: ndc_postgres_data
+  minio_data:
+    name: ndc_minio_data

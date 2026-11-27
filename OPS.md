@@ -9,10 +9,11 @@ Sổ tay cho người quản lý website `https://neudebateclub.id.vn`.
 ```
 Người dùng ──HTTPS──▶ Lightsail "ndc-prod" (Ubuntu 24.04, 2 GB, Sydney) — IP 52.64.239.220
                        └─ Docker Compose, project "ndc", thư mục ~/ndc
-                          ├─ ndc_caddy     cổng 80/443, tự gia hạn HTTPS; /api/* → backend, còn lại → frontend
+                          ├─ ndc_caddy     cổng 80/443, tự gia hạn HTTPS; /api/* → backend, /media/* → minio, còn lại → frontend
                           ├─ ndc_frontend  Next.js :3000   (chỉ trong mạng Docker)
                           ├─ ndc_backend   Spring Boot :8080, profile prod (chỉ trong mạng Docker)
-                          └─ ndc_db        PostgreSQL 16, volume ndc_prod_postgres_data
+                          ├─ ndc_db        PostgreSQL 16, volume ndc_prod_postgres_data
+                          └─ ndc_minio     MinIO :9000, ảnh CMS (bucket media), volume ndc_prod_minio_data; Caddy /media/* → đây
 GitHub push main ──▶ Actions: test + kiểm tra migration ──▶ SSH ──▶ git pull + scripts/deploy.sh
 ```
 
@@ -188,6 +189,8 @@ Trước khi chạy `UPDATE` hoặc `DELETE`, gõ `BEGIN;`, chạy lệnh, rồi
 - **Tự động:** 3h sáng giờ Việt Nam mỗi ngày, ghi ra `~/backups/ndc-YYYY-MM-DD.dump`, giữ 7 ngày. Lightsail chụp thêm snapshot cả máy, cũng giữ 7 ngày.
 - **Backup ngay** (bắt buộc trước migration xoá hoặc đổi dữ liệu, hoặc trước khi sửa tay): `~/ndc-backup.sh`. File cùng ngày sẽ bị ghi đè.
 - **Bản sao ngoài AWS:** khoảng mỗi tháng một lần, tải một bản về máy: `scp ndc:backups/ndc-YYYY-MM-DD.dump .`.
+- **Ảnh CMS (MinIO)** nằm trong volume `ndc_prod_minio_data`, **không** có trong file dump DB; chỉ snapshot Lightsail giữ chúng. Sao ảnh ra file: `docker run --rm -v ndc_prod_minio_data:/data:ro alpine tar -C /data -cz . > ~/backups/minio-$(date +%F).tgz` rồi `scp` về máy.
+- **Lần đầu bật MinIO:** thêm `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD` vào `~/ndc/.env` (thiếu thì deploy dừng, bản cũ vẫn chạy). Sau khi deploy xong chạy 1 lần `cd ~/ndc && scripts/migrate-supabase-images.sh` để chép ảnh cũ từ Supabase.
 
 ### 7.3. Khôi phục
 

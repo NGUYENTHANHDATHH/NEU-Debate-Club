@@ -33,6 +33,11 @@ spring:
     baseline-on-migrate: true
     baseline-version: 12
 
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+
 server:
   port: ${PORT:8080}
   servlet:
@@ -67,6 +72,12 @@ app:
     client-id: ${PAYOS_CLIENT_ID:}
     api-key: ${PAYOS_API_KEY:}
     checksum-key: ${PAYOS_CHECKSUM_KEY:}
+
+  # MinIO lưu ảnh CMS (bucket "media"). Để trống access-key = tắt upload ảnh.
+  storage:
+    url: ${MINIO_URL:http://localhost:9000}
+    access-key: ${MINIO_ACCESS_KEY:}
+    secret-key: ${MINIO_SECRET_KEY:}
 
   # Web Push (VAPID, base64url). Để trống = tắt thông báo đẩy. Tạo cặp khoá: npx web-push generate-vapid-keys
   push:
